@@ -116,7 +116,7 @@ while true; do
                     hyprpm enable dynamic-cursors
                     hyprpm enable hyprtrails
                 fi
-            elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" ]]; then
+            elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
                 sudo apt update && sudo apt upgrade -y
                 wait
                 sudo apt full-upgrade -y
@@ -148,12 +148,8 @@ while true; do
             ;;
         "PiercingXX Rice")
             echo -e "${YELLOW}Downloading and Applying PiercingXX Rice...${NC}"
-            if [ ! -d "piercing-dots" ] ; then
-                git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-            else
-                rm -rf piercing-dots
-                git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-            fi
+            rm -rf piercing-dots
+            git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
             chmod -R u+x piercing-dots
             chown -R "$username":"$username" piercing-dots
             cd piercing-dots || exit
@@ -164,12 +160,8 @@ while true; do
             ;;
         "Piercing Gimp Only")
             echo -e "${YELLOW}Installing Piercing Gimp Presets...${NC}"
-            if [ ! -d "piercing-dots" ] ; then
-                git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-            else
-                rm -rf piercing-dots
-                git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-            fi
+            rm -rf piercing-dots
+            git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
             chmod -R u+x piercing-dots
             chown -R "$username":"$username" piercing-dots
             cd piercing-dots/scripts || exit
@@ -181,12 +173,8 @@ while true; do
         "Rice-No Hyprland")
             if [[ "$DISTRO" == "arch" ]]; then
                 echo -e "${YELLOW}Downloading and Applying PiercingXX Rice w/o Hyprdots...${NC}"
-                if [ ! -d "piercing-dots" ] ; then
-                    git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-                else
-                    rm -rf piercing-dots
-                    git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-                fi
+                rm -rf piercing-dots
+                git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
                 chmod -R u+x piercing-dots
                 chown -R "$username":"$username" piercing-dots
                 cd piercing-dots || exit

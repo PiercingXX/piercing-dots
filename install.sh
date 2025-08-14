@@ -5,14 +5,11 @@ username=$(id -u -n 1000)
 builddir=$(pwd)
 
 # PiercingXX Rice
-    # Clone Piercing Dots Repo
-        git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
-        chmod -R u+x piercing-dots
-        chown -R "$username":"$username" piercing-dots
-        cd piercing-dots || exit
-        cp -Rf dots/* /home/"$username"/.config/
-        chown "$username":"$username" -R /home/"$username"/.config/*
-        cd "$builddir" || exit
+    # Update Maintenance Script (run 'xx' in terminal)
+        rm -f /home/"$username"/maintenance.sh
+        cp -f scripts/maintenance.sh /home/"$username"/
+        chown "$username":"$username" /home/"$username"/maintenance.sh
+        chmod +x /home/"$username"/maintenance.sh
     # Make Directories if needed
         # .font directory
             if [ ! -d "$HOME/.fonts" ]; then
@@ -42,13 +39,13 @@ builddir=$(pwd)
                 mkdir -p /home/"$username"/media/Archived-Storage
             fi
             chown "$username":"$username" /home/"$username"/media/Archived-Storage
+    # Clone Piercing Dots Repo
+        cp -Rf dots/* /home/"$username"/.config/
+        chown "$username":"$username" -R /home/"$username"/.config/*
+        cd "$builddir" || exit
     # Copy Backgrounds
-        mkdir -p /home/"$username"/Pictures/backgrounds
-        chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
         cp -Rf piercing-dots/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
-        mkdir -p /home/"$username"/Pictures/profile-image
-        chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
         cp -Rf piercing-dots/profile-image/* /home/"$username"/Pictures/profile-image
         chown -R "$username":"$username" /home/"$username"/Pictures/profile-images
         cd "$builddir" || exit
@@ -60,11 +57,6 @@ builddir=$(pwd)
         ./gnome-customizations.sh
         wait
         cd "$builddir" || exit
-    # Update Maintenance Script (run 'xx' in terminal)
-        rm -f /home/"$username"/maintenance.sh
-        cp -f piercing-dots/scripts/maintenance.sh /home/"$username"/
-        chown "$username":"$username" /home/"$username"/maintenance.sh
-        chmod +x /home/"$username"/maintenance.sh
     # Apply Beautiful Bash
         echo -e "${YELLOW}Installing Beautiful Bash...${NC}"
         git clone https://github.com/christitustech/mybash
