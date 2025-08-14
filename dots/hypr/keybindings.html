@@ -1,0 +1,118 @@
+<!DOCTYPE html> 
+<html> 
+
+<head> 
+    <title>PiercingXX'S KEYBINDINGS </title> 
+</head> 
+
+<body> 
+    <h2>General</h2> 
+    <p>
+        <ul>
+        <h4>$mainMod = SUPER</h4>
+        <li>bind = ,                            $mainMod,           exec, true # Open app launcher,</li>
+        <li>bindr = $mainMod,                   $mainMod_L,         exec, pkill rofi || rofi -show drun # Open rofi</li>
+        <li>bind = $mainMod,                    Q,                  killactive # Kill active window,</li>
+        <li>bind = $mainMod,                    W,                  exec, kitty # Open kitty,</li>
+        <li>bind = ALT,                         TAB,                exec, rofi -show window # Open rofi window,</li>
+        <li>bind = $mainMod,                    SPACE,              exec, nautilus --new-window # Open nautilus,</li>
+        <li>bind = $mainMod,                    Return,             exec, kitty xplr # Open xplr,</li>
+        <li>bind = $mainMod SHIFT,              S,                  exec, yad --html < ~/.config/hypr/keybindings.md --button=OK:0,</li>
+        <li>bind = $mainMod,                    S,                  exec, XDG_CURRENT_DESKTOP="gnome" gnome-control-center # Launch GNOME Settings,</li>
+        <li>bind = $mainMod,                    F,                  fullscreen # Toggle fullscreen mode,</li>
+        <li>bind = $mainMod SHIFT,              F,                  togglefloating # Toggle floating mode,</li>
+        <li>bind = $mainMod,                    R,                  exec, pkill waybar && waybar &,</li>
+        <li>bindr = Ctrl+$mainMod,              R,                  exec, hyprctl reload; killall ags ydotool; ags & # [hidden],</li>
+        <li>bind = ,                            PRINT,              exec, hyprshot -m region # Screenshot a region,</li>
+        <li>bind = $shiftMod,                   PRINT,              exec, hyprshot -m window # Screenshot a window,</li>
+        <li>bindl= Ctrl,                        PRINT,              exec, mkdir -p ~/Pictures/Screenshots && ~/.config/ags/scripts/grimblast.sh copysave screen ~/Pictures/Screenshots/Screenshot_"$(date '+%Y-%m-%d_%H.%M.%S')".png # Screenshot >> clipboard & file</li>
+        </ul>
+        </p>
+    <h2>Applications</h2> 
+    <p>
+        <ul>
+        <li>bind = $mainMod,                    C,                  exec, google-chrome-stable # Google Chrome
+        <li>bind = $mainMod,                    V,                  exec, code # Visual Studio Code
+        <li>bind = $mainMod,                    B,                  exec, flatpak run md.obsidian.Obsidian # Obsidian
+        <li>bind = Ctrl+Shift,                  Escape,             exec, gnome-system-monitor # Launch GNOME System monitor
+        <li>bind = Ctrl+$mainMod,               V,                  exec, pavucontrol # Launch pavucontrol (volume mixer)
+        <li>bind = Ctrl+$mainMod+Shift,         V,                  exec, easyeffects # Launch EasyEffects (equalizer & other audio effects)
+        <li>bind = Ctrl+$mainMod,               Slash,              exec, pkill anyrun || anyrun # Toggle fallback launcher: anyrun
+        <li>bind = $mainMod+Alt,                Slash,              exec, pkill anyrun || fuzzel # Toggle fallback launcher: fuzzel
+        <li>bind = Ctrl+$mainMod,               Backslash,          resizeactive, exact 640 480 # [hidden]
+        </ul>
+        </p>    
+    
+    <h2>Workspace Navigation</h2>
+    <p>
+        <ul>
+        # Move focus with mainMod + arrow keys
+        <li>bind = $mainMod,                    left,               movefocus, l # Focus left</li>
+        <li>bind = $mainMod,                    right,              movefocus, r # Focus right</li>
+        <li>bind = $mainMod,                    up,                 movefocus, u # Focus up</li>
+        <li>bind = $mainMod,                    down,               movefocus, d # Focus down</li>
+        # Move window with mainMod + arrow keys
+        <li>bind = $mainMod SHIFT,              left,               movewindow, l # Move window left</li>
+        <li>bind = $mainMod SHIFT,              right,              movewindow, r # Move window right</li>
+        <li>bind = $mainMod SHIFT,              up,                 movewindow, u # Move window up</li>
+        <li>bind = $mainMod SHIFT,              down,               movewindow, d # Move window down</li>
+        <li>bindm = $mainMod,                   mouse:272,          movewindow # Mouse move window</li>
+        <li>bindm = $mainMod,                   Control_L,          movewindow # Control move window</li>
+        # Resize Window with mainMod + vim keys
+        <li>bind = $mainMod ALT,                left,               resizeactive, -100 0 # Resize window left</li>
+        <li>bind = $mainMod ALT,                right,              resizeactive, 100 0 # Resize window right</li>
+        <li>bind = $mainMod ALT,                up,                 resizeactive, 0, -100 # Resize window up</li>
+        <li>bind = $mainMod ALT,                down,               resizeactive, 0, 100 # Resize window down</li>
+        <li>bindm = $mainMod,                   Alt_L,              resizewindow # Resize window</li>
+        </ul>
+        </p>    
+
+    <p>
+    <h2>Workspace Management</h2>
+        # Switch to workspace with mainMod + [0-9]
+        <li>bind = $mainMod, 1, workspace, 1</li>
+        # Move active window to a workspace with mainMod + SHIFT + [0-9]
+        <li>bind = $mainMod SHIFT, 1, movetoworkspace, 1</li>
+        # Move active window silently to a workspace with mainMod + ALT + [0-9]
+        <li>bind = $mainMod+Alt, 1, movetoworkspacesilent, 1</li>
+        </p>
+    
+    <p>
+    <h2>Clipboard Stuff</h2>
+        <li>bind = $mainMod SHIFT, V   =    Clipboard history >> clipboard</li>
+        <li>bind = $mainMod, Period, exec, pkill fuzzel || fuzzmoji # Pick emoji >> clipboard</li>
+        </p>
+
+    <p>
+    <h2>Media Keys</h2>
+        <li>binde = , XF86AudioPlay, exec, playerctl play-pause</li>
+        <li>binde = , XF86AudioPause, exec, playerctl play-pause</li>
+        <li>binde = , XF86AudioNext, exec, playerctl next</li>
+        <li>binde = , XF86AudioPrev, exec, playerctl previous</li>
+        <li>binde = , XF86AudioRaiseVolume, exec, pactl set-sink-volume @DEFAULT_SINK@ +5%</li>
+        <li>binde = , XF86AudioLowerVolume, exec, pactl set-sink-volume @DEFAULT_SINK@ -5%</li>
+        <li>binde = , XF86AudioMute, exec, pactl set-sink-mute @DEFAULT_SINK@ toggle</li>
+        <li>binde = , XF86AudioMicMute, exec, pactl set-source-mute @DEFAULT_SOURCE@ toggle</li>
+        </p>
+
+    <p>
+    <h2>Brightness Controls</h2>
+        <li>bind = ,XF86MonBrightnessUp, exec, brightnessctl set 10%+</li>
+        <li>bind = ,XF86MonBrightnessDown, exec, brightnessctl set 10%-</li>
+    </p>
+
+    <p>
+    <h2>Session</h2>
+        <li>bind = $mainMod,                    L,                  exec, hyprlock # Lock screen</li>
+        <li>bindl = $mainMod+Shift, L, exec, sleep 0.1 && systemctl suspend || loginctl suspend # Suspend system</li>
+        <li>bind = $mainMod SHIFT,              Q,                  exit # Logout - Hope you saved your work!</li>
+        <li>bind = Ctrl+Shift+Alt, Delete, exec, pkill wlogout || wlogout -p layer-shell # Logout</li>
+        <li>bind = Ctrl+Shift+Alt+$mainMod, Delete, exec, systemctl poweroff || loginctl poweroff # Power off</li>
+        <li>bind = Ctrl+Alt, Delete, exec, htop</li>
+    
+    
+
+
+    </p> 
+</body> 
+</html>

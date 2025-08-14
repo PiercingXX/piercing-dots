@@ -1,0 +1,9 @@
+# GIMP gimp-operation-tool options
+
+(foreground
+    (color "Y'A u8" 2 "\61\377" 0))
+(background
+    (color "HSVA float" 16 "\0\0\0\0\0\0\0\0\0\0\200\77\0\0\200\77" 0))
+(blending-options-expanded yes)
+
+# end of gimp-operation-tool options

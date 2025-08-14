@@ -1,0 +1,25 @@
+# settings
+
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:19:06"
+    (time 1741468746)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:09:41"
+    (time 1741468181)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:07:40"
+    (time 1741468060)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:06:39"
+    (time 1741467999)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:06:07"
+    (time 1741467967)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2025-03-08 16:01:54"
+    (time 1741467714)
+    (mode luminance))
+(GimpGegl-gimp-desaturate-config "2020-06-17 09:54:27"
+    (time 1592402067)
+    (mode luma))
+
+# end of settings

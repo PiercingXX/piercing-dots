@@ -1,0 +1,20 @@
+[meta]
+major-version=0
+minor-version=4
+
+[print-settings]
+scale=100
+number-up=1
+reverse=false
+output-uri=file:///tmp/gtkprintC4Q3A3
+page-set=all
+printer=Print to File
+print-pages=all
+collate=false
+output-file-format=pdf
+
+[image-setup]
+unit=1
+center-mode=3
+use-full-page=false
+crop-marks=false

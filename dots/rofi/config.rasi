@@ -1,0 +1,142 @@
+configuration {
+    modi: "drun,run";
+    font: "JetBrains Mono Nerd Font Bold 12";
+    show-icons: true;
+    terminal: "kitty";
+    drun-display-format: "{icon} {name}";
+    location: 0;
+    disable-history: false;
+    hide-scrollbar: true;
+    sidebar-mode: true;
+    display-drun: "   Apps ";
+    display-run: "   Command ";
+    display-window: "   Window ";
+}
+
+* {
+    g-spacing: 20px;
+    g-margin: 20;
+    b-color: #29263c;
+    fg-color: #FFFFFFFF;
+    fgp-color: #888888FF;
+    b-radius: 8px;
+    g-padding: 8px;
+    hl-color: #FFFFFFFF;
+    hlt-color: #29263c;
+    hlt-color: #29263c;
+    alt-color: #29263c;
+    wbg-color: #29263c;
+    w-border: 3px solid;
+    w-border-color: #a277ff;
+    w-padding: 12px;
+}
+
+
+
+listview {
+    columns: 3;
+    lines: 7;
+    fixed-height: true;
+    fixed-columns: true;
+    cycle: false;
+    scrollbar: false;
+    border: 3px solid;
+}
+
+window {
+    transparency: "real";
+    height: 400px;
+    width: 900px;
+    border-radius: @b-radius;
+    background-color: @wbg-color;
+    border: @w-border;
+    border-color: @w-border-color;
+    padding: @w-padding;
+}
+
+prompt {
+    text-color: @fg-color;
+}
+
+inputbar {
+    children: ["prompt", "entry"];
+    background-color: #a277ff;
+    spacing: @g-spacing;
+}
+
+entry {
+    placeholder: "Search Apps";
+    text-color: #29263c;
+    placeholder-color: #29263c;
+}
+
+mainbox {
+    spacing: @g-spacing;
+    margin: @g-margin;
+    padding: @g-padding;
+    children: ["inputbar", "listview", "message"];
+}
+
+element {
+    spacing: @g-spacing;
+    margin: @g-margin;
+    padding: @g-padding;
+    border: 0px solid;
+    border-radius: @b-radius;
+    border-color: @b-color;
+    background-color: transparent;
+    text-color: @fg-color;
+}
+
+element-icon {
+    size: 25px;
+    background-color: #00000000;
+}
+
+element normal.normal {
+	background-color: transparent;
+	text-color: @fg-color;
+}
+
+element alternate.normal {
+	background-color: @alt-color;
+	text-color: @fg-color;
+}
+
+element selected.active {
+	background-color: @hl-color;
+	text-color: @hlt-color;
+}
+
+element selected.normal {
+	background-color: @hl-color;
+	text-color: @hlt-color;
+}
+
+message {
+    background-color: red;
+    border: 0px solid;
+}
+
+
+mode-switcher {
+    spacing: 0;
+}
+
+button {
+    padding: 12px;
+    margin: 10px 5px 10px 5px;
+    background-color: @hl-color;
+    text-color: @hlt-color;
+    vertical-align: 0.5; 
+    horizontal-align: 0.5;
+    border-radius: 5px;
+    border: 0px 0px 8px 0px;
+}
+
+button selected {
+    background-color: @alt-color;
+    text-color: @hl-color;
+    border-radius: 5px;
+    border: 0px 0px 8px 0px;
+}

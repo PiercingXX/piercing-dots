@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<interface>
+  <menu id="/brushes-popup">
+    <submenu>
+      <attribute name="label" translatable="yes" context="brushes-action">Brushes Menu</attribute>
+      <attribute name="icon">gimp-tool-paintbrush</attribute>
+
+      <item><attribute name="action">brushes.brushes-edit</attribute></item>
+      <item><attribute name="action">brushes.brushes-open-as-image</attribute></item>
+      <section>
+        <item><attribute name="action">brushes.brushes-new</attribute></item>
+        <item><attribute name="action">brushes.brushes-duplicate</attribute></item>
+        <item><attribute name="action">brushes.brushes-copy-location</attribute></item>
+        <item><attribute name="action">brushes.brushes-show-in-file-manager</attribute></item>
+        <item><attribute name="action">brushes.brushes-delete</attribute></item>
+      </section>
+      <section>
+        <item><attribute name="action">brushes.brushes-refresh</attribute></item>
+      </section>
+    </submenu>
+  </menu>
+</interface>

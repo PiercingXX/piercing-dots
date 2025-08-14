@@ -1,0 +1,25 @@
+# GIMP tool preset file
+
+(icon-name "gimp-tool-paintbrush")
+(name "Splatters")
+(tool-options "GimpPaintOptions"
+    (tool "gimp-paintbrush-tool")
+    (foreground
+        (color "R'G'B'A double" 32 "\0\0\0\0\0\0\0\0\0\0\0\300\350\53\230\77\0\0\0\100Q\55\302\77\0\0\0\0\0\0\360\77" 0))
+    (brush "Splats 01")
+    (dynamics "Pressure Opacity")
+    (pattern "Pine")
+    (gradient "FG to BG (RGB)")
+    (palette "Color History")
+    (brush-size 200))
+(use-fg-bg no)
+(use-opacity-paint-mode yes)
+(use-brush yes)
+(use-dynamics yes)
+(use-mypaint-brush no)
+(use-gradient no)
+(use-pattern no)
+(use-palette no)
+(use-font no)
+
+# end of GIMP tool preset file

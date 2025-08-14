@@ -1,0 +1,17 @@
+/* GIMP theme.css
+ *
+ * This file is written on GIMP startup and on every theme change.
+ * It is NOT supposed to be edited manually. Edit your personal
+ * gimp.css file instead (/home/dr3k/.config/GIMP/3.0/gimp.css).
+ */
+
+@import url("file:///home/dr3k/.config/GIMP/3.0/themes/Darker/gimp-dark.css");
+@import url("file:///etc/gimp/3.0/gimp.css");
+
+* { -gtk-icon-style: regular; }
+
+/* prefer-dark-theme */
+
+* { font-size: 1.1000000000000001rem; }
+
+/* end of theme.css */

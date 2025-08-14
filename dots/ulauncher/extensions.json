@@ -1,0 +1,30 @@
+{
+    "com.github.mepowerleo10.ulauncher-dict-en": {
+        "id": "com.github.mepowerleo10.ulauncher-dict-en",
+        "url": "https://github.com/mepowerleo10/ulauncher-dict-en",
+        "updated_at": "2025-07-08T17:29:38.146177",
+        "last_commit": "78babcd05dff825a580a7192fc14ee73775784f2",
+        "last_commit_time": "2023-04-03T09:26:35"
+    },
+    "com.github.ulauncher.ulauncher-emoji": {
+        "id": "com.github.ulauncher.ulauncher-emoji",
+        "url": "https://github.com/Ulauncher/ulauncher-emoji",
+        "updated_at": "2025-07-08T18:23:11.406615",
+        "last_commit": "af5806625e361ca4519b99755ccf0a557c1e894a",
+        "last_commit_time": "2025-06-03T19:05:58"
+    },
+    "com.github.doekeb.ulauncher-gnome-calculator": {
+        "id": "com.github.doekeb.ulauncher-gnome-calculator",
+        "url": "https://github.com/Doekeb/ulauncher-gnome-calculator",
+        "updated_at": "2025-07-08T21:09:57.741143",
+        "last_commit": "f1efd61c6ecd1160b007bca1f90511a346378e64",
+        "last_commit_time": "2021-05-03T15:30:01"
+    },
+    "com.github.brpaz.ulauncher-shortcuts": {
+        "id": "com.github.brpaz.ulauncher-shortcuts",
+        "url": "https://github.com/brpaz/ulauncher-shortcuts",
+        "updated_at": "2025-07-08T21:19:54.580526",
+        "last_commit": "8f226b0cbe744221ce441cd09853b0abe06e78fd",
+        "last_commit_time": "2022-02-05T15:11:07"
+    }
+}

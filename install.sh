@@ -1,0 +1,83 @@
+#!/bin/bash
+# GitHub.com/PiercingXX
+
+username=$(id -u -n 1000)
+builddir=$(pwd)
+
+# PiercingXX Rice
+    # Clone Piercing Dots Repo
+        git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
+        chmod -R u+x piercing-dots
+        chown -R "$username":"$username" piercing-dots
+        cd piercing-dots || exit
+        cp -Rf dots/* /home/"$username"/.config/
+        chown "$username":"$username" -R /home/"$username"/.config/*
+        cd "$builddir" || exit
+    # Make Directories if needed
+        # .font directory
+            if [ ! -d "$HOME/.fonts" ]; then
+                mkdir -p "$HOME/.fonts"
+            fi
+            chown -R "$username":"$username" "$HOME"/.fonts
+        # .icons directory
+            if [ ! -d "$HOME/.icons" ]; then
+                mkdir -p /home/"$username"/.icons
+            fi
+            chown -R "$username":"$username" /home/"$username"/.icons
+        # Background and Profile Image Directories
+            if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
+                mkdir -p /home/"$username"/Pictures/backgrounds
+            fi
+            chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
+            if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
+                mkdir -p /home/"$username"/Pictures/profile-image
+            fi
+            chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
+        # fstab external drive mounting directory
+            if [ ! -d "$HOME/.media/Working-Storage" ]; then
+                mkdir -p /home/"$username"/media/Working-Storage
+            fi
+            chown "$username":"$username" /home/"$username"/media/Working-Storage
+            if [ ! -d "$HOME/.media/Archived-Storage" ]; then
+                mkdir -p /home/"$username"/media/Archived-Storage
+            fi
+            chown "$username":"$username" /home/"$username"/media/Archived-Storage
+    # Copy Backgrounds
+        mkdir -p /home/"$username"/Pictures/backgrounds
+        chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
+        cp -Rf piercing-dots/backgrounds/* /home/"$username"/Pictures/backgrounds
+        chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
+        mkdir -p /home/"$username"/Pictures/profile-image
+        chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
+        cp -Rf piercing-dots/profile-image/* /home/"$username"/Pictures/profile-image
+        chown -R "$username":"$username" /home/"$username"/Pictures/profile-images
+        cd "$builddir" || exit
+    # Copy Refs to Download folder
+        cp -Rf piercing-dots/refs/* /home/"$username"/Downloads
+    # Apply Piercings Gnome Customizations
+        cd piercing-dots || exit
+        cd scripts || exit
+        ./gnome-customizations.sh
+        wait
+        cd "$builddir" || exit
+    # Update Maintenance Script (run 'xx' in terminal)
+        rm -f /home/"$username"/maintenance.sh
+        cp -f piercing-dots/scripts/maintenance.sh /home/"$username"/
+        chown "$username":"$username" /home/"$username"/maintenance.sh
+        chmod +x /home/"$username"/maintenance.sh
+    # Apply Beautiful Bash
+        echo -e "${YELLOW}Installing Beautiful Bash...${NC}"
+        git clone https://github.com/christitustech/mybash
+            chmod -R u+x mybash
+            chown -R "$username":"$username" mybash
+            cd mybash || exit
+            ./setup.sh
+            wait
+            cd "$builddir" || exit
+            rm -rf mybash
+    # Replace .bashrc
+        cp -Rf piercing-dots/bash/.bashrc /home/"$username"/
+        chown -R "$username":"$username" /home/"$username"/.bashrc
+    # Clean Up
+        rm -Rf piercing-dots
+    echo -e "${GREEN}PiercingXX Rice Applied Successfully!${NC}"

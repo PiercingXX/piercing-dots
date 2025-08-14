@@ -1,0 +1,15 @@
+# settings
+
+(width 1800)
+(height 426)
+(keep-ratio yes)
+(prefer-native-dimensions no)
+(reverse-order no)
+(pages 0)
+(antialias yes)
+(white-background yes)
+(pixel-density 300)
+(physical-unit inches)
+(target 0)
+
+# end of settings

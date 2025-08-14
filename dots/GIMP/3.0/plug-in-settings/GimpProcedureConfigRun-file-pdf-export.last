@@ -1,0 +1,12 @@
+# settings
+
+(vectorize yes)
+(ignore-hidden yes)
+(apply-masks yes)
+(layers-as-pages no)
+(reverse-order no)
+(root-layers-only yes)
+(convert-text-layers no)
+(fill-background-color no)
+
+# end of settings

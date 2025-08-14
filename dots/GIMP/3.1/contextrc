@@ -1,0 +1,18 @@
+# GIMP user context
+
+(tool "gimp-move-tool")
+(paint-info "gimp-paintbrush")
+(foreground
+    (color "HSVA float" 16 "\0\0\0\0\0\0\0\0\0\0\200\77\0\0\200\77" 0))
+(background
+    (color "Y'A u8" 2 "\61\377" 0))
+(brush "2. Hardness 075")
+(dynamics "Pressure Opacity")
+(mybrush "100% Opaque")
+(pattern "Pine")
+(gradient "FG to BG (HSV Clockwise Hue)")
+(palette "Default")
+(font "Monospace")
+(tool-preset "16×10")
+
+# end of user context

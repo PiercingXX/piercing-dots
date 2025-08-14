@@ -1,0 +1,235 @@
+
+{
+    // Workspaces
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "on-click": "activate",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "4": "4",
+          "5": "5",
+          "6": "6",
+          "7": "7",
+          "8": "8",
+          "9": "9",
+          "10": "10",
+          "focused": "",
+          "default": ""
+        },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1",
+        },
+
+    // Hyprland Window
+    "hyprland/window": {
+        "format": "{}",
+	"icon":true,
+	"icon-size" : 20
+    },
+
+    // Power Menu
+    "custom/exit": {
+        "format": "",
+        "tooltip-format": "Powermenu",
+        "on-click": "wlogout -b 4",
+        "tooltip": false
+    },
+
+    // Keyboard State
+    "keyboard-state": {
+        "numlock": true,
+        "capslock": true,
+        "format": "{name} {icon}",
+        "format-icons": {
+            "locked": "",
+            "unlocked": ""
+        }
+    },
+
+    // System tray
+    "tray": {
+        // "icon-size": 23,
+        "spacing": 13
+    },
+
+    // Clock
+    "clock": {
+        "format": "{:%H:%M %a %b %d}",
+        "on-click": "sleep 0.1 && swaync-client -t -sw",
+        "on-click-right": "swaync-client -C",
+	"tooltip-format": "<tt><small>{calendar}</small></tt>",
+	"calendar": {
+		"mode"          : "month",
+		"mode-mon-col"  : 3,
+		"weeks-pos"     : "right",
+		"on-scroll"     : 1,
+		"on-click-right": "mode",
+        "on-scroll-up"  : "shift_up",
+		"on-scroll-down": "shift_down",
+		"format": {
+			"months":     "<span color='#82e2ff'><b>{}</b></span>",
+			"days":       "<span color='#61ffca'><b>{}</b></span>",
+			"weeks":      "<span color='#f694ff'><b>W{}</b></span>",
+			"weekdays":   "<span color='#a277ff'><b>{}</b></span>",
+			"today":      "<span color='#ff6767'><b><u>{}</u></b></span>"
+		}
+	},
+	"actions": {
+		"on-click-right": "mode",
+		"on-click-forward": "tz_up",
+		"on-click-backward": "tz_down",
+		"on-scroll-up": "shift_up",
+		"on-scroll-down": "shift_down"
+	}
+},
+
+    // System
+    "custom/system": {
+        "format": "",
+        "tooltip": false
+    },
+
+    // CPU
+    "cpu": {
+        "format": "/ C {usage}% ",
+        "on-click": "kitty -e htop"
+    },
+
+    // Memory
+    "memory": {
+        "format": "/ M {}% ",
+        "on-click": "kitty -e htop"
+    },
+
+    // Harddisc space used
+    "disk": {
+        "interval": 30,
+        "format": "D {percentage_used}% ",
+        "path": "/",
+        "on-click": "kitty -e htop"
+    }, 
+
+    // Temperature
+    "temperature": {
+        "thermal-zone": 7,  // Check with: # cat /sys/class/hwmon/hwmon*/temp1_input
+        "hwmon-path": "/sys/class/hwmon/hwmon7/temp1_input",
+        "critical-threshold": 80,
+        "format-critical": "{temperatureF}°F ",
+        "format": "{temperatureF}°F "
+    },
+
+    // Language
+    "hyprland/language": {
+        "format": "/ K {short}"
+    },
+
+    // Group Hardware
+    "group/hardware": {
+        "orientation": "inherit",
+        "drawer": {
+            "transition-duration": 300,
+            "children-class": "not-memory",
+            "transition-left-to-right": false
+        },        
+        "modules": [
+            "custom/system",
+            "disk",
+            "cpu",
+            "memory",
+            "hyprland/language"
+        ]
+    },
+    
+   // Network
+    "network": {
+        "format": "{ifname}",
+        "format-wifi": "   {signalStrength}%",
+        "format-ethernet": "  {ipaddr}",
+        "format-disconnected": "Not connected", //An empty format will hide the module.
+        "tooltip-format": " {ifname} via {gwaddri}",
+        "tooltip-format-wifi": "   {essid} ({signalStrength}%)",
+        "tooltip-format-ethernet": "  {ifname} ({ipaddr}/{cidr})",
+        "tooltip-format-disconnected": "Disconnected",
+        "max-length": 50,
+        "on-click": "kitty -e nmtui"
+    },
+
+    // Battery
+    "battery": {
+        "states": {
+            // "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon}   {capacity}%",
+        "format-charging": "  {capacity}%",
+        "format-plugged": "  {capacity}%",
+        "format-alt": "{icon}  {time}",
+        // "format-good": "", // An empty format will hide the module
+        // "format-full": "",
+        "format-icons": [" ", " ", " ", " ", " "]
+    },
+
+    // Backlight
+    "backlight": {
+        // "device": "acpi_video1",
+        "format": "{icon} {percent: >3}%",
+        "format-icons": ["", ""],
+        "on-scroll-down": "brightnessctl -c backlight set 1%-",
+        "on-scroll-up": "brightnessctl -c backlight set +1%",
+        "on-click": "~/.config/waybar/scripts/backlight-hint.sh"
+    },
+
+    // Pulseaudio
+    "pulseaudio": {
+        // "scroll-step": 1, // %, can be a float
+        "format": "{icon}  {volume}%",
+        "format-bluetooth": "{volume}% {icon} {format_source}",
+        "format-bluetooth-muted": " {icon} {format_source}",
+        "format-muted": " {format_source}",
+        "format-source": "{volume}% ",
+        "format-source-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", " ", " "]
+        },
+        "on-click": "pavucontrol",
+        "on-click-right": "pactl set-source-mute @DEFAULT_SOURCE@ toggle"
+    },
+
+    // Bluetooth
+    "bluetooth": {
+        "format-disabled": "",
+        "format-off": "",
+        "interval": 30,
+        "on-click": "blueman-manager",
+        "format-no-controller": ""
+    },
+
+    // Other
+    "user": {
+        "format": "{user}",
+        "interval": 60,
+        "icon": false,
+    },
+
+    // Idle Inhibator
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "tooltip": true,
+        "format-icons":{
+            "activated": "",
+            "deactivated": ""
+        },
+        "on-click-right": "hyprlock"        
+    }
+}

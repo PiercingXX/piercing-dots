@@ -1,0 +1,12 @@
+{
+  "manifest_version": "1",
+  "name": "Aura-Theme",
+  "display_name": "Aura Theme",
+  "extend_theme": "dark",
+  "css_file": "theme.css",
+  "css_file_gtk_3.20+": "theme-aura.css",
+  "matched_text_hl_colors": {
+    "when_selected": "#b4f9f8",
+    "when_not_selected": "#7aa2f7"
+  }
+}

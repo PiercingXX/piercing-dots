@@ -1,0 +1,6 @@
+# GIMP gimp-flip-tool options
+
+(background
+    (color "Y'A u8" 2 "\61\377" 0))
+
+# end of gimp-flip-tool options
