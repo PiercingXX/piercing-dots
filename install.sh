@@ -14,31 +14,31 @@ builddir=$(pwd)
         # .font directory
             if [ ! -d "$HOME/.fonts" ]; then
                 mkdir -p "$HOME/.fonts"
+                chown -R "$username":"$username" "$HOME"/.fonts
             fi
-            chown -R "$username":"$username" "$HOME"/.fonts
         # .icons directory
             if [ ! -d "$HOME/.icons" ]; then
                 mkdir -p /home/"$username"/.icons
+                chown -R "$username":"$username" /home/"$username"/.icons
             fi
-            chown -R "$username":"$username" /home/"$username"/.icons
         # Background and Profile Image Directories
             if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
                 mkdir -p /home/"$username"/Pictures/backgrounds
+                chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
             fi
-            chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
             if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
                 mkdir -p /home/"$username"/Pictures/profile-image
+                chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
             fi
-            chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
         # fstab external drive mounting directory
             if [ ! -d "$HOME/.media/Working-Storage" ]; then
                 mkdir -p /home/"$username"/media/Working-Storage
+                chown "$username":"$username" /home/"$username"/media/Working-Storage
             fi
-            chown "$username":"$username" /home/"$username"/media/Working-Storage
             if [ ! -d "$HOME/.media/Archived-Storage" ]; then
                 mkdir -p /home/"$username"/media/Archived-Storage
+                chown "$username":"$username" /home/"$username"/media/Archived-Storage
             fi
-            chown "$username":"$username" /home/"$username"/media/Archived-Storage
     # Clone Piercing Dots Repo
         cp -Rf dots/* /home/"$username"/.config/
         chown "$username":"$username" -R /home/"$username"/.config/*
@@ -52,7 +52,7 @@ builddir=$(pwd)
     # Copy Refs to Download folder
         cp -Rf refs/* /home/"$username"/Downloads
     # Replace .bashrc
-        cp -Rf bash/.bashrc /home/"$username"/
+        cp -rf bash/.bashrc /home/"$username"/
         chmod u+x /home/"$username"/.bashrc
         chown -R "$username":"$username" /home/"$username"/.bashrc
     # Clean Up
