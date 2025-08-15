@@ -44,19 +44,13 @@ builddir=$(pwd)
         chown "$username":"$username" -R /home/"$username"/.config/*
         cd "$builddir" || exit
     # Copy Backgrounds
-        cp -Rf piercing-dots/backgrounds/* /home/"$username"/Pictures/backgrounds
+        cp -Rf backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
-        cp -Rf piercing-dots/profile-image/* /home/"$username"/Pictures/profile-image
+        cp -Rf profile-image/* /home/"$username"/Pictures/profile-image
         chown -R "$username":"$username" /home/"$username"/Pictures/profile-images
         cd "$builddir" || exit
     # Copy Refs to Download folder
-        cp -Rf piercing-dots/refs/* /home/"$username"/Downloads
-    # Apply Piercings Gnome Customizations
-        cd piercing-dots || exit
-        cd scripts || exit
-        ./gnome-customizations.sh
-        wait
-        cd "$builddir" || exit
+        cp -Rf refs/* /home/"$username"/Downloads
     # Apply Beautiful Bash
         echo -e "${YELLOW}Installing Beautiful Bash...${NC}"
         git clone https://github.com/christitustech/mybash
@@ -68,7 +62,8 @@ builddir=$(pwd)
             cd "$builddir" || exit
             rm -rf mybash
     # Replace .bashrc
-        cp -Rf piercing-dots/bash/.bashrc /home/"$username"/
+        cp -Rf bash/.bashrc /home/"$username"/
+        chmod u+x /home/"$username"/.bashrc
         chown -R "$username":"$username" /home/"$username"/.bashrc
     # Clean Up
         rm -Rf piercing-dots

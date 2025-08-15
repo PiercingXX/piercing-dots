@@ -117,7 +117,7 @@ while true; do
                     hyprpm enable hyprtrails
                 fi
             elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
-                sudo apt update && sudo apt upgrade -y
+                sudo apt update && sudo apt upgrade -y || true
                 wait
                 sudo apt full-upgrade -y
                 wait
@@ -127,7 +127,7 @@ while true; do
                 sudo apt --fix-broken install -y
                 wait
                 sudo apt autoremove -y
-                sudo apt update && sudo apt upgrade -y
+                sudo apt update && sudo apt upgrade -y || true
                 wait
                 if command_exists flatpak; then
                     flatpak update -y
@@ -151,7 +151,6 @@ while true; do
             rm -rf piercing-dots
             git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
             chmod -R u+x piercing-dots
-            chown -R "$username":"$username" piercing-dots
             cd piercing-dots || exit
             ./install.sh
             cd "$builddir" || exit
@@ -163,7 +162,6 @@ while true; do
             rm -rf piercing-dots
             git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
             chmod -R u+x piercing-dots
-            chown -R "$username":"$username" piercing-dots
             cd piercing-dots/scripts || exit
             ./gimp-mod.sh
             cd "$builddir" || exit
@@ -176,7 +174,6 @@ while true; do
                 rm -rf piercing-dots
                 git clone --depth 1 https://github.com/Piercingxx/piercing-dots.git
                 chmod -R u+x piercing-dots
-                chown -R "$username":"$username" piercing-dots
                 cd piercing-dots || exit
                 cp -p dots/hypr/hyprland/keybinds.conf /home/"$username"/.config/hypr/hyprland/
                 rm -rf dots/hypr
