@@ -51,16 +51,6 @@ builddir=$(pwd)
         cd "$builddir" || exit
     # Copy Refs to Download folder
         cp -Rf refs/* /home/"$username"/Downloads
-    # Apply Beautiful Bash
-        echo -e "${YELLOW}Installing Beautiful Bash...${NC}"
-        git clone https://github.com/christitustech/mybash
-            chmod -R u+x mybash
-            chown -R "$username":"$username" mybash
-            cd mybash || exit
-            ./setup.sh
-            wait
-            cd "$builddir" || exit
-            rm -rf mybash
     # Replace .bashrc
         cp -Rf bash/.bashrc /home/"$username"/
         chmod u+x /home/"$username"/.bashrc
