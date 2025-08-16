@@ -53,8 +53,7 @@ builddir=$(pwd)
         cp -Rf refs/* /home/"$username"/Downloads
     # Replace .bashrc
         cp -rf bash/.bashrc /home/"$username"/
-        chmod u+x /home/"$username"/.bashrc
-        chown -R "$username":"$username" /home/"$username"/.bashrc
+        chown "$username":"$username" /home/"$username"/.bashrc
     # Clean Up
         rm -Rf piercing-dots
     echo -e "${GREEN}PiercingXX Rice Applied Successfully!${NC}"
