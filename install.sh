@@ -44,22 +44,16 @@ builddir=$(pwd)
         chown "$username":"$username" -R /home/"$username"/.config/*
         cd "$builddir" || exit
     # Copy Backgrounds
-        cp -Rf backgrounds/* /home/"$username"/Pictures/backgrounds
+        cp -Rf resources/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
-        cp -Rf profile-image/* /home/"$username"/Pictures/profile-image
+        cp -Rf resources/profile-image/* /home/"$username"/Pictures/profile-image
         chown -R "$username":"$username" /home/"$username"/Pictures/profile-images
         cd "$builddir" || exit
     # Copy Refs to Download folder
-        cp -Rf refs/* /home/"$username"/Downloads
+        cp -Rf resources/refs/* /home/"$username"/Downloads
     # Apply Piercing Gnome Customizations
         cd scripts || exit
         chmod u+x gnome-customizations.sh
         ./gnome-customizations.sh
         wait
         cd "$builddir" || exit
-    # Replace .bashrc
-        cp -rf bash/.bashrc /home/"$username"/
-        chown "$username":"$username" /home/"$username"/.bashrc
-    # Clean Up
-        rm -Rf piercing-dots
-    echo -e "${GREEN}PiercingXX Rice Applied Successfully!${NC}"
