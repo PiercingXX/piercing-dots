@@ -51,6 +51,12 @@ builddir=$(pwd)
         cd "$builddir" || exit
     # Copy Refs to Download folder
         cp -Rf refs/* /home/"$username"/Downloads
+    # Apply Piercing Gnome Customizations
+        cd scripts || exit
+        chmod u+x gnome-customizations.sh
+        ./gnome-customizations.sh
+        wait
+        cd "$builddir" || exit
     # Replace .bashrc
         cp -rf bash/.bashrc /home/"$username"/
         chown "$username":"$username" /home/"$username"/.bashrc
