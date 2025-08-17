@@ -147,7 +147,9 @@ gsettings set org.gnome.desktop.interface show-battery-percentage 'true'
 gsettings set org.gnome.settings-daemon.plugins.power ambient-enabled 'false'
 gsettings set org.gnome.settings-daemon.plugins.power power-button-action 'interactive'
 gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-type 'suspend'
-gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout '7200'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout '3600'
+gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout '1800'
+gsettings set org.gnome.settings-daemon.plugins.power idle-dim 'false'
 gsettings set org.gnome.desktop.session idle-delay 'uint32 900'
 
 # Fractional scaling
