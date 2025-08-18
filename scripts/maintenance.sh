@@ -111,10 +111,6 @@ while true; do
                     hyprpm update
                     wait
                     hyprpm reload
-                    hyprpm add https://github.com/hyprwm/hyprland-plugins
-                    hyprpm add https://github.com/virtcode/hypr-dynamic-cursors
-                    hyprpm enable dynamic-cursors
-                    hyprpm enable hyprtrails
                 fi
             elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
                 sudo apt update && sudo apt upgrade -y || true
@@ -133,6 +129,11 @@ while true; do
                     flatpak update -y
                 fi
                 wait
+                if pgrep -x "Hyprland" > /dev/null; then
+                hyprpm update
+                wait
+                hyprpm reload
+                fi
             fi
             echo -e "${GREEN}System Updated Successfully!${NC}"
             ;;

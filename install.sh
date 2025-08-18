@@ -57,3 +57,9 @@ builddir=$(pwd)
         ./gnome-customizations.sh
         wait
         cd "$builddir" || exit
+    # Replace .bashrc
+        cp -f resources/bash/.bashrc /home/"$username"/.bashrc
+        source ~/.bashrc
+    # Set PRETTY_NAME in /etc/os-release
+        chmod +x set-pretty-os-name.sh
+        sudo ./set-pretty-os-name.sh
