@@ -44,11 +44,7 @@ return {
       })
       vim.api.nvim_create_autocmd("VimEnter", {
         callback = function()
-          vim.cmd("Neotree")
-          vim.cmd("wincmd s")
-          local h = math.floor(vim.o.lines * 0.30)
-          vim.cmd("resize " .. h)
-          vim.cmd("Terminal Yazi")
+          vim.cmd("Neotree reveal")
         end,
       })
     end,

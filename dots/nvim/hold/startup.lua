@@ -1,6 +1,7 @@
 return {
     "startup-nvim/startup.nvim",
-    event = "VimEnter",                     -- <‑‑ load on startup
+    event = "VimEnter",
+    priority = 1000,
     dependencies = {
         "nvim-telescope/telescope.nvim",
         "nvim-lua/plenary.nvim",

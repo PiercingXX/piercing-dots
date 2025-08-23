@@ -22,6 +22,9 @@ vim.opt.softtabstop = 4 -- How many spaces are applied when pressing Tab
 vim.opt.smartindent = true
 vim.opt.autoindent = true -- Keep identation from previous line
 
+-- Disable Nvim splash screen
+vim.opt.shortmess:append "I"
+
 
 -- Show line under cursor
 vim.opt.cursorline = true
@@ -78,8 +81,9 @@ vim.opt.inccommand = "split"
 vim.opt.scrolloff = 10
 
 
--- Disable commandline until it is needed. This gives us a cleaner look and an extra line ;)
-vim.opt.cmdheight = 0
+-- You can prevent Neovim from prompting for a keypress by giving the command-line more space. 
+-- If cmdheight is 2 or higher, Neovim will display the full message without pausing. 
+vim.opt.cmdheight = 2
 
 
 -- Highlight text for some time after yanking
