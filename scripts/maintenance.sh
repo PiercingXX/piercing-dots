@@ -83,6 +83,50 @@ while true; do
     case $choice in
         "Update System")
             echo -e "${YELLOW}Updating System...${NC}"
+            # Cache sudo credentials
+                sudo -v
+            # Applies to all distros
+                # Neovim Lazy Update
+                    if command_exists nvim; then    
+                    nvim --headless "+Lazy! sync" +qa
+                    fi
+                # Function to update pip if it exists
+                    update_pip() {
+                        if command_exists pip; then
+                            echo -e "${YELLOW}Updating system pip...${NC}"
+                            pip install --upgrade pip
+                        elif command_exists pip3; then
+                            echo -e "${YELLOW}Updating system pip3...${NC}"
+                            pip3 install --upgrade pip
+                        else
+                            echo -e "${RED}pip not found.${NC}"
+                        fi
+                    }
+                # Update global npm packages
+                    if command_exists npm; then
+                        sudo npm update -g
+                    fi
+                # Update Rust crates
+                    if command_exists cargo; then
+                        cargo install --list | awk '/^.*:/{print $1}' | xargs -r cargo install
+                    fi
+                # Update firmware
+                    if command_exists fwupd; then
+                        fwupd refresh && fwupd update
+                    fi
+                # Update all installed Docker images
+                    if command_exists docker; then
+                    update_docker_images() {
+                        mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
+                        echo -e "${YELLOW}Updating ${#images[@]} Docker image(s)...${NC}"
+                        for img in "${images[@]}"; do
+                            echo -e "  • ${img}"
+                            docker pull "$img" 2>/dev/null
+                        done
+                        echo -e "${GREEN}Docker images updated.${NC}"
+                    }
+                    fi
+            # Distro-specific updates
             if [[ "$DISTRO" == "arch" ]]; then
                 if command_exists paru; then
                     paru -Syu --noconfirm
