@@ -128,35 +128,42 @@ while true; do
                     fi
             # Distro-specific updates
             if [[ "$DISTRO" == "arch" ]]; then
+                # Paru & Pacman update
                 if command_exists paru; then
                     paru -Syu --noconfirm
                 else
                     sudo pacman -Syu --noconfirm
                 fi
                 wait
+                # Update Flatpak packages
                 if command_exists flatpak; then
                     flatpak update -y
                 fi
                 wait
+                # Hyprland update
                 if pgrep -x "Hyprland" > /dev/null; then
                     hyprpm update
                     wait
                     hyprpm reload
                 fi
             elif [[ "$DISTRO" == "fedora" ]]; then
+                # DNF update
                 sudo dnf update -y && sudo dnf upgrade -y
                 wait
                 sudo dnf autoremove -y
+                # Update Flatpak packages
                 if command_exists flatpak; then
                     flatpak update -y
                 fi
                 wait
+                # Hyprland update
                 if pgrep -x "Hyprland" > /dev/null; then
                     hyprpm update
                     wait
                     hyprpm reload
                 fi
             elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
+                # APT update
                 sudo apt update && sudo apt upgrade -y || true
                 wait
                 sudo apt full-upgrade -y
@@ -169,10 +176,16 @@ while true; do
                 sudo apt autoremove -y
                 sudo apt update && sudo apt upgrade -y || true
                 wait
+                # SNAP update
+                if command_exists snap; then
+                    sudo snap refresh
+                fi
+                # Update Flatpak packages
                 if command_exists flatpak; then
                     flatpak update -y
                 fi
                 wait
+                # Hyprland update
                 if pgrep -x "Hyprland" > /dev/null; then
                 hyprpm update
                 wait
