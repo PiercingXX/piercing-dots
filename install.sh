@@ -63,3 +63,5 @@ builddir=$(pwd)
     # Set PRETTY_NAME in /etc/os-release
         chmod +x set-pretty-os-name.sh
         sudo ./set-pretty-os-name.sh
+    # Set Paru to no password
+        sudo sh -c 'echo "$username ALL=(root) NOPASSWD: /usr/bin/paru" > /etc/sudoers.d/99-$(whoami)-paru'

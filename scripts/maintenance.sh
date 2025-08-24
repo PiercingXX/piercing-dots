@@ -1,6 +1,9 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+sudo -v
+
+
 # Detect distribution
 if [ -f /etc/os-release ]; then
     . /etc/os-release
