@@ -1,5 +1,4 @@
 #!/bin/bash
-# Unified Maintenance Script for Arch, Fedora, Debian
 # GitHub.com/PiercingXX
 
 # Detect distribution
@@ -19,9 +18,33 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+    command_exists() {
+        command -v "$1" >/dev/null 2>&1
+    }
+
+# Function to update pip if it exists
+update_pip() {
+    if command_exists pip; then
+        echo -e "${YELLOW}Updating system pip...${NC}"
+        pip install --upgrade pip --break-system-packages 2>/dev/null || true
+    elif command_exists pip3; then
+        echo -e "${YELLOW}Updating system pip3...${NC}"
+        pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
+    else
+        echo -e "${RED}pip not found.${NC}"
+    fi
 }
+
+# Function to update all installed Docker images
+    update_docker_images() {
+        mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
+        echo -e "${YELLOW}Updating ${#images[@]} Docker image(s)...${NC}"
+        for img in "${images[@]}"; do
+            echo -e "  • ${img}"
+            docker pull "$img" 2>/dev/null
+        done
+        echo -e "${GREEN}Docker images updated.${NC}"
+    }
 
 username=$(id -u -n 1000)
 builddir=$(pwd)
@@ -83,28 +106,16 @@ while true; do
     case $choice in
         "Update System")
             echo -e "${YELLOW}Updating System...${NC}"
-            # Cache sudo credentials
-                sudo -v
             # Applies to all distros
                 # Neovim Lazy Update
                     if command_exists nvim; then    
                     nvim --headless "+Lazy! sync" +qa
                     fi
                 # Function to update pip if it exists
-                    update_pip() {
-                        if command_exists pip; then
-                            echo -e "${YELLOW}Updating system pip...${NC}"
-                            pip install --upgrade pip
-                        elif command_exists pip3; then
-                            echo -e "${YELLOW}Updating system pip3...${NC}"
-                            pip3 install --upgrade pip
-                        else
-                            echo -e "${RED}pip not found.${NC}"
-                        fi
-                    }
+                    update_pip
                 # Update global npm packages
                     if command_exists npm; then
-                        sudo npm update -g
+                        sudo npm update -g --silent --no-progress
                     fi
                 # Update Rust crates
                     if command_exists cargo; then
@@ -116,62 +127,45 @@ while true; do
                     fi
                 # Update all installed Docker images
                     if command_exists docker; then
-                    update_docker_images() {
-                        mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
-                        echo -e "${YELLOW}Updating ${#images[@]} Docker image(s)...${NC}"
-                        for img in "${images[@]}"; do
-                            echo -e "  • ${img}"
-                            docker pull "$img" 2>/dev/null
-                        done
-                        echo -e "${GREEN}Docker images updated.${NC}"
-                    }
+                        update_docker_images
                     fi
                 # Update Flatpak packages
                     if command_exists flatpak; then
                         flatpak update -y
                     fi
-                    wait
-                    # Hyprland update
+                # Hyprland update
                     if pgrep -x "Hyprland" > /dev/null; then
                         hyprpm update
-                        wait
                         hyprpm reload
                     fi
             # Distro-specific updates
-            if [[ "$DISTRO" == "arch" ]]; then
+                if [[ "$DISTRO" == "arch" ]]; then
                 # Paru & Pacman update
-                if command_exists paru; then
-                    paru -Syu --noconfirm
-                else
-                    sudo pacman -Syu --noconfirm
-                fi
-                wait
-            elif [[ "$DISTRO" == "fedora" ]]; then
+                    if command_exists paru; then
+                        paru -Syu --noconfirm
+                    else
+                        sudo pacman -Syu --noconfirm
+                    fi
+                elif [[ "$DISTRO" == "fedora" ]]; then
                 # DNF update
-                sudo dnf update -y && sudo dnf upgrade -y
-                wait
-                sudo dnf autoremove -y
-            elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
+                    sudo dnf update -y
+                    sudo dnf autoremove -y
+                elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
                 # APT update
-                sudo apt update && sudo apt upgrade -y || true
-                wait
-                sudo apt full-upgrade -y
-                wait
-                sudo apt install -f
-                wait
-                sudo dpkg --configure -a
-                sudo apt --fix-broken install -y
-                wait
-                sudo apt autoremove -y
-                sudo apt update && sudo apt upgrade -y || true
-                wait
+                    sudo apt update && sudo apt upgrade -y || true
+                    sudo apt full-upgrade -y
+                    sudo apt install -f
+                    sudo dpkg --configure -a
+                    sudo apt --fix-broken install -y
+                    sudo apt autoremove -y
+                    sudo apt update && sudo apt upgrade -y || true
                 # SNAP update
-                if command_exists snap; then
-                    sudo snap refresh
+                    if command_exists snap; then
+                        sudo snap refresh
+                    fi
                 fi
-            fi
-            echo -e "${GREEN}System Updated Successfully!${NC}"
-            ;;
+                echo -e "${GREEN}System Updated Successfully!${NC}"
+                ;;
         "Update Mirrors")
             if [[ "$DISTRO" == "arch" ]]; then
                 echo -e "${YELLOW}Updating Mirrors...${NC}"
