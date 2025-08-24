@@ -30,15 +30,7 @@ gsettings set org.gnome.shell.keybindings toggle-message-tray "@as []"
 #########################
 ### Window Management ###
 #########################
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-1 "['<Shift><Super>1']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-2 "['<Shift><Super>2']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-3 "['<Shift><Super>3']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-4 "['<Shift><Super>4']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-5 "['<Shift><Super>5']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-6 "['<Shift><Super>6']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-7 "['<Shift><Super>7']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-8 "['<Shift><Super>8']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-9 "['<Shift><Super>9']"
+# Super+Num to switch Workspace
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
@@ -48,6 +40,16 @@ gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-7 "['<Super>7']"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-8 "['<Super>8']"
 gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-9 "['<Super>9']"
+# Super+Shift+Num to move App to Workspace
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-1 "['<Shift><Super>1']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-2 "['<Shift><Super>2']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-3 "['<Shift><Super>3']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-4 "['<Shift><Super>4']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-5 "['<Shift><Super>5']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-6 "['<Shift><Super>6']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-7 "['<Shift><Super>7']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-8 "['<Shift><Super>8']"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-9 "['<Shift><Super>9']"
 # Alt for Pinned apps
 gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
 gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
@@ -137,6 +139,7 @@ dconf write /org/gnome/desktop/privacy/recent-files-max-age "1"
 dconf write /org/gnome/desktop/privacy/remove-old-trash-files "true"
 dconf write /org/gnome/desktop/privacy/remove-old-temp-files "true"
 dconf write /org/gnome/desktop/privacy/old-files-age "1"
+dconf write /org/gnome/mutter/workspaces-only-on-primary "true"
 
 # Enable X11 Keyboard Varients in Wayland
 gsettings set org.gnome.desktop.input-sources show-all-sources 'true'
@@ -208,7 +211,7 @@ dconf write /org/gnome/shell/extensions/pop-cosmic/show-workspaces-button 'false
 dconf write /org/gnome/shell/extensions/pop-cosmic/show-applications-button 'false'
 dconf write /org/gnome/shell/extensions/pop-shell/hint-color-rgba "'rgb(255,255,255)'"
 gsettings set org.gnome.shell.extensions.pop-shell stacking-with-mouse false
-gsettings set org.gnome.shell.extensions.pop-shell active-hint-border-radius 'uint32 2'
+gsettings set org.gnome.shell.extensions.pop-shell active-hint-border-radius 'uint32 7'
 gsettings set org.gnome.shell.extensions.pop-shell gap-inner 'uint32 4'
 gsettings set org.gnome.shell.extensions.pop-shell gap-outer 'uint32 6'
 gsettings set org.gnome.shell.extensions.pop-shell tile-orientation "['<Super>x']"

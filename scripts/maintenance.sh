@@ -1,9 +1,6 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
-sudo -v
-
-
 # Detect distribution
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -25,14 +22,34 @@ NC='\033[0m'
         command -v "$1" >/dev/null 2>&1
     }
 
+# Check for active network connection
+    if command_exists nmcli; then
+        state=$(nmcli -t -f STATE g)
+        if [[ "$state" != connected ]]; then
+            echo "Network connectivity is required to continue."
+            exit 1
+        fi
+    else
+        # Fallback: ensure at least one interface has an IPv4 address
+        if ! ip -4 addr show | grep -q "inet "; then
+            echo "Network connectivity is required to continue."
+            exit 1
+        fi
+    fi
+        # Additional ping test to confirm internet reachability
+        if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
+            echo "Network connectivity is required to continue."
+            exit 1
+        fi
+
 # Function to update pip if it exists
 update_pip() {
     if command_exists pip; then
         echo -e "${YELLOW}Updating system pip...${NC}"
-        pip install --upgrade pip --break-system-packages 2>/dev/null || true
+        sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
     elif command_exists pip3; then
         echo -e "${YELLOW}Updating system pip3...${NC}"
-        pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
+        sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
     else
         echo -e "${RED}pip not found.${NC}"
     fi
@@ -47,6 +64,41 @@ update_pip() {
             docker pull "$img" 2>/dev/null
         done
         echo -e "${GREEN}Docker images updated.${NC}"
+    }
+
+# Function to update universal stuff
+    universal_update() {
+        # Neovim Lazy Update
+            if command_exists nvim; then    
+            nvim --headless "+Lazy! sync" +qa
+            fi
+        # Function to update pip if it exists
+            update_pip
+        # Update global npm packages
+            if command_exists npm; then
+                sudo npm update -g --silent --no-progress
+            fi
+        # Update Rust crates
+            if command_exists cargo; then
+                cargo install --list | awk '/^.*:/{print $1}' | xargs -r cargo install
+            fi
+        # Update firmware
+            if command_exists fwupd; then
+                fwupd refresh && fwupd update
+            fi
+        # Update all installed Docker images
+            if command_exists docker; then
+                update_docker_images
+            fi
+        # Update Flatpak packages
+            if command_exists flatpak; then
+                flatpak update -y
+            fi
+        # Hyprland update
+            if pgrep -x "Hyprland" > /dev/null; then
+                hyprpm update
+                hyprpm reload
+            fi
     }
 
 username=$(id -u -n 1000)
@@ -109,50 +161,26 @@ while true; do
     case $choice in
         "Update System")
             echo -e "${YELLOW}Updating System...${NC}"
-            # Applies to all distros
-                # Neovim Lazy Update
-                    if command_exists nvim; then    
-                    nvim --headless "+Lazy! sync" +qa
-                    fi
-                # Function to update pip if it exists
-                    update_pip
-                # Update global npm packages
-                    if command_exists npm; then
-                        sudo npm update -g --silent --no-progress
-                    fi
-                # Update Rust crates
-                    if command_exists cargo; then
-                        cargo install --list | awk '/^.*:/{print $1}' | xargs -r cargo install
-                    fi
-                # Update firmware
-                    if command_exists fwupd; then
-                        fwupd refresh && fwupd update
-                    fi
-                # Update all installed Docker images
-                    if command_exists docker; then
-                        update_docker_images
-                    fi
-                # Update Flatpak packages
-                    if command_exists flatpak; then
-                        flatpak update -y
-                    fi
-                # Hyprland update
-                    if pgrep -x "Hyprland" > /dev/null; then
-                        hyprpm update
-                        hyprpm reload
-                    fi
+            # Distro agnostic update
+                
             # Distro-specific updates
                 if [[ "$DISTRO" == "arch" ]]; then
-                # Paru & Pacman update
+                # Paru, Yay, or Pacman update
                     if command_exists paru; then
                         paru -Syu --noconfirm
+                        universal_update
+                    elif command_exists yay; then
+                        yay -Syu --noconfirm
+                        universal_update
                     else
                         sudo pacman -Syu --noconfirm
+                        universal_update
                     fi
                 elif [[ "$DISTRO" == "fedora" ]]; then
                 # DNF update
                     sudo dnf update -y
                     sudo dnf autoremove -y
+                    universal_update
                 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
                 # APT update
                     sudo apt update && sudo apt upgrade -y || true
@@ -162,6 +190,7 @@ while true; do
                     sudo apt --fix-broken install -y
                     sudo apt autoremove -y
                     sudo apt update && sudo apt upgrade -y || true
+                    universal_update
                 # SNAP update
                     if command_exists snap; then
                         sudo snap refresh
