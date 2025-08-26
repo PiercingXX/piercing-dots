@@ -24,7 +24,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Function to check if a command exists
+# Check if a command exists
     command_exists() {
         command -v "$1" >/dev/null 2>&1
     }
@@ -80,39 +80,19 @@ auto_update() {
     return 0
 }
 
-# Function to update pip if it exists
-update_pip() {
-    if command_exists pip; then
-        echo -e "${YELLOW}Updating system pip...${NC}"
-        sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
-    elif command_exists pip3; then
-        echo -e "${YELLOW}Updating system pip3...${NC}"
-        sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
-    else
-        echo -e "${RED}pip not found.${NC}"
-    fi
-}
-
-# Function to update all installed Docker images
-    update_docker_images() {
-        mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
-        echo -e "${YELLOW}Updating ${#images[@]} Docker image(s)...${NC}"
-        for img in "${images[@]}"; do
-            echo -e "  • ${img}"
-            docker pull "$img" 2>/dev/null
-        done
-        echo -e "${GREEN}Docker images updated.${NC}"
-    }
-
 # Function to update universal stuff
     universal_update() {
         # Neovim Lazy Update
             if command_exists nvim; then    
             nvim --headless "+Lazy! sync" +qa
             fi
-        # Function to update pip if it exists
+        # Update pip if it exists
             if command_exists pip; then
-                update_pip
+                echo -e "${YELLOW}Updating system pip...${NC}"
+                sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
+            elif command_exists pip3; then
+                echo -e "${YELLOW}Updating system pip3...${NC}"
+                sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
             fi
         # Update global npm packages
             if command_exists npm; then
@@ -126,13 +106,18 @@ update_pip() {
             if command_exists fwupd; then
                 fwupd refresh && fwupd update
             fi
-        # Update all installed Docker images
-            if command_exists docker; then
-                update_docker_images
-            fi
         # Update Flatpak packages
             if command_exists flatpak; then
                 flatpak update -y
+            fi
+        # Update_docker_images
+            if command_exists docker; then
+                mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
+                echo -e "${YELLOW}Updating ${#images[@]} Docker image(s)...${NC}"
+                for img in "${images[@]}"; do
+                    echo -e "  • ${img}"
+                    docker pull "$img" 2>/dev/null
+                done
             fi
         # Hyprland update
             if pgrep -x "Hyprland" > /dev/null; then
