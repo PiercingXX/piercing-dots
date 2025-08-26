@@ -1,6 +1,13 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+# Detect if we are resuming after an auto‑update
+RESUME_UPDATE=0
+if [[ "$1" == "--resume-update" ]]; then
+    RESUME_UPDATE=1
+    shift   # remove the flag so it doesn’t interfere with other arguments
+fi
+
 # Detect distribution
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -42,6 +49,39 @@ NC='\033[0m'
             exit 1
         fi
 
+# Auto‑update Maintenance.sh from PiercingXX GitHub
+auto_update() {
+    local GITHUB_RAW_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/scripts/maintenance.sh"
+    local TMP_FILE
+    TMP_FILE=$(mktemp)
+    # Download the latest script
+    if ! curl -fsSL "$GITHUB_RAW_URL" -o "$TMP_FILE"; then
+        echo -e "${RED}Failed to download update from GitHub.${NC}"
+        rm -f "$TMP_FILE"
+        return 1
+    fi
+    # If downloaded file differs from current one, copy to the home folder
+    if ! cmp -s "$0" "$TMP_FILE"; then
+        echo -e "${YELLOW}Updating maintenance script from GitHub...${NC}"
+        local HOME_SCRIPT="$HOME/maintenance.sh"
+        if ! cp "$TMP_FILE" "$HOME_SCRIPT"; then
+            echo -e "${RED}Failed to copy the script to $HOME_SCRIPT. Check permissions.${NC}"
+            rm -f "$TMP_FILE"
+            return 1
+        fi
+        chmod +x "$HOME_SCRIPT"
+        echo -e "${GREEN}Maintenance.sh update complete.${NC}"
+        echo -e "${GREEN}Refreshing terminal and resuming update...${NC}"
+        echo -e "Press [Enter] to proceed."
+        read -r
+        # Re‑execute the updated script from the home folder with a flag
+        exec "$HOME_SCRIPT" "--resume-update" "$@"
+    fi
+    # Clean up temporary file if no update was performed
+    rm -f "$TMP_FILE"
+    return 0
+}
+
 # Function to update pip if it exists
 update_pip() {
     if command_exists pip; then
@@ -73,7 +113,9 @@ update_pip() {
             nvim --headless "+Lazy! sync" +qa
             fi
         # Function to update pip if it exists
-            update_pip
+            if command_exists pip; then
+                update_pip
+            fi
         # Update global npm packages
             if command_exists npm; then
                 sudo npm update -g --silent --no-progress
@@ -119,7 +161,7 @@ case "$DISTRO" in
                 "Update Mirrors"        "Update Mirrors" \
                 "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
                 "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
-                "Rice-No Hyprland"      "Piercing Rice w/o Hyprdots but still Hypr Keybinds" \
+                "Rice-No Hyprland"      "Piercing Rice w/o Hyprdots but with Hypr Keybinds" \
                 "Reboot System"         "Reboot the system" \
                 "Exit"                  "Exit the script" 3>&1 1>&2 2>&3
         }
@@ -161,8 +203,11 @@ while true; do
     case $choice in
         "Update System")
             echo -e "${YELLOW}Updating System...${NC}"
-            # Distro agnostic update
-                
+            # PiercingXX Maintenance.sh update check
+                # Skip auto‑update if we are resuming
+                if [[ "$RESUME_UPDATE" -eq 0 ]]; then
+                    auto_update "$@"
+                fi
             # Distro-specific updates
                 if [[ "$DISTRO" == "arch" ]]; then
                 # Paru, Yay, or Pacman update
