@@ -70,8 +70,10 @@ auto_update() {
             return 1
         fi
         chmod +x "$HOME_SCRIPT"
-        echo -e "${GREEN}Maintenance.sh update complete.${NC}"
-        echo -e "${GREEN}Refreshing terminal and resuming update...${NC}"
+        echo -e "${GREEN}Maintenance.sh was updated.${NC}"
+        echo -e "${GREEN}Restart update to proceed...${NC}"
+        echo -e "Press [Enter] twice."
+        read -r
         # Re‑execute the updated script from the home folder with a flag
         exec "$HOME_SCRIPT" "--resume-update" "$@"
     fi
