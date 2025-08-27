@@ -37,12 +37,12 @@ The script will:
 
 ##  🚀 Gnome Customization - The Rice
 
-The `gnome-customizations.sh` script applies a curated set of tweaks that give your Gnome desktop a polished, “Piercing‑style” look. It:
+The `gnome-customizations.sh` script applies a curated set of tweaks that give your Gnome desktop a polished look.
 
-- This script is meant to be ran as a part of any of the Distro-mods I have in my git repo. It can be ran separately but edit it first so you aren't stuck with issues
+- This script is meant to be ran as a part of any of the Distro-mods I have in my git repo. It can be ran separately but edit it first so you aren't stuck with issues.
 - This will apply a number of configs for gnome itself as well as several Gnome-extensions. 
 	- dconf* is required to run gnome-customizations.sh
-- Simulates Window managers like Hyprland, simular to PopOS but smoother.
+- Simulates Window Managers like Hyprland, simular to PopOS but smoother.
 - Adjusts system settings such as **keybinds**, **cursor theme**, **icon theme**, **background settings**, and **panel layout**.
 - Enables useful shortcuts and accessibility options (e.g., **Alt‑Tab** enhancements, **focus‑follows‑mouse**).
 - Applies a consistent color scheme and font settings across all Gnome applications.
