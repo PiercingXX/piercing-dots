@@ -118,6 +118,8 @@ auto_update() {
                     docker pull "$img" 2>/dev/null
                 done
             fi
+        # Starship Update
+            curl -sS https://starship.rs/install.sh | sh
         # Hyprland update
             if pgrep -x "Hyprland" > /dev/null; then
                 hyprpm update
