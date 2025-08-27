@@ -1,6 +1,20 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+pretty_name() {
+    if [ ! -f /etc/os-release ]; then
+        echo "Cannot detect distribution!"
+        return 1
+    fi
+    . /etc/os-release
+    DISTRO_NAME="${ID^}"
+    DISTRO_VERSION="${VERSION_ID:-}"
+    NEW_PRETTY_NAME="PiercingXX $DISTRO_NAME $DISTRO_VERSION"
+    sudo cp /etc/os-release /etc/os-release.bak
+    sudo sed -i "s/^PRETTY_NAME=.*/PRETTY_NAME=\"$NEW_PRETTY_NAME\"/" /etc/os-release
+    echo "PRETTY_NAME set to \"$NEW_PRETTY_NAME\" in /etc/os-release"
+}
+
 # Check for active network connection
     if command_exists nmcli; then
         state=$(nmcli -t -f STATE g)
@@ -81,5 +95,4 @@ builddir=$(pwd)
         cp -f resources/bash/.bashrc /home/"$username"/.bashrc
         source ~/.bashrc
     # Set PRETTY_NAME in /etc/os-release
-        chmod +x set-pretty-os-name.sh
-        sudo ./set-pretty-os-name.sh
+        pretty_name
