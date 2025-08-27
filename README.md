@@ -59,7 +59,7 @@ Running the script is as simple as `./gnome-customizations.sh` from the `scri
     - `PiercingXX Rice` – Installs/Updates the full dotfile set.
     - `Piercing Gimp Only` – Installs only GIMP dots.
     - `Rice-No Hyprland` – Installs everything except Hyprland config but will still update the Hypr keybinds (useful when running same setup on multiple devices).
-    - `Reboot System` – Reboots after 3 s.
+    - `Reboot System` – Does what you think it will.
     - `Exit` – Quit.
 
 > **Note:** The script will ask for your password when needed (e.g., `sudo`).
