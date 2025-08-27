@@ -12,8 +12,6 @@ Piercing‑Dots is my **personal dotfile repository** that includes a powerful
 - **One command** to keep your system, packages, and dotfiles in sync.
 - **Distribution Agnostic** support (Arch, Fedora, Debian/Ubuntu/Pop!_OS, etc.).
 
-<img width="961" height="775" alt="2025-08-26-190921_hyprshot" src="https://github.com/user-attachments/assets/ce7b6549-24b8-40ab-b648-10589cc57fdd" />
-
 ---
 
 ## 🌟 The Dots
@@ -65,6 +63,9 @@ Running the script is as simple as `./gnome-customizations.sh` from the `scri
     - `Exit` – Quit.
 
 > **Note:** The script will ask for your password when needed (e.g., `sudo`).
+
+
+<img width="961" height="775" alt="2025-08-26-190921_hyprshot" src="https://github.com/user-attachments/assets/ce7b6549-24b8-40ab-b648-10589cc57fdd" />
 
 ---
 
