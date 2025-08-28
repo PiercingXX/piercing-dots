@@ -12,8 +12,6 @@ Piercing‑Dots is my **personal dotfile repository** that includes a powerful
 - **One command** to keep your system, packages, and dotfiles in sync.
 - **Distribution Agnostic** support (Arch, Fedora, Debian/Ubuntu/Pop!_OS, etc.).
 
-<img width="961" height="775" alt="2025-08-26-190921_hyprshot" src="https://github.com/user-attachments/assets/ce7b6549-24b8-40ab-b648-10589cc57fdd" />
-
 ---
 
 ## 🌟 The Dots
@@ -39,12 +37,12 @@ The script will:
 
 ##  🚀 Gnome Customization - The Rice
 
-The `gnome-customizations.sh` script applies a curated set of tweaks that give your Gnome desktop a polished, “Piercing‑style” look. It:
+The `gnome-customizations.sh` script applies a curated set of tweaks that give your Gnome desktop a polished look.
 
-- This script is meant to be ran as a part of any of the Distro-mods I have in my git repo. It can be ran separately but edit it first so you aren't stuck with issues
+- This script is meant to be ran as a part of any of the Distro-mods I have in my git repo. It can be ran separately but edit it first so you aren't stuck with issues.
 - This will apply a number of configs for gnome itself as well as several Gnome-extensions. 
 	- dconf* is required to run gnome-customizations.sh
-- Simulates Window managers like Hyprland, simular to PopOS but smoother.
+- Simulates Window Managers like Hyprland, simular to PopOS but smoother.
 - Adjusts system settings such as **keybinds**, **cursor theme**, **icon theme**, **background settings**, and **panel layout**.
 - Enables useful shortcuts and accessibility options (e.g., **Alt‑Tab** enhancements, **focus‑follows‑mouse**).
 - Applies a consistent color scheme and font settings across all Gnome applications.
@@ -61,10 +59,13 @@ Running the script is as simple as `./gnome-customizations.sh` from the `scri
     - `PiercingXX Rice` – Installs/Updates the full dotfile set.
     - `Piercing Gimp Only` – Installs only GIMP dots.
     - `Rice-No Hyprland` – Installs everything except Hyprland config but will still update the Hypr keybinds (useful when running same setup on multiple devices).
-    - `Reboot System` – Reboots after 3 s.
+    - `Reboot System` – Does what you think it will.
     - `Exit` – Quit.
 
 > **Note:** The script will ask for your password when needed (e.g., `sudo`).
+
+
+<img width="961" height="775" alt="2025-08-26-190921_hyprshot" src="https://github.com/user-attachments/assets/ce7b6549-24b8-40ab-b648-10589cc57fdd" />
 
 ---
 
