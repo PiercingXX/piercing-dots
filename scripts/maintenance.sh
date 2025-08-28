@@ -83,7 +83,7 @@ auto_update() {
     universal_update() {
         # Neovim Lazy Update
             if command_exists nvim; then    
-            nvim --headless "+Lazy! sync" +qa
+                nvim --headless "+Lazy! sync" +qa
             fi
         # Update pip if it exists
             if command_exists pip; then
@@ -118,8 +118,6 @@ auto_update() {
                     docker pull "$img" 2>/dev/null
                 done
             fi
-        # Starship Update
-            curl -sS https://starship.rs/install.sh | sh
         # Hyprland update
             if pgrep -x "Hyprland" > /dev/null; then
                 hyprpm update

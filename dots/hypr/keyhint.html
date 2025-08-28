@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hyprland Keybinds</title>
+    <style>
+        body {font-family: monospace; background:#111; color:#eee; padding:1rem;}
+        table {border-collapse: collapse; width:100%;}
+        th, td {border:1px solid #444; padding:0.5rem; vertical-align:top;}
+        th {background:#222;}
+        u {text-decoration: underline;}
+    </style>
+</head>
+<body>
+    <h1>Hyprland Keybinds</h1>
+    <table>
+        <tr>
+            <th><u>Essentials</u></th>
+            <td>
+                ,  $mainMod   →  exec true  (Open app launcher)<br>
+                ,  $mainMod   →  exec ulauncher  (Open launcher)<br>
+                ,  $mainMod   →  killactive  (Kill active window)<br>
+                ,  $mainMod   →  exec kitty  (Open terminal)<br>
+                ,  ALT+TAB    →  exec nwg-drawer -c 7 -is 70 -spacing 13  (Window picker)<br>
+                ,  $mainMod+Shift  →  exec nautilus --new-window  (Open file manager)<br>
+                ,  $mainMod   →  exec kitty yazi  (Open file manager in terminal)<br>
+                ,  $mainMod+Shift  →  exec pavucontrol  (Open volume control)<br>
+                ,  $mainMod   →  exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center  (Open settings)<br>
+                ,  $mainMod+Shift  →  fullscreen  (Fullscreen toggle)<br>
+                ,  $mainMod   →  togglefloating  (Toggle floating)<br>
+                ,  $mainMod   →  exec pkill waybar && waybar &  (Restart bar)<br>
+                ,  PRINT      →  exec hyprshot -m region  (Screenshot region)<br>
+                ,  $shiftMod+PRINT  →  exec hyprshot -m window  (Screenshot window)<br>
+                ,  $mainMod   →  layoutmsg togglesplit  (Toggle split layout)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Applications</u></th>
+            <td>
+                ,  $mainMod   →  exec waterfox || flatpak run net.waterfox.waterfox  (Browser)<br>
+                ,  $mainMod   →  exec discord || flatpak run com.discordapp.Discord  (Discord)<br>
+                ,  $mainMod+Shift  →  exec code  (VS Code)<br>
+                ,  $mainMod   →  exec kitty nvim  (Neovim in terminal)<br>
+                ,  $mainMod   →  exec obsidian || flatpak run md.obsidian.Obsidian  (Obsidian)<br>
+                ,  $mainMod   →  exec gimp || flatpak run org.gimp.GIMP  (GIMP)<br>
+                ,  Ctrl+Alt+Delete  →  exec kitty flatpak run io.missioncenter.MissionCenter  (Mission Center)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Clipboard History</u></th>
+            <td>
+                ,  $mainMod   →  exec pkill fuzzel || cliphist list | fuzzel --match-mode fzf --dmenu | cliphist decode | wl-copy  (Clipboard history)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Show Keybinds</u></th>
+            <td>
+                ,  $mainMod   →  exec kitty ~/.config/hypr/hyprland/scripts/keyhint.html  (Open this page)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Local AI</u></th>
+            <td>
+                ,  $mainMod   →  exec kitty ollama run skippy  (Local AI – Skippy)<br>
+                ,  $mainMod+Shift  →  exec kitty ollama run gpt-oss:20b  (Local AI – GPT‑OSS)<br>
+                ,  $mainMod+Alt  →  exec kitty ollama run gemma3:27b-it-qat  (Local AI – Gemma3)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Session</u></th>
+            <td>
+                ,  $mainMod   →  exec hyprlock  (Lock screen)<br>
+                ,  $mainMod+Shift  →  exec sleep 0.1 && systemctl suspend || loginctl suspend  (Suspend)<br>
+                ,  Ctrl+Shift+Alt+$mainMod  →  exec systemctl poweroff || loginctl poweroff  (Power off)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Workspace Navigation</u></th>
+            <td>
+                ,  $mainMod   →  movewindow (mouse:272)  (Move window with mouse)<br>
+                ,  $mainMod   →  movewindow (Control_L)  (Move window with Ctrl)<br>
+                ,  $mainMod   →  resizewindow (Alt_L)  (Resize window with Alt)<br>
+                ,  $mainMod   →  movefocus l  (H – Focus right)<br>
+                ,  $mainMod   →  movefocus d  (J – Focus down)<br>
+                ,  $mainMod   →  movefocus u  (K – Focus up)<br>
+                ,  $mainMod   →  movefocus r  (L – Focus left)<br>
+                ,  $mainMod+Shift   →  movewindow l  (H – Move window right)<br>
+                ,  $mainMod+Shift   →  movewindow d  (J – Move window down)<br>
+                ,  $mainMod+Shift   →  movewindow u  (K – Move window up)<br>
+                ,  $mainMod+Shift   →  movewindow r  (L – Move window left)<br>
+                ,  $mainMod+Alt   →  resizeactive -100 0  (H – Resize left)<br>
+                ,  $mainMod+Alt   →  resizeactive 0 100  (J – Resize down)<br>
+                ,  $mainMod+Alt   →  resizeactive 0 -100  (K – Resize up)<br>
+                ,  $mainMod+Alt   →  resizeactive 100 0  (L – Resize right)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Switching</u></th>
+            <td>
+                ,  $mainMod   →  workspace 1  (1)<br>
+                ,  $mainMod   →  workspace 2  (2)<br>
+                ,  $mainMod   →  workspace 3  (3)<br>
+                ,  $mainMod   →  workspace 4  (4)<br>
+                ,  $mainMod   →  workspace 5  (5)<br>
+                ,  $mainMod   →  workspace 6  (6)<br>
+                ,  $mainMod   →  workspace 7  (7)<br>
+                ,  $mainMod   →  workspace 8  (8)<br>
+                ,  $mainMod   →  workspace 9  (9)<br>
+                ,  $mainMod   →  workspace 10  (0)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Move Active Window to Workspace</u></th>
+            <td>
+                ,  $mainMod+Shift   →  movetoworkspace 1  (1)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 2  (2)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 3  (3)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 4  (4)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 5  (5)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 6  (6)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 7  (7)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 8  (8)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 9  (9)<br>
+                ,  $mainMod+Shift   →  movetoworkspace 10  (0)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 1  (1)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 2  (2)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 3  (3)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 4  (4)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 5  (5)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 6  (6)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 7  (7)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 8  (8)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 9  (9)<br>
+                ,  $mainMod+Alt   →  movetoworkspacesilent 10  (0)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Media Control</u></th>
+            <td>
+                ,  XF86AudioPlay  →  exec playerctl play-pause  (Play/Pause)<br>
+                ,  XF86AudioPause  →  exec playerctl play-pause  (Play/Pause)<br>
+                ,  XF86AudioNext  →  exec playerctl next  (Next)<br>
+                ,  XF86AudioPrev  →  exec playerctl previous  (Previous)<br>
+                ,  XF86AudioRaiseVolume  →  exec pactl set-sink-volume @DEFAULT_SINK@ +5%  (Volume up)<br>
+                ,  XF86AudioLowerVolume  →  exec pactl set-sink-volume @DEFAULT_SINK@ -5%  (Volume down)<br>
+                ,  XF86AudioMute  →  exec pactl set-sink-mute @DEFAULT_SINK@ toggle  (Mute)<br>
+                ,  XF86AudioMicMute  →  exec pactl set-source-mute @DEFAULT_SOURCE@ toggle  (Mic mute)<br>
+            </td>
+        </tr>
+        <tr>
+            <th><u>Brightness Control</u></th>
+            <td>
+                ,  XF86MonBrightnessUp  →  exec brightnessctl set 10%+  (Brightness up)<br>
+                ,  XF86MonBrightnessDown  →  exec brightnessctl set 10%-  (Brightness down)<br>
+            </td>
