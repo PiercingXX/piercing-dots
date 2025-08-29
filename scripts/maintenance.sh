@@ -159,7 +159,7 @@ case "$DISTRO" in
                 "Exit"                  "Exit the script" 3>&1 1>&2 2>&3
         }
         ;;
-    debian|ubuntu|pop)
+    debian|ubuntu|pop|linuxmint)
         menu() {
             whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
                 --menu "Run Options In Order:" 0 0 0 \
@@ -208,7 +208,7 @@ while true; do
                     sudo dnf update -y
                     sudo dnf autoremove -y
                     universal_update
-                elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" ]]; then
+                elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint"]]; then
                 # APT update
                     sudo apt update && sudo apt upgrade -y || true
                     sudo apt full-upgrade -y
