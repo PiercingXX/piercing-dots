@@ -208,8 +208,8 @@ while true; do
                     sudo dnf update -y
                     sudo dnf autoremove -y
                     universal_update
-                elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint"]]; then
-                # APT update
+                elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
+                    # APT update
                     sudo apt update && sudo apt upgrade -y || true
                     sudo apt full-upgrade -y
                     sudo apt install -f
@@ -218,7 +218,7 @@ while true; do
                     sudo apt autoremove -y
                     sudo apt update && sudo apt upgrade -y || true
                     universal_update
-                # SNAP update
+                    # SNAP update
                     if command_exists snap; then
                         sudo snap refresh
                     fi
