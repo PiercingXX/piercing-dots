@@ -275,7 +275,7 @@ while true; do
         "Reboot System")
             echo -e "${YELLOW}Rebooting system in 3 seconds...${NC}"
             sleep 2
-            reboot
+            sudo reboot
             ;;
         "Exit")
             clear
