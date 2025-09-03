@@ -597,6 +597,9 @@ lazyg() {
 }
 
 
+# Starship
+eval "$(starship init bash)"
+
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
