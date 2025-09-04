@@ -79,6 +79,29 @@ auto_update() {
     return 0
 }
 
+# Function to update local .bashrc from Piercing‑dots GitHub
+update_bashrc() {
+    local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/.bashrc"
+    local TMP_FILE
+    TMP_FILE=$(mktemp)
+    # Download the remote .bashrc
+    if ! curl -fsSL "$REMOTE_URL" -o "$TMP_FILE"; then
+        echo -e "${RED}Failed to download .bashrc from GitHub.${NC}"
+        rm -f "$TMP_FILE"
+        return 1
+    fi
+    # Compare with local .bashrc
+    if ! cmp -s "$HOME/.bashrc" "$TMP_FILE"; then
+        echo -e "${YELLOW}.bashrc differs from the GitHub version. Updating...${NC}"
+        cp "$TMP_FILE" "$HOME/.bashrc"
+        echo -e "${GREEN}.bashrc has been updated.${NC}"
+    else
+        echo -e "${GREEN}.bashrc is already up to date.${NC}"
+    fi
+    rm -f "$TMP_FILE"
+    return 0
+}
+
 # Function to update universal stuff
     universal_update() {
         # Neovim Lazy Update
@@ -190,6 +213,8 @@ while true; do
                 if [[ "$RESUME_UPDATE" -eq 0 ]]; then
                     auto_update "$@"
                 fi
+            # Update local .bashrc from Piercing‑dots GitHub
+                update_bashrc
             # Distro-specific updates
                 if [[ "$DISTRO" == "arch" ]]; then
                 # Paru, Yay, or Pacman update

@@ -125,8 +125,9 @@ alias hlp='less ~/.bashrc_help'
 # alias to show the date
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
-# Alias's to modified commands
-alias xx='$HOME/maintenance*.sh'
+# Alias' to modified commands
+alias vi='nvim'
+alias svi='sudo vi'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rm='trash -v'
@@ -138,8 +139,6 @@ alias cls='clear'
 alias apt-get='sudo apt-get'
 alias multitail='multitail --no-repeat -c'
 alias freshclam='sudo freshclam'
-alias vi='nvim'
-alias svi='sudo vi'
 alias vis='nvim "+set si"'
 alias yayf="yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S"
 
@@ -369,7 +368,7 @@ distribution () {
             sles|opensuse*)
                 dtype="suse"
                 ;;
-            ubuntu|debian)
+            ubuntu|debian|pop|mint)
                 dtype="debian"
                 ;;
             gentoo)
@@ -391,7 +390,7 @@ distribution () {
                         *sles*|*opensuse*)
                             dtype="suse"
                             ;;
-                        *ubuntu*|*debian*)
+                        *ubuntu*|*debian*|*pop*|*mint*)
                             dtype="debian"
                             ;;
                         *gentoo*)
@@ -475,18 +474,10 @@ install_bashrc_support() {
 			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch
 			;;
 		"debian")
-			sudo apt-get install multitail tree zoxide trash-cli fzf bash-completion
-			# Fetch the latest fastfetch release URL for linux-amd64 deb file
-			FASTFETCH_URL=$(curl -s https://api.github.com/repos/fastfetch-cli/fastfetch/releases/latest | grep "browser_download_url.*linux-amd64.deb" | cut -d '"' -f 4)
-
-			# Download the latest fastfetch deb file
-			curl -sL $FASTFETCH_URL -o /tmp/fastfetch_latest_amd64.deb
-
-			# Install the downloaded deb file using apt-get
-			sudo apt-get install /tmp/fastfetch_latest_amd64.deb
+			sudo apt install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
 			;;
 		"arch")
-			sudo paru multitail tree zoxide trash-cli fzf bash-completion fastfetch
+			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch --noconfirm
 			;;
 		"slackware")
 			echo "No install support for Slackware"
@@ -498,6 +489,7 @@ install_bashrc_support() {
 }
 
 # IP address lookup
+alias ip?=whatsmyip
 alias whatismyip="whatsmyip"
 function whatsmyip () {
     # Internal IP Lookup.
@@ -596,9 +588,21 @@ lazyg() {
 	git push
 }
 
-
 # Starship
 eval "$(starship init bash)"
+
+# FZF
+source /usr/share/fzf/key-bindings.bash
+source /usr/share/fzf/completion.bash
+
+# Tab completion settings
+bind 'set show-all-if-ambiguous on'
+bind 'TAB:menu-complete'
+
+# PiercingXX alias' to modified commands
+alias xx='$HOME/maintenance*.sh'
+alias pf="paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S"
+alias ff='fastfetch'
 
 #######################################################
 # Set the ultimate amazing command prompt
@@ -621,6 +625,3 @@ if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
 exec startx
 
 fi
-
-
-
