@@ -81,7 +81,7 @@ auto_update() {
 
 # Function to update local .bashrc from Piercing‑dots GitHub
 update_bashrc() {
-    local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/.bashrc"
+    local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/resources/bash/.bashrc"
     local TMP_FILE
     TMP_FILE=$(mktemp)
     # Download the remote .bashrc
