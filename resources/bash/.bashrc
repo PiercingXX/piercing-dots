@@ -595,6 +595,9 @@ eval "$(starship init bash)"
 source /usr/share/fzf/key-bindings.bash
 source /usr/share/fzf/completion.bash
 
+# Zoxide
+eval "$(zoxide init bash)"
+
 # Tab completion settings
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
@@ -603,6 +606,7 @@ bind 'TAB:menu-complete'
 alias xx='$HOME/maintenance*.sh'
 alias pf="paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S"
 alias ff='fastfetch'
+alias c='clear'
 
 #######################################################
 # Set the ultimate amazing command prompt
