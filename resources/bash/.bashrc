@@ -466,10 +466,10 @@ install_bashrc_support() {
 			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch
 			;;
 		"debian")
-			sudo apt install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
+			sudo apt install multitail tree zoxide trash-cli fzf bash-completion fastfetch exa -y
 			;;
 		"arch")
-			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch --noconfirm
+			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa--noconfirm
 			;;
 		"slackware")
 			echo "No install support for Slackware"
