@@ -65,13 +65,13 @@ builddir=$(pwd)
                 chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
             fi
         # fstab external drive mounting directory
-            if [ ! -d "$HOME/.media/Working-Storage" ]; then
-                mkdir -p /home/"$username"/media/Working-Storage
-                chown "$username":"$username" /home/"$username"/media/Working-Storage
+            if [ ! -d "/media/Working-Storage" ]; then
+                sudo mkdir -p /media/Working-Storage
+                sudo chown "$username":"$username" /media/Working-Storage
             fi
-            if [ ! -d "$HOME/.media/Archived-Storage" ]; then
-                mkdir -p /home/"$username"/media/Archived-Storage
-                chown "$username":"$username" /home/"$username"/media/Archived-Storage
+            if [ ! -d "/media/Archived-Storage" ]; then
+                sudo mkdir -p /media/Archived-Storage
+                sudo chown "$username":"$username" /media/Archived-Storage
             fi
     # Clone Piercing Dots Repo
         cp -Rf dots/* /home/"$username"/.config/
@@ -93,6 +93,6 @@ builddir=$(pwd)
         cd "$builddir" || exit
     # Replace .bashrc
         cp -f resources/bash/.bashrc /home/"$username"/.bashrc
-        source ~/.bashrc
+        source /home/"$username"/.bashrc
     # Set PRETTY_NAME in /etc/os-release
         pretty_name
