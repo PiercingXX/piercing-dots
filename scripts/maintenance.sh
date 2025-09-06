@@ -94,8 +94,6 @@ update_bashrc() {
     if ! cmp -s "$HOME/.bashrc" "$TMP_FILE"; then
         cp "$TMP_FILE" "$HOME/.bashrc"
         echo -e "${GREEN}.bashrc has been updated.${NC}"
-    else
-        echo -e "${GREEN}.bashrc is up to date.${NC}"
     fi
     rm -f "$TMP_FILE"
     return 0
