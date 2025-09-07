@@ -238,10 +238,10 @@ alias kssh="kitty +kitten ssh"
 # alias to cleanup unused docker containers, images, networks, and volumes
 
 alias docker-clean=' \
-  docker container prune -f ; \
-  docker image prune -f ; \
-  docker network prune -f ; \
-  docker volume prune -f '
+    docker container prune -f ; \
+    docker image prune -f ; \
+    docker network prune -f ; \
+    docker volume prune -f '
 
 #######################################################
 # SPECIAL FUNCTIONS
@@ -350,7 +350,7 @@ cd ()
 	fi
 }
 function z() {
-  __zoxide_z "$@" && ls
+    __zoxide_z "$@" && ls
 }
 
 
@@ -358,73 +358,6 @@ function z() {
 pwdtail() {
 	pwd | awk -F/ '{nlast = NF -1;print $nlast"/"$NF}'
 }
-
-# Show the current distribution
-distribution () {
-    local dtype="unknown"  # Default to unknown
-
-    # Use /etc/os-release for modern distro identification
-    if [ -r /etc/os-release ]; then
-        source /etc/os-release
-        case $ID in
-            fedora|rhel|centos)
-                dtype="redhat"
-                ;;
-            sles|opensuse*)
-                dtype="suse"
-                ;;
-            ubuntu|debian|pop|mint)
-                dtype="debian"
-                ;;
-            gentoo)
-                dtype="gentoo"
-                ;;
-            arch|manjaro)
-                dtype="arch"
-                ;;
-            slackware)
-                dtype="slackware"
-                ;;
-            *)
-                # Check ID_LIKE only if dtype is still unknown
-                if [ -n "$ID_LIKE" ]; then
-                    case $ID_LIKE in
-                        *fedora*|*rhel*|*centos*)
-                            dtype="redhat"
-                            ;;
-                        *sles*|*opensuse*)
-                            dtype="suse"
-                            ;;
-                        *ubuntu*|*debian*|*pop*|*mint*)
-                            dtype="debian"
-                            ;;
-                        *gentoo*)
-                            dtype="gentoo"
-                            ;;
-                        *arch*)
-                            dtype="arch"
-                            ;;
-                        *slackware*)
-                            dtype="slackware"
-                            ;;
-                    esac
-                fi
-
-                # If ID or ID_LIKE is not recognized, keep dtype as unknown
-                ;;
-        esac
-    fi
-
-    echo $dtype
-}
-
-
-DISTRIBUTION=$(distribution)
-if [ "$DISTRIBUTION" = "redhat" ] || [ "$DISTRIBUTION" = "arch" ]; then
-      alias cat='bat'
-else
-      alias cat='batcat'
-fi 
 
 # Show the current distribution
 distribution () {
@@ -493,13 +426,13 @@ install_bashrc_support() {
 	case $dtype in
         "redhat")
             if command -v dnf &> /dev/null; then
-                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
+                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
             else
-                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
+                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
             fi
             ;;
 		"suse")
-			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch
+			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
 			;;
 		"debian")
 			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch -y
@@ -507,8 +440,7 @@ install_bashrc_support() {
 			cargo install exa
 			;;
 		"arch")
-			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa --noconfirm
-			sudo pacman -s bat --noconfirm
+			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
 			;;
 		"slackware")
 			echo "No install support for Slackware"
@@ -699,7 +631,6 @@ ss() {
 }
 alias ss='ss'
 
-
 #######################################################
 # Set the ultimate amazing command prompt
 #######################################################
@@ -720,4 +651,3 @@ if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
 exec startx
 
 fi
-
