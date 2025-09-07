@@ -24,30 +24,33 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Check if a command exists
-    command_exists() {
-        command -v "$1" >/dev/null 2>&1
-    }
-
-# Check for active network connection
-    if command_exists nmcli; then
-        state=$(nmcli -t -f STATE g)
-        if [[ "$state" != connected ]]; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
-    else
-        # Fallback: ensure at least one interface has an IPv4 address
-        if ! ip -4 addr show | grep -q "inet "; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
+# Verify active network device and internet connectivity
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+if command_exists nmcli; then
+    # Check if any device is connected
+    if ! nmcli -t -f DEVICE,STATE d | grep -q ':connected'; then
+        echo "No active network device is connected."
+        exit 1
     fi
-        # Additional ping test to confirm internet reachability
-        if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
-            echo "Network connectivity is required to continue."
-            exit 1
-        fi
+    # Check for IPv4 connectivity on any connected device
+    if ! nmcli -t -f DEVICE,STATE,IP4-CONNECTIVITY d | grep -q ':connected:full'; then
+        echo "No device has full IPv4 connectivity."
+        exit 1
+    fi
+else
+    # Fallback: ensure at least one interface has an IPv4 address
+    if ! ip -4 addr show | grep -q "inet "; then
+        echo "Network connectivity is required to continue."
+        exit 1
+    fi
+fi
+# Additional ping test to confirm internet reachability
+if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
+    echo "Internet connectivity is required to continue."
+    exit 1
+fi
 
 # Auto‑update Maintenance.sh from PiercingXX GitHub
 auto_update() {

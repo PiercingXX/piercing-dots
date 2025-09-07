@@ -126,8 +126,6 @@ alias hlp='less ~/.bashrc_help'
 alias da='date "+%Y-%m-%d %A %T %Z"'
 
 # Alias' to modified commands
-alias vi='nvim'
-alias svi='sudo vi'
 alias cp='cp -i'
 alias mv='mv -i'
 alias rm='trash -v'
@@ -139,6 +137,8 @@ alias cls='clear'
 alias apt-get='sudo apt-get'
 alias multitail='multitail --no-repeat -c'
 alias freshclam='sudo freshclam'
+alias vi='nvim'
+alias svi='sudo vi'
 alias vis='nvim "+set si"'
 alias yayf="yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S"
 
@@ -340,6 +340,19 @@ up() {
 	cd $d
 }
 
+# Automatically do an ls after each cd, or z
+cd ()
+{
+	if [ -n "$1" ]; then
+		builtin cd "$@" && ls
+	else
+		builtin cd ~ && ls
+	fi
+}
+function z() {
+  __zoxide_z "$@" && ls
+}
+
 
 # Returns the last 2 fields of the working directory
 pwdtail() {
@@ -413,44 +426,63 @@ else
       alias cat='batcat'
 fi 
 
-# Show the current version of the operating system
-ver() {
-    local dtype
-    dtype=$(distribution)
+# Show the current distribution
+distribution () {
+    local dtype="unknown"  # Default to unknown
 
-    case $dtype in
-        "redhat")
-            if [ -s /etc/redhat-release ]; then
-                cat /etc/redhat-release
-            else
-                cat /etc/issue
-            fi
-            uname -a
-            ;;
-        "suse")
-            cat /etc/SuSE-release
-            ;;
-        "debian")
-            lsb_release -a
-            ;;
-        "gentoo")
-            cat /etc/gentoo-release
-            ;;
-        "arch")
-            cat /etc/os-release
-            ;;
-        "slackware")
-            cat /etc/slackware-version
-            ;;
-        *)
-            if [ -s /etc/issue ]; then
-                cat /etc/issue
-            else
-                echo "Error: Unknown distribution"
-                exit 1
-            fi
-            ;;
-    esac
+    # Use /etc/os-release for modern distro identification
+    if [ -r /etc/os-release ]; then
+        source /etc/os-release
+        case $ID in
+            fedora|rhel|centos)
+                dtype="redhat"   # Fedora, RHEL, CentOS
+                ;;
+            sles|opensuse*)
+                dtype="suse"
+                ;;
+            ubuntu|debian|pop|mint)
+                dtype="debian"
+                ;;
+            gentoo)
+                dtype="gentoo"
+                ;;
+            arch|manjaro)
+                dtype="arch"
+                ;;
+            slackware)
+                dtype="slackware"
+                ;;
+            *)
+                # Check ID_LIKE only if dtype is still unknown
+                if [ -n "$ID_LIKE" ]; then
+                    case $ID_LIKE in
+                        *fedora*|*rhel*|*centos*)
+                            dtype="redhat"   # Fedora, RHEL, CentOS
+                            ;;
+                        *sles*|*opensuse*)
+                            dtype="suse"
+                            ;;
+                        *ubuntu*|*debian*|*pop*|*mint*)
+                            dtype="debian"
+                            ;;
+                        *gentoo*)
+                            dtype="gentoo"
+                            ;;
+                        *arch*)
+                            dtype="arch"
+                            ;;
+                        *slackware*)
+                            dtype="slackware"
+                            ;;
+                    esac
+                fi
+
+                # If ID or ID_LIKE is not recognized, keep dtype as unknown
+                ;;
+        esac
+    fi
+
+    echo $dtype
 }
 
 # Automatically install the needed support files for this .bashrc file
@@ -459,17 +491,24 @@ install_bashrc_support() {
 	dtype=$(distribution)
 
 	case $dtype in
-		"redhat")
-			sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch
-			;;
+        "redhat")
+            if command -v dnf &> /dev/null; then
+                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
+            else
+                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch -y
+            fi
+            ;;
 		"suse")
 			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch
 			;;
 		"debian")
-			sudo apt install multitail tree zoxide trash-cli fzf bash-completion fastfetch exa -y
+			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch -y
+			# Install exa via cargo...exa is not in apt on Debian 13 yet #sudo apt install exa -y
+			cargo install exa
 			;;
 		"arch")
 			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa --noconfirm
+			sudo pacman -s bat --noconfirm
 			;;
 		"slackware")
 			echo "No install support for Slackware"
@@ -481,7 +520,6 @@ install_bashrc_support() {
 }
 
 # IP address lookup
-alias ip?=whatsmyip
 alias whatismyip="whatsmyip"
 function whatsmyip () {
     # Internal IP Lookup.
@@ -569,6 +607,9 @@ trim() {
 	echo -n "$var"
 }
 
+#######################################################
+# GitHub Titus Additions
+#######################################################
 
 gcom() {
 	git add .
@@ -580,39 +621,83 @@ lazyg() {
 	git push
 }
 
+function hb {
+    if [ $# -eq 0 ]; then
+        echo "No file path specified."
+        return
+    elif [ ! -f "$1" ]; then
+        echo "File path does not exist."
+        return
+    fi
+}
+
+# PiercingXX Additions
+
 # Starship
 eval "$(starship init bash)"
-
+# Zoxide
+eval "$(zoxide init bash)"
 # FZF
 source /usr/share/fzf/key-bindings.bash
 source /usr/share/fzf/completion.bash
-
-# Zoxide
-eval "$(zoxide init bash)"
 
 # Tab completion settings
 bind 'set show-all-if-ambiguous on'
 bind 'TAB:menu-complete'
 
-# PiercingXX alias' to modified commands
+# PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
 alias xx='$HOME/maintenance*.sh'
-alias pf="paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S"
 alias ff='fastfetch'
 alias c='clear'
 
-# Automatically do an ls after each cd, or z
-cd ()
-{
-	if [ -n "$1" ]; then
-		builtin cd "$@" && ls
-	else
-		builtin cd ~ && ls
-	fi
-}
-function z() {
-  __zoxide_z "$@" && ls
-}
+# The ultimate way to search and install packages using fzf with preview window
+# Software Search
+ss() {
+    local dtype
+    dtype=$(distribution)
+    case "$dtype" in
+        "arch")
+            if command -v paru &> /dev/null; then
+                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
+            elif command -v yay &> /dev/null; then
+                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
+            elif command -v pacman &> /dev/null; then
+                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
+            else
+                echo "No supported Arch package manager found (paru, yay, pacman)."
+            fi
+            ;;
+        "debian")
+            apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
+            ;;
+        "redhat")
+            if command -v dnf &> /dev/null; then
+                dnf list available | awk '{print $1}' | fzf --multi --preview='dnf info {1}' --preview-window=down:75% | xargs -ro sudo dnf install
+            else
+                yum list available | awk '{print $1}' | fzf --multi --preview='yum info {1}' --preview-window=down:75% | xargs -ro sudo yum install
+            fi
+            ;;
+        "suse")
+            zypper search -u | awk '{print $3}' | fzf --multi --preview='zypper info {1}' --preview-window=down:75% | xargs -ro sudo zypper install
+            ;;
+        "gentoo")
+            eix -c | awk -F' ' '{print $2}' | fzf --multi --preview='eix {1}' --preview-window=down:75% | xargs -ro sudo emerge
+            ;;
+        "slackware")
+            slackpkg search | awk '{print $1}' | fzf --multi --preview='slackpkg info {1}' --preview-window=down:75% | xargs -ro sudo slackpkg install
+            ;;
+        *)
+            echo "Unknown or unsupported distribution for ss alias."
+            ;;
+    esac
 
+    # Flatpak support (works on any distro if flatpak is installed)
+    if command -v flatpak &> /dev/null; then
+        echo "Flatpak available! Select apps to install:"
+        flatpak remote-ls --app flathub | fzf --multi --preview='flatpak info flathub {1}' --preview-window=down:75% | xargs -ro -I{} flatpak install -y flathub {}
+    fi
+}
+alias ss='ss'
 
 
 #######################################################
@@ -629,7 +714,6 @@ if [[ $- == *i* ]]; then
 fi
 
 export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin"
-
 
 if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
 
