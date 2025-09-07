@@ -9,7 +9,7 @@ _A curated collection of dotfiles + a one‑stop distro-agnostic maintenance scr
 Piercing‑Dots is my **personal dotfile repository** that includes a powerful, self‑updating Bash script.
 
 - **All your favorite configs** (Gnome, Hyprland, BSPWM, Awesome, i3, Neovim, Kitty, Yazi, etc.) are in one place.
-- **One command** to keep your system, packages, and dotfiles in sync.
+- **One command** to keep your system, packages, and dotfiles in sync (dotfiles will overwrite w/ no backup).
 - **Distribution Agnostic** support (Arch, Fedora, Debian/Ubuntu/Pop!_OS, etc.).
 
 ---
