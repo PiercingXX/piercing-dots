@@ -78,7 +78,7 @@ if command -v rg &> /dev/null; then
     alias grep='rg'
 else
     # Alias grep to /usr/bin/grep with GREP_OPTIONS if ripgrep is not installed
-    alias grep="/usr/bin/grep $GREP_OPTIONS"
+    alias grep='/usr/bin/grep $GREP_OPTIONS'
 fi
 unset GREP_OPTIONS
 
@@ -195,7 +195,11 @@ alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 alias f="find . | grep "
 
 # Count all files (recursively) in the current folder
-alias countfiles="for t in files links directories; do echo \`find . -type \${t:0:1} | wc -l\` \$t; done 2> /dev/null"
+countfiles() {
+    for t in files links directories; do
+        echo "$(find . -type ${t:0:1} | wc -l) $t"
+    done 2> /dev/null
+}
 
 # To see if a command is aliased, a file, or a built-in command
 alias checkcommand="type -t"
@@ -439,12 +443,22 @@ install_bashrc_support() {
 			# Install exa via cargo...exa is not in apt on Debian 13 yet #sudo apt install exa -y
 			cargo install exa
 			;;
-		"arch")
-			paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
-			;;
-		"slackware")
-			echo "No install support for Slackware"
-			;;
+        "arch")
+            if command -v paru &> /dev/null; then
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
+            elif command -v yay &> /dev/null; then
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
+            else
+                echo "Install paru or yay."
+            fi
+            ;;
+        "slackware")
+            if command -v slackpkg &> /dev/null; then
+                sudo slackpkg install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa
+            else
+                echo "slackpkg not found. Please install slackpkg to enable package installation."
+            fi
+            ;;
 		*)
 			echo "Unknown distribution"
 			;;
