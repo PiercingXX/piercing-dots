@@ -603,15 +603,7 @@ ss() {
     dtype=$(distribution)
     case "$dtype" in
         "arch")
-            if command -v paru &> /dev/null; then
                 paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
-            elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
-            elif command -v pacman &> /dev/null; then
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
-            else
-                echo "No supported Arch package manager found (paru, yay, pacman)."
-            fi
             ;;
         "debian")
             apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
