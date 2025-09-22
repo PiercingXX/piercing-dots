@@ -79,7 +79,7 @@ builddir=$(pwd)
         cd "$builddir" || exit
     # Copy FZF to /urs
         sudo cp -rf resources/fzf /usr/share/fzf
-        sudo chmod +x /usr/local/bin/fzf
+        sudo chmod -R +x /usr/share/fzf/
     # Copy Backgrounds
         cp -Rf resources/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
