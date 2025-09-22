@@ -24,33 +24,63 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Verify active network device and internet connectivity
-# command_exists() {
-#     command -v "$1" >/dev/null 2>&1
-# }
-# if command_exists nmcli; then
-#     # Check if any device is connected
-#     if ! nmcli -t -f DEVICE,STATE d | grep -q ':connected'; then
-#         echo "No active network device is connected."
-#         exit 1
-#     fi
-#     # Check for IPv4 connectivity on any connected device
-#     if ! nmcli -t -f DEVICE,STATE,IP4-CONNECTIVITY d | grep -q ':connected:full'; then
-#         echo "No device has full IPv4 connectivity."
-#         exit 1
-#     fi
-# else
-#     # Fallback: ensure at least one interface has an IPv4 address
-#     if ! ip -4 addr show | grep -q "inet "; then
-#         echo "Network connectivity is required to continue."
-#         exit 1
-#     fi
-# fi
-# # Additional ping test to confirm internet reachability
-# if ! ping -c 1 -W 1 8.8.8.8 >/dev/null 2>&1; then
-#     echo "Internet connectivity is required to continue."
-#     exit 1
-# fi
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Reliable-ish internet check:
+# 1) Prefer nm-online or networkctl if available (fast readiness)
+# 2) Try HTTP(S) endpoints that return 204 or fixed text (detects DNS + HTTP + captive portals)
+# 3) Fallback to ICMP ping to public IPs (in case HTTP is blocked)
+check_internet() {
+    local timeout=4
+    # Fast path: if system tools can confirm we're online, accept it
+    if command_exists nm-online; then
+        nm-online -q -t "$timeout" && return 0
+    fi
+    if command_exists networkctl; then
+        networkctl -q is-online --timeout="$timeout" && return 0
+    fi
+    # HTTP(S) probes (DNS + TCP + HTTP)
+    local urls=(
+        "https://connectivitycheck.gstatic.com/generate_204"   # 204 when open internet
+        "http://www.google.com/generate_204"                    # 204 when open internet
+        "http://www.msftncsi.com/ncsi.txt"                      # 200 + 'Microsoft NCSI'
+        "http://www.msftconnecttest.com/connecttest.txt"        # 200 + 'Microsoft Connect Test'
+    )
+    for url in "${urls[@]}"; do
+        # Get HTTP status quickly
+        local code
+        code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
+        # 204 is a strong signal of open internet (not a captive portal)
+        if [[ "$code" == "204" ]]; then
+            return 0
+        fi
+        # For Microsoft endpoints, verify body content when 200
+        if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
+            local body
+            body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
+            if [[ "$body" == "Microsoft NCSI" || "$body" == "Microsoft Connect Test" ]]; then
+                return 0
+            fi
+        fi
+    done
+    # ICMP fallback (some networks block ICMP, so this is last)
+    local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
+    for host in "${hosts[@]}"; do
+        if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Require internet before continuing
+if ! check_internet; then
+    echo "Internet connectivity is required to continue."
+    exit 1
+fi
 
 # Auto‑update Maintenance.sh from PiercingXX GitHub
 auto_update() {
