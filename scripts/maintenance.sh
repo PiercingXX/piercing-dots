@@ -35,29 +35,24 @@ command_exists() {
 # 3) Fallback to ICMP ping to public IPs (in case HTTP is blocked)
 check_internet() {
     local timeout=4
-    # Fast path: if system tools can confirm we're online, accept it
     if command_exists nm-online; then
         nm-online -q -t "$timeout" && return 0
     fi
     if command_exists networkctl; then
         networkctl -q is-online --timeout="$timeout" && return 0
     fi
-    # HTTP(S) probes (DNS + TCP + HTTP)
     local urls=(
-        "https://connectivitycheck.gstatic.com/generate_204"   # 204 when open internet
+        "https://connectivitycheck.gstatic.com/generate_204"    # 204 when open internet
         "http://www.google.com/generate_204"                    # 204 when open internet
         "http://www.msftncsi.com/ncsi.txt"                      # 200 + 'Microsoft NCSI'
         "http://www.msftconnecttest.com/connecttest.txt"        # 200 + 'Microsoft Connect Test'
     )
     for url in "${urls[@]}"; do
-        # Get HTTP status quickly
         local code
         code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
-        # 204 is a strong signal of open internet (not a captive portal)
         if [[ "$code" == "204" ]]; then
             return 0
         fi
-        # For Microsoft endpoints, verify body content when 200
         if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
             local body
             body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
@@ -66,7 +61,6 @@ check_internet() {
             fi
         fi
     done
-    # ICMP fallback (some networks block ICMP, so this is last)
     local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
     for host in "${hosts[@]}"; do
         if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
