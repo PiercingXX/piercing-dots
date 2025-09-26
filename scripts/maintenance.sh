@@ -313,26 +313,28 @@ while true; do
                 fi
             # Update local .bashrc from Piercing‑dots GitHub
                 update_bashrc
-            # Update Neovim config from Piercing‑dots GitHub
-                update_nvim
             # Distro-specific updates
                 if [[ "$DISTRO" == "arch" ]]; then
                 # Paru, Yay, or Pacman update
                     if command_exists paru; then
                         paru -Syu --noconfirm
                         universal_update
+                        update_nvim
                     elif command_exists yay; then
                         yay -Syu --noconfirm
                         universal_update
+                        update_nvim
                     else
                         sudo pacman -Syu --noconfirm
                         universal_update
+                        update_nvim
                     fi
                 elif [[ "$DISTRO" == "fedora" ]]; then
                 # DNF update
                     sudo dnf update -y
                     sudo dnf autoremove -y
                     universal_update
+                    update_nvim
                 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
                     # APT update
                     sudo apt update && sudo apt upgrade -y || true
@@ -343,6 +345,7 @@ while true; do
                     sudo apt autoremove -y
                     sudo apt update && sudo apt upgrade -y || true
                     universal_update
+                    update_nvim
                     # SNAP update
                     if command_exists snap; then
                         sudo snap refresh
