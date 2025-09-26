@@ -95,3 +95,17 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
   desc = "Highlight yank",
 })
+
+
+function OpenInObsidian()
+  local file = vim.fn.expand("<cfile>")
+  if file:match("%.md$") then
+    local vault = "notes"
+    local vault_path = vim.fn.expand("~/path/to/vault/")
+    local relative_path = file:gsub(vault_path, "")
+    local obsidian_url = "obsidian://open?vault=" .. vault .. "&file=" .. vim.fn.fnameescape(relative_path)
+    vim.fn.system({ "open", obsidian_url })
+  else
+    vim.cmd("silent open " .. file)
+  end
+end
