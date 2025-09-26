@@ -126,6 +126,62 @@ update_bashrc() {
     return 0
 }
 
+# Function to update Neovim from Piercing‑dots GitHub
+update_nvim() {
+    local REPO_URL="https://github.com/Piercingxx/piercing-dots.git"
+    local SUBDIR="dots/nvim"
+    local NVIM_CONFIG_DIR="$HOME/.config/nvim"
+    local TMP_DIR
+    TMP_DIR=$(mktemp -d)
+    if ! command_exists git; then
+        echo -e "${RED}git is required to update Neovim config.${NC}"
+        rm -rf "$TMP_DIR"
+        return 1
+    fi
+    if ! git clone --depth 1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1; then
+        echo -e "${RED}Failed to clone piercing-dots repo.${NC}"
+        rm -rf "$TMP_DIR"
+        return 1
+    fi
+    if [ ! -d "$TMP_DIR/$SUBDIR" ]; then
+        echo -e "${RED}Neovim config directory not found in repo (${SUBDIR}).${NC}"
+        rm -rf "$TMP_DIR"
+        return 1
+    fi
+    mkdir -p "$NVIM_CONFIG_DIR"
+    # Show what would change; if nothing, skip full sync
+    if command_exists rsync; then
+        local DIFF
+        DIFF=$(rsync -ai --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/)
+        if [ -n "$DIFF" ]; then
+            # Optional backup
+            cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+            rsync -a --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/
+            echo -e "${GREEN}Neovim config updated (${NVIM_CONFIG_DIR}).${NC}"
+        else
+            echo -e "${YELLOW}Neovim config already up to date.${NC}"
+        fi
+    else
+        # Fallback without rsync diffing
+        cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
+        rm -rf "$NVIM_CONFIG_DIR"
+        mkdir -p "$NVIM_CONFIG_DIR"
+        cp -a "$TMP_DIR/$SUBDIR"/. "$NVIM_CONFIG_DIR"/
+        echo -e "${GREEN}Neovim config replaced (rsync not available).${NC}"
+    fi
+    rm -rf "$TMP_DIR"
+    return 0
+    # Delete .cache/nvim
+        rm -rf "$HOME/.cache/nvim"
+    # Delete .local/share/nvim
+        rm -rf "$HOME/.local/share/nvim" 
+    # Delete .local/state/nvim
+        rm -rf "$HOME/.local/state/nvim"
+    # Reinstall plugins
+        nvim --headless "+Lazy! sync" +qa
+}
+
+
 # Function to update universal stuff
     universal_update() {
         # Neovim Lazy Update
@@ -211,6 +267,7 @@ case "$DISTRO" in
             whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
                 --menu "Run Options In Order:" 0 0 0 \
                 "Update System"         "Update System" \
+                "Update Neovim"         "Update Neovim config from Piercing-dots" \
                 "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
                 "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
                 "Reboot System"         "Reboot the system" \
@@ -274,6 +331,13 @@ while true; do
                 fi
                 echo -e "${GREEN}System Updated Successfully!${NC}"
                 ;;
+        "Update Neovim")
+            if [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" ]]; then
+                echo -e "${YELLOW}Updating Neovim config from Piercing-dots...${NC}"
+                update_nvim || true
+                echo -e "${GREEN}Neovim config updated successfully!${NC}"
+            fi
+            ;;
         "Update Mirrors")
             if [[ "$DISTRO" == "arch" ]]; then
                 echo -e "${YELLOW}Updating Mirrors...${NC}"
