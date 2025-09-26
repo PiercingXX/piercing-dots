@@ -76,6 +76,30 @@ if ! check_internet; then
     exit 1
 fi
 
+
+# Auto-install rsync if missing
+if ! command_exists rsync; then
+    echo -e "${YELLOW}rsync not found – attempting install...${NC}"
+    case "$DISTRO" in
+        arch)
+            sudo pacman -S --noconfirm rsync ;;
+        fedora)
+            sudo dnf install -y rsync >/dev/null 2>&1 ;;
+        debian|ubuntu|pop|linuxmint|mint)
+            sudo apt install -y rsync >/dev/null 2>&1 ;;
+        *)
+            echo -e "${YELLOW}Unsupported distro for auto rsync install. Skipping.${NC}"
+            ;;
+    esac
+    if command_exists rsync; then
+        echo -e "${GREEN}rsync installed successfully.${NC}"
+    else
+        echo -e "${YELLOW}Could not install rsync; will full replace config.${NC}"
+    fi
+fi
+
+
+
 # Auto‑update Maintenance.sh from PiercingXX GitHub
 auto_update() {
     local GITHUB_RAW_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/scripts/maintenance.sh"
@@ -105,6 +129,7 @@ auto_update() {
     rm -f "$TMP_FILE"
     return 0
 }
+
 
 # Function to update local .bashrc from Piercing‑dots GitHub
 update_bashrc() {
@@ -140,71 +165,38 @@ update_nvim() {
         rm -rf "$TMP_DIR"
         return 1
     fi
-
     if ! git clone --depth 1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1; then
         echo -e "${RED}Failed to clone piercing-dots repo.${NC}"
-        rm -rf "$TMP_DIR"
-        return 1
+        rm -rf "$TMP_DIR"; return 1
     fi
-
     if [ ! -d "$TMP_DIR/$SUBDIR" ]; then
-        echo -e "${RED}Neovim config directory not found in repo (${SUBDIR}).${NC}"
-        rm -rf "$TMP_DIR"
-        return 1
+        echo -e "${RED}Neovim config directory not found (${SUBDIR}).${NC}"
+        rm -rf "$TMP_DIR"; return 1
     fi
 
     mkdir -p "$NVIM_CONFIG_DIR"
     local updated=0
-
-    # Auto-install rsync if missing
-    if ! command_exists rsync; then
-        echo -e "${YELLOW}rsync not found – attempting install...${NC}"
-        case "$DISTRO" in
-            arch)
-                sudo pacman -Sy --noconfirm rsync >/dev/null 2>&1 || sudo pacman -S --noconfirm rsync ;;
-            fedora)
-                sudo dnf install -y rsync >/dev/null 2>&1 ;;
-            debian|ubuntu|pop|linuxmint|mint)
-                sudo apt update -y >/dev/null 2>&1 && sudo apt install -y rsync >/dev/null 2>&1 ;;
-            *)
-                echo -e "${YELLOW}Unsupported distro for auto rsync install. Skipping.${NC}"
-                ;;
-        esac
-        if command_exists rsync; then
-            echo -e "${GREEN}rsync installed successfully.${NC}"
-        else
-            echo -e "${YELLOW}Could not install rsync; will full replace config.${NC}"
-        fi
-    fi
-
     if command_exists rsync; then
-        local DIFF
-        DIFF=$(rsync -ai --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/)
-        if [ -n "$DIFF" ]; then
+        if rsync -ai --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/ | grep -q .; then
             cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
             rsync -a --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/
-            echo -e "${GREEN}Neovim config updated (${NVIM_CONFIG_DIR}).${NC}"
+            echo -e "${GREEN}Neovim config updated.${NC}"
             updated=1
         else
             echo -e "${YELLOW}Neovim config already up to date.${NC}"
         fi
     else
-        echo -e "${YELLOW}rsync unavailable – performing full replace.${NC}"
+        echo -e "${YELLOW}rsync unavailable – full replace.${NC}"
         cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
         rm -rf "$NVIM_CONFIG_DIR"
         mkdir -p "$NVIM_CONFIG_DIR"
         cp -a "$TMP_DIR/$SUBDIR"/. "$NVIM_CONFIG_DIR"/
-        echo -e "${GREEN}Neovim config replaced.${NC}"
         updated=1
     fi
-
     rm -rf "$TMP_DIR"
 
-    if [[ $updated -eq 1 && -x "$(command -v nvim)" ]]; then
-        echo -e "${YELLOW}Resetting Neovim state & syncing plugins...${NC}"
-        rm -rf "$HOME/.cache/nvim" \
-               "$HOME/.local/share/nvim" \
-               "$HOME/.local/state/nvim"
+    if (( updated )) && command_exists nvim; then
+        echo -e "${YELLOW}Syncing Neovim plugins (Lazy)...${NC}"
         nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
         echo -e "${GREEN}Neovim plugins synchronized.${NC}"
     fi
@@ -214,10 +206,6 @@ update_nvim() {
 
 # Function to update universal stuff
     universal_update() {
-        # Neovim Lazy Update
-            if command_exists nvim; then    
-                nvim --headless "+Lazy! sync" +qa
-            fi
         # Update pip if it exists
             if command_exists pip; then
                 echo -e "${YELLOW}Updating system pip...${NC}"
