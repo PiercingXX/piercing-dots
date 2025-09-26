@@ -126,6 +126,7 @@ update_bashrc() {
     return 0
 }
 
+
 # Function to update Neovim from Piercing‑dots GitHub
 update_nvim() {
     local REPO_URL="https://github.com/Piercingxx/piercing-dots.git"
@@ -148,37 +149,44 @@ update_nvim() {
         rm -rf "$TMP_DIR"
         return 1
     fi
+
     mkdir -p "$NVIM_CONFIG_DIR"
-    # Show what would change; if nothing, skip full sync
+    local updated=0
+
     if command_exists rsync; then
+        # Show diff (optional silent capture)
         local DIFF
         DIFF=$(rsync -ai --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/)
         if [ -n "$DIFF" ]; then
-            # Optional backup
             cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
             rsync -a --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/
             echo -e "${GREEN}Neovim config updated (${NVIM_CONFIG_DIR}).${NC}"
+            updated=1
         else
             echo -e "${YELLOW}Neovim config already up to date.${NC}"
         fi
     else
-        # Fallback without rsync diffing
+        echo -e "${YELLOW}rsync not found – performing full replace.${NC}"
         cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
         rm -rf "$NVIM_CONFIG_DIR"
         mkdir -p "$NVIM_CONFIG_DIR"
         cp -a "$TMP_DIR/$SUBDIR"/. "$NVIM_CONFIG_DIR"/
-        echo -e "${GREEN}Neovim config replaced (rsync not available).${NC}"
+        echo -e "${GREEN}Neovim config replaced.${NC}"
+        updated=1
     fi
+
     rm -rf "$TMP_DIR"
+
+    # Only clear caches & sync plugins if actual update occurred and nvim exists
+    if [[ $updated -eq 1 && -x "$(command -v nvim)" ]]; then
+        echo -e "${YELLOW}Resetting Neovim state & syncing plugins...${NC}"
+        rm -rf "$HOME/.cache/nvim" \
+            "$HOME/.local/share/nvim" \
+            "$HOME/.local/state/nvim"
+        nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+        echo -e "${GREEN}Neovim plugins synchronized.${NC}"
+    fi
     return 0
-    # Delete .cache/nvim
-        rm -rf "$HOME/.cache/nvim"
-    # Delete .local/share/nvim
-        rm -rf "$HOME/.local/share/nvim" 
-    # Delete .local/state/nvim
-        rm -rf "$HOME/.local/state/nvim"
-    # Reinstall plugins
-        nvim --headless "+Lazy! sync" +qa
 }
 
 
@@ -267,7 +275,6 @@ case "$DISTRO" in
             whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
                 --menu "Run Options In Order:" 0 0 0 \
                 "Update System"         "Update System" \
-                "Update Neovim"         "Update Neovim config from Piercing-dots" \
                 "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
                 "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
                 "Reboot System"         "Reboot the system" \
@@ -284,7 +291,7 @@ esac
 while true; do
     clear
     echo -e "${BLUE}PiercingXX's Maintenance Script for $DISTRO${NC}"
-    echo -e "${GREEN}Hello Handsome${NC}\n"
+    echo -e "${GREEN}H3ll0${NC}\n"
     choice=$(menu)
     case $choice in
         "Update System")
@@ -296,6 +303,8 @@ while true; do
                 fi
             # Update local .bashrc from Piercing‑dots GitHub
                 update_bashrc
+            # Update Neovim config from Piercing‑dots GitHub
+                update_nvim
             # Distro-specific updates
                 if [[ "$DISTRO" == "arch" ]]; then
                 # Paru, Yay, or Pacman update
@@ -331,13 +340,6 @@ while true; do
                 fi
                 echo -e "${GREEN}System Updated Successfully!${NC}"
                 ;;
-        "Update Neovim")
-            if [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" ]]; then
-                echo -e "${YELLOW}Updating Neovim config from Piercing-dots...${NC}"
-                update_nvim || true
-                echo -e "${GREEN}Neovim config updated successfully!${NC}"
-            fi
-            ;;
         "Update Mirrors")
             if [[ "$DISTRO" == "arch" ]]; then
                 echo -e "${YELLOW}Updating Mirrors...${NC}"
@@ -392,7 +394,6 @@ while true; do
             ;;
         "Exit")
             clear
-            echo -e "${BLUE}Thank You Handsome!${NC}"
             exit 0
             ;;
     esac
