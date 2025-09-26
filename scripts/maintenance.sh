@@ -153,6 +153,22 @@ update_nvim() {
     mkdir -p "$NVIM_CONFIG_DIR"
     local updated=0
 
+    # Auto-install rsync if missing
+    if ! command_exists rsync; then
+        echo -e "${YELLOW}rsync not found – installing...${NC}"
+        case "$DISTRO" in
+            arch)
+                sudo pacman -S rsync --noconfirm
+                ;;
+            fedora)
+                sudo dnf install -y rsync
+                ;;
+            debian|ubuntu|pop|linuxmint|mint)
+                sudo apt install -y rsync
+                ;;
+        esac
+    fi
+
     if command_exists rsync; then
         # Show diff (optional silent capture)
         local DIFF
@@ -166,7 +182,7 @@ update_nvim() {
             echo -e "${YELLOW}Neovim config already up to date.${NC}"
         fi
     else
-        echo -e "${YELLOW}rsync not found – performing full replace.${NC}"
+        echo -e "${YELLOW}rsync still unavailable – performing full replace.${NC}"
         cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
         rm -rf "$NVIM_CONFIG_DIR"
         mkdir -p "$NVIM_CONFIG_DIR"
@@ -177,7 +193,6 @@ update_nvim() {
 
     rm -rf "$TMP_DIR"
 
-    # Only clear caches & sync plugins if actual update occurred and nvim exists
     if [[ $updated -eq 1 && -x "$(command -v nvim)" ]]; then
         echo -e "${YELLOW}Resetting Neovim state & syncing plugins...${NC}"
         rm -rf "$HOME/.cache/nvim" \
