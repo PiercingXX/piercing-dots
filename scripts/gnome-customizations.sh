@@ -69,7 +69,8 @@ gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super>s']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['>Super>grave']"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-floating "['<Super>f']"
-gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Super>z']"
+gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Shift><Super>z']"
+gsettings set org.gnome.settings-daemon.plugins.media-keys calculator "['<Shift><Super>c']"
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
 gsettings set org.gnome.desktop.wm.keybindings switch-applications "['<Alt>Tab']"
 gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward "['<Shift><Alt>Tab']"
@@ -115,6 +116,10 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ name 'AI'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ command 'kitty ollama run gemma3n:latest'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ binding '<Super>a'
+# 10 Yazi
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ name 'Yazi'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ command 'kitty -- yazi'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ binding '<Super>z'
 
 
 ######################
