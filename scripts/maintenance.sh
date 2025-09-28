@@ -152,58 +152,6 @@ update_bashrc() {
 }
 
 
-# Function to update Neovim from Piercing‑dots GitHub
-update_nvim() {
-    local REPO_URL="https://github.com/Piercingxx/piercing-dots.git"
-    local SUBDIR="dots/nvim"
-    local NVIM_CONFIG_DIR="$HOME/.config/nvim"
-    local TMP_DIR
-    TMP_DIR=$(mktemp -d)
-
-    if ! command_exists git; then
-        echo -e "${RED}git is required to update Neovim config.${NC}"
-        rm -rf "$TMP_DIR"
-        return 1
-    fi
-    if ! git clone --depth 1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1; then
-        echo -e "${RED}Failed to clone piercing-dots repo.${NC}"
-        rm -rf "$TMP_DIR"; return 1
-    fi
-    if [ ! -d "$TMP_DIR/$SUBDIR" ]; then
-        echo -e "${RED}Neovim config directory not found (${SUBDIR}).${NC}"
-        rm -rf "$TMP_DIR"; return 1
-    fi
-
-    mkdir -p "$NVIM_CONFIG_DIR"
-    local updated=0
-    if command_exists rsync; then
-        if rsync -ai --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/ | grep -q .; then
-            cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
-            rsync -a --delete "$TMP_DIR/$SUBDIR"/ "$NVIM_CONFIG_DIR"/
-            echo -e "${GREEN}Neovim config updated.${NC}"
-            updated=1
-        else
-            echo -e "${YELLOW}Neovim config already up to date.${NC}"
-        fi
-    else
-        echo -e "${YELLOW}rsync unavailable – full replace.${NC}"
-        cp -a "$NVIM_CONFIG_DIR" "${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)" 2>/dev/null || true
-        rm -rf "$NVIM_CONFIG_DIR"
-        mkdir -p "$NVIM_CONFIG_DIR"
-        cp -a "$TMP_DIR/$SUBDIR"/. "$NVIM_CONFIG_DIR"/
-        updated=1
-    fi
-    rm -rf "$TMP_DIR"
-
-    if (( updated )) && command_exists nvim; then
-        echo -e "${YELLOW}Syncing Neovim plugins (Lazy)...${NC}"
-        nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
-        echo -e "${GREEN}Neovim plugins synchronized.${NC}"
-    fi
-    return 0
-}
-
-
 # Function to update universal stuff
     universal_update() {
         # Update pip if it exists
@@ -230,6 +178,8 @@ update_nvim() {
             if command_exists flatpak; then
                 flatpak update -y
             fi
+        # Update Neovim
+            nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
         # Update_docker_images
             if command_exists docker; then
                 mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
@@ -319,22 +269,18 @@ while true; do
                     if command_exists paru; then
                         paru -Syu --noconfirm
                         universal_update
-                        update_nvim
                     elif command_exists yay; then
                         yay -Syu --noconfirm
                         universal_update
-                        update_nvim
                     else
                         sudo pacman -Syu --noconfirm
                         universal_update
-                        update_nvim
                     fi
                 elif [[ "$DISTRO" == "fedora" ]]; then
                 # DNF update
                     sudo dnf update -y
                     sudo dnf autoremove -y
                     universal_update
-                    update_nvim
                 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
                     # APT update
                     sudo apt update && sudo apt upgrade -y || true
@@ -345,7 +291,6 @@ while true; do
                     sudo apt autoremove -y
                     sudo apt update && sudo apt upgrade -y || true
                     universal_update
-                    update_nvim
                     # SNAP update
                     if command_exists snap; then
                         sudo snap refresh
