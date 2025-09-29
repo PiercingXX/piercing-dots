@@ -195,7 +195,7 @@ gsettings set org.gnome.settings-daemon.plugins.color night-light-enabled 'true'
 gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-automatic 'false'
 gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-from '20'
 gsettings set org.gnome.settings-daemon.plugins.color night-light-schedule-to '04'
-gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature '2500'
+gsettings set org.gnome.settings-daemon.plugins.color night-light-temperature '1700'
 
 # Gnome Shell Icon List
 gsettings set org.gnome.shell favorite-apps "['net.waterfox.waterfox.desktop', 'waterfox.desktop', 'org.gnome.Nautilus.desktop', 'org.libreoffice.LibreOffice.writer.desktop', 'org.gnome.Calculator.desktop', 'md.obsidian.Obsidian.desktop', 'com.visualstudio.code.desktop', 'code.desktop', 'synochat.desktop', 'org.gimp.GIMP.desktop', 'org.blender.Blender.desktop']"
