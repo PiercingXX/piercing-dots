@@ -583,12 +583,9 @@ function hb {
 
 
 
-
-
-
-
+#######################################################
 # PiercingXX Additions
-
+#######################################################
 
 # Yazi set CWD on exit
 function y() {
@@ -598,8 +595,6 @@ function y() {
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
-
-
 
 
 # Starship
@@ -661,11 +656,10 @@ ss() {
     fi
 }
 
-# Software Uninstaller - This took a bit more to get it to work.
+# Software Uninstaller - This took a bit more to get working.
 ssu_preview() {
     local line="$*"
     local dtype="${DTYPE:-$(distribution)}"
-
     if [[ $line == "[F] "* ]]; then
         local app=${line#"[F] "}
         if command -v flatpak &>/dev/null; then
@@ -693,12 +687,10 @@ ssu_preview() {
         esac
     fi
 }
-
 # Software Uninstaller: 
 ssu() {
     local dtype selection
     dtype=$(distribution)
-
     # Build native list command per distro
     local native_list_cmd
     case "$dtype" in
@@ -721,7 +713,6 @@ ssu() {
             native_list_cmd='echo'
             ;;
     esac
-
     # Compose combined menu
     selection=$(
         {
@@ -734,7 +725,6 @@ ssu() {
                             --preview-window=down:75% --height=80% --border
     )
     [[ -z "$selection" ]] && return 0
-
     # Uninstall each selected entry
     while IFS= read -r line; do
         if [[ $line == "[F] "* ]]; then
@@ -763,9 +753,6 @@ ssu() {
         fi
     done <<< "$selection"
 }
-
-
-
 
 
 #######################################################
