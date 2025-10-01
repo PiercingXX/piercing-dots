@@ -619,14 +619,23 @@ alias xx='$HOME/maintenance*.sh'
 alias ff='fastfetch'
 alias c='clear'
 
-# The ultimate way to search and install packages using fzf with preview window
+
+# The ultimate way to search and install/uninstall packages using fzf with preview window
+alias ss='ss'
+alias ssu='ssu'
 # Software Search
 ss() {
     local dtype
     dtype=$(distribution)
     case "$dtype" in
         "arch")
+            if command -v paru &> /dev/null; then
                 paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
+            elif command -v yay &> /dev/null; then
+                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
+            else
+                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
+            fi
             ;;
         "debian")
             apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
@@ -638,15 +647,6 @@ ss() {
                 yum list available | awk '{print $1}' | fzf --multi --preview='yum info {1}' --preview-window=down:75% | xargs -ro sudo yum install
             fi
             ;;
-        "suse")
-            zypper search -u | awk '{print $3}' | fzf --multi --preview='zypper info {1}' --preview-window=down:75% | xargs -ro sudo zypper install
-            ;;
-        "gentoo")
-            eix -c | awk -F' ' '{print $2}' | fzf --multi --preview='eix {1}' --preview-window=down:75% | xargs -ro sudo emerge
-            ;;
-        "slackware")
-            slackpkg search | awk '{print $1}' | fzf --multi --preview='slackpkg info {1}' --preview-window=down:75% | xargs -ro sudo slackpkg install
-            ;;
         *)
             echo "Unknown or unsupported distribution for ss alias."
             ;;
@@ -655,10 +655,118 @@ ss() {
     # Flatpak support (works on any distro if flatpak is installed)
     if command -v flatpak &> /dev/null; then
         echo "Flatpak available! Select apps to install:"
-        flatpak remote-ls --app flathub | fzf --multi --preview='flatpak info flathub {1}' --preview-window=down:75% | xargs -ro -I{} flatpak install -y flathub {}
+        flatpak remote-ls --app --columns=application flathub \
+            | fzf --multi --preview='flatpak remote-info flathub {}' --preview-window=down:75% \
+            | xargs -r -I{} flatpak install -y flathub {}
     fi
 }
-alias ss='ss'
+
+# Software Uninstaller - This took a bit more to get it to work.
+ssu_preview() {
+    local line="$*"
+    local dtype="${DTYPE:-$(distribution)}"
+
+    if [[ $line == "[F] "* ]]; then
+        local app=${line#"[F] "}
+        if command -v flatpak &>/dev/null; then
+            flatpak info "$app"
+        else
+            echo "Flatpak not installed"
+        fi
+    else
+        local pkg=${line#"[N] "}
+        case "$dtype" in
+            arch)
+                if command -v paru &>/dev/null; then paru -Qi "$pkg";
+                elif command -v yay &>/dev/null; then yay -Qi "$pkg";
+                else pacman -Qi "$pkg"; fi
+                ;;
+            debian)
+                apt-cache show "$pkg"
+                ;;
+            redhat)
+                if command -v dnf &>/dev/null; then dnf info "$pkg"; else yum info "$pkg"; fi
+                ;;
+            *)
+                echo "Unknown distro"
+                ;;
+        esac
+    fi
+}
+
+# Software Uninstaller: 
+ssu() {
+    local dtype selection
+    dtype=$(distribution)
+
+    # Build native list command per distro
+    local native_list_cmd
+    case "$dtype" in
+        arch)
+            if command -v paru &>/dev/null; then
+                native_list_cmd='paru -Qq'
+            elif command -v yay &>/dev/null; then
+                native_list_cmd='yay -Qq'
+            else
+                native_list_cmd='pacman -Qq'
+            fi
+            ;;
+        debian)
+            native_list_cmd="dpkg-query -W -f='\${binary:Package}\n'"
+            ;;
+        redhat)
+            native_list_cmd="rpm -qa --qf '%{NAME}\n'"
+            ;;
+        *)
+            native_list_cmd='echo'
+            ;;
+    esac
+
+    # Compose combined menu
+    selection=$(
+        {
+            eval "$native_list_cmd" | sed 's/^/[N] /'
+            if command -v flatpak &>/dev/null; then
+                flatpak list --app --columns=application | sed 's/^/[F] /'
+            fi
+        } | DTYPE="$dtype" fzf --multi --prompt="Uninstall (enter to select): " \
+                            --preview 'ssu_preview {}' \
+                            --preview-window=down:75% --height=80% --border
+    )
+    [[ -z "$selection" ]] && return 0
+
+    # Uninstall each selected entry
+    while IFS= read -r line; do
+        if [[ $line == "[F] "* ]]; then
+            app=${line#"[F] "}
+            flatpak uninstall -y --delete-data "$app"
+        elif [[ $line == "[N] "* ]]; then
+            pkg=${line#"[N] "}
+            case "$dtype" in
+                arch)
+                    sudo pacman -Rns --noconfirm "$pkg"
+                    ;;
+                debian)
+                    sudo apt-get purge -y "$pkg"
+                    ;;
+                redhat)
+                    if command -v dnf &>/dev/null; then
+                        sudo dnf remove -y "$pkg"
+                    else
+                        sudo yum remove -y "$pkg"
+                    fi
+                    ;;
+                *)
+                    echo "Unknown or unsupported distribution for uninstall: $pkg"
+                    ;;
+            esac
+        fi
+    done <<< "$selection"
+}
+
+
+
+
 
 #######################################################
 # Set the ultimate amazing command prompt
