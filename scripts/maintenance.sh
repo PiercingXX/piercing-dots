@@ -76,6 +76,30 @@ if ! check_internet; then
     exit 1
 fi
 
+
+# Auto-install rsync if missing
+if ! command_exists rsync; then
+    echo -e "${YELLOW}rsync not found – attempting install...${NC}"
+    case "$DISTRO" in
+        arch)
+            sudo pacman -S --noconfirm rsync ;;
+        fedora)
+            sudo dnf install -y rsync >/dev/null 2>&1 ;;
+        debian|ubuntu|pop|linuxmint|mint)
+            sudo apt install -y rsync >/dev/null 2>&1 ;;
+        *)
+            echo -e "${YELLOW}Unsupported distro for auto rsync install. Skipping.${NC}"
+            ;;
+    esac
+    if command_exists rsync; then
+        echo -e "${GREEN}rsync installed successfully.${NC}"
+    else
+        echo -e "${YELLOW}Could not install rsync; will full replace config.${NC}"
+    fi
+fi
+
+
+
 # Auto‑update Maintenance.sh from PiercingXX GitHub
 auto_update() {
     local GITHUB_RAW_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/scripts/maintenance.sh"
@@ -106,6 +130,7 @@ auto_update() {
     return 0
 }
 
+
 # Function to update local .bashrc from Piercing‑dots GitHub
 update_bashrc() {
     local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/resources/bash/.bashrc"
@@ -126,12 +151,9 @@ update_bashrc() {
     return 0
 }
 
+
 # Function to update universal stuff
     universal_update() {
-        # Neovim Lazy Update
-            if command_exists nvim; then    
-                nvim --headless "+Lazy! sync" +qa
-            fi
         # Update pip if it exists
             if command_exists pip; then
                 echo -e "${YELLOW}Updating system pip...${NC}"
@@ -156,6 +178,8 @@ update_bashrc() {
             if command_exists flatpak; then
                 flatpak update -y
             fi
+        # Update Neovim
+            nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
         # Update_docker_images
             if command_exists docker; then
                 mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
@@ -227,7 +251,7 @@ esac
 while true; do
     clear
     echo -e "${BLUE}PiercingXX's Maintenance Script for $DISTRO${NC}"
-    echo -e "${GREEN}Hello Handsome${NC}\n"
+    echo -e "${GREEN}H3ll0${NC}\n"
     choice=$(menu)
     case $choice in
         "Update System")
@@ -328,7 +352,6 @@ while true; do
             ;;
         "Exit")
             clear
-            echo -e "${BLUE}Thank You Handsome!${NC}"
             exit 0
             ;;
     esac
