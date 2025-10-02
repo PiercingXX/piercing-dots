@@ -189,6 +189,10 @@ update_bashrc() {
                     docker pull "$img" 2>/dev/null
                 done
             fi
+        # Yazi Update
+            if command_exists yazi; then
+                ya pack -u
+            fi
         # Hyprland update
             if pgrep -x "Hyprland" > /dev/null; then
                 hyprpm update
