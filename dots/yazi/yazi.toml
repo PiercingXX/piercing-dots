@@ -1,3 +1,187 @@
 # yazi.toml
 [mgr]
+ratio = [1, 3, 4]
 show_hidden = true
+sort_by = "natural"
+sort_dir_first = true
+linemode = "size_and_permissions"
+
+[preview]
+wrap = "yes"
+tab_size = 4
+max_width = 120
+max_height = 80
+
+[opener]
+term = [
+  { run = 'kitty --detach --directory \"$PWD\"', orphan = true, desc = "Kitty here" },
+]
+
+# Text/code editors
+edit = [
+	{ run = 'nvim "$@"', block = true, desc = "nvim" },
+	{ run = 'vim "$@"', block = true, desc = "vim" },
+	{ run = 'code -w "$@"', block = true, desc = "VS Code" },
+    { run = 'nano "$@"', block = true, desc = "nano" },
+]
+
+# Generic open via system handler
+open = [
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Video/audio players (VLC preferred as requested)
+play = [
+	{ run = 'vlc "$@"', orphan = true, desc = "VLC" },
+	{ run = 'mpv --force-window -- "$@"', orphan = true, desc = "mpv" },
+]
+
+# Image viewers
+image = [
+	{ run = 'imv "$@"', orphan = true, desc = "imv" },
+	{ run = 'feh "$@"', orphan = true, desc = "feh" },
+	{ run = 'sxiv "$@"', orphan = true, desc = "sxiv" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# PDF/ebook viewers
+pdf = [
+	{ run = 'zathura "$@"', orphan = true, desc = "zathura" },
+	{ run = 'evince "$@"', orphan = true, desc = "evince" },
+	{ run = 'okular "$@"', orphan = true, desc = "okular" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Office documents
+office = [
+	{ run = 'libreoffice "$@"', orphan = true, desc = "LibreOffice" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Archives
+archive = [
+	{ run = 'file-roller "$@"', orphan = true, desc = "Archive Manager" },
+	{ run = 'ark "$@"', orphan = true, desc = "Ark" },
+	{ run = 'xarchiver "$@"', orphan = true, desc = "Xarchiver" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+[open]
+rules = [
+	# Code and text
+	{ name = "*.md",    use = "edit" },
+	{ name = "*.markdown", use = "edit" },
+	{ name = "*.txt",   use = "edit" },
+	{ name = "*.log",   use = "edit" },
+	{ name = "*.csv",   use = "edit" },
+	{ name = "*.tsv",   use = "edit" },
+	{ name = "*.ini",   use = "edit" },
+	{ name = "*.cfg",   use = "edit" },
+	{ name = "*.conf",  use = "edit" },
+	{ name = "*.toml",  use = "edit" },
+	{ name = "*.yaml",  use = "edit" },
+	{ name = "*.yml",   use = "edit" },
+	{ name = "*.json",  use = "edit" },
+	{ name = "*.xml",   use = "edit" },
+	{ name = "*.html",  use = [ "edit", "open" ] },
+	{ name = "*.htm",   use = [ "edit", "open" ] },
+	{ name = "*.css",   use = "edit" },
+	{ name = "*.scss",  use = "edit" },
+	{ name = "*.less",  use = "edit" },
+	{ name = "*.svg",   use = [ "edit", "image" ] },
+	{ name = "*.sh",    use = "edit" },
+	{ name = "*.bash",  use = "edit" },
+	{ name = "*.zsh",   use = "edit" },
+	{ name = "*.fish",  use = "edit" },
+	{ name = "*.py",    use = "edit" },
+	{ name = "*.rb",    use = "edit" },
+	{ name = "*.pl",    use = "edit" },
+	{ name = "*.pm",    use = "edit" },
+	{ name = "*.lua",   use = "edit" },
+	{ name = "*.go",    use = "edit" },
+	{ name = "*.rs",    use = "edit" },
+	{ name = "*.c",     use = "edit" },
+	{ name = "*.h",     use = "edit" },
+	{ name = "*.cc",    use = "edit" },
+	{ name = "*.cpp",   use = "edit" },
+	{ name = "*.hpp",   use = "edit" },
+	{ name = "*.java",  use = "edit" },
+	{ name = "*.kt",    use = "edit" },
+	{ name = "*.kts",   use = "edit" },
+	{ name = "*.cs",    use = "edit" },
+	{ name = "*.ts",    use = "edit" },
+	{ name = "*.tsx",   use = "edit" },
+	{ name = "*.js",    use = "edit" },
+	{ name = "*.jsx",   use = "edit" },
+	{ name = "*.vue",   use = "edit" },
+	{ name = "*.svelte",use = "edit" },
+	{ name = "*.php",   use = "edit" },
+	{ name = "*.swift", use = "edit" },
+	{ name = "*.sql",   use = "edit" },
+	{ name = "*.vim",   use = "edit" },
+	{ name = "*.desktop", use = "edit" },
+	{ name = "Makefile", use = "edit" },
+	{ name = "CMakeLists.txt", use = "edit" },
+
+	# Media
+	{ mime = "image/*", use = "image" },
+	{ name = "*.gif",   use = [ "image", "play" ] },
+	{ mime = "video/*", use = "play" },
+	{ mime = "audio/*", use = "play" },
+	{ name = "*.mkv",   use = "play" },
+	{ name = "*.mp4",   use = "play" },
+	{ name = "*.webm",  use = "play" },
+	{ name = "*.mp3",   use = "play" },
+	{ name = "*.flac",  use = "play" },
+	{ name = "*.opus",  use = "play" },
+	{ name = "*.wav",   use = "play" },
+
+	# Documents
+	{ mime = "application/pdf", use = "pdf" },
+	{ name = "*.pdf",    use = "pdf" },
+	{ mime = "application/epub+zip", use = [ "pdf", "open" ] },
+	{ name = "*.epub",   use = [ "pdf", "open" ] },
+	{ name = "*.djvu",   use = [ "pdf", "open" ] },
+	{ mime = "application/vnd.*", use = "office" },
+	{ name = "*.doc",    use = "office" },
+	{ name = "*.docx",   use = "office" },
+	{ name = "*.xls",    use = "office" },
+	{ name = "*.xlsx",   use = "office" },
+	{ name = "*.ppt",    use = "office" },
+	{ name = "*.pptx",   use = "office" },
+	{ name = "*.odt",    use = "office" },
+	{ name = "*.ods",    use = "office" },
+	{ name = "*.odp",    use = "office" },
+
+	# Archives and images
+	{ mime = "application/zip",                use = "archive" },
+	{ mime = "application/x-zip-compressed",   use = "archive" },
+	{ mime = "application/x-7z-compressed",    use = "archive" },
+	{ mime = "application/x-rar",              use = "archive" },
+	{ mime = "application/x-tar",              use = "archive" },
+	{ mime = "application/gzip",               use = "archive" },
+	{ mime = "application/x-bzip2",            use = "archive" },
+	{ mime = "application/x-xz",               use = "archive" },
+	{ name = "*.tar",     use = "archive" },
+	{ name = "*.tar.gz",  use = "archive" },
+	{ name = "*.tgz",     use = "archive" },
+	{ name = "*.tar.bz2", use = "archive" },
+	{ name = "*.tbz2",    use = "archive" },
+	{ name = "*.tar.xz",  use = "archive" },
+	{ name = "*.txz",     use = "archive" },
+	{ name = "*.7z",      use = "archive" },
+	{ name = "*.rar",     use = "archive" },
+
+	# Misc
+	{ name = "*.torrent", use = "open" },
+	{ name = "*.iso",     use = "open" },
+	{ name = "*.apk",     use = "open" },
+	{ name = "*.AppImage",use = "open" },
+	{ mime = "text/*",    use = "edit" },
+	{ mime = "application/javascript", use = "edit" },
+	{ mime = "application/json",       use = "edit" },
+	{ mime = "application/xml",        use = "edit" },
+
+	# Fallback
+	{ name = "*", use = "open" },
+]
