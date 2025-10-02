@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-iatest=$(expr index "$-" i)
+
+# Detect interactive shell
+case $- in *i*) iatest=1 ;; *) iatest=0 ;; esac
+
 #######################################################
-# SOURCED ALIAS'S AND SCRIPTS BY zachbrowne.me
+# PiercingXX's .bashrc https://github.com/piercingxx
 #######################################################
-if [ -f /usr/bin/fastfetch ]; then
-	fastfetch
-fi
 
 # Source global definitions
 if [ -f /etc/bashrc ]; then
@@ -13,10 +13,12 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # Enable bash programmable completion features in interactive shells
-if [ -f /usr/share/bash-completion/bash_completion ]; then
-	. /usr/share/bash-completion/bash_completion
-elif [ -f /etc/bash_completion ]; then
-	. /etc/bash_completion
+if [[ $iatest -gt 0 ]]; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+    fi
 fi
 
 #######################################################
@@ -29,58 +31,36 @@ if [[ $iatest -gt 0 ]]; then bind "set bell-style visible"; fi
 # Expand the history size
 export HISTFILESIZE=10000
 export HISTSIZE=500
-export HISTTIMEFORMAT="%F %T" # add timestamp to history
-
-# Don't put duplicate lines in the history and do not add lines that start with a space
-export HISTCONTROL=erasedups:ignoredups:ignorespace
 
 # Check the window size after each command and, if necessary, update the values of LINES and COLUMNS
 shopt -s checkwinsize
 
 # Causes bash to append to history instead of overwriting it so if you start a new terminal, you have old session history
 shopt -s histappend
-PROMPT_COMMAND='history -a'
-
-# set up XDG folders
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_STATE_HOME="$HOME/.local/state"
-export XDG_CACHE_HOME="$HOME/.cache"
-
-# Seeing as other scripts will use it might as well export it
-export LINUXTOOLBOXDIR="$HOME/linuxtoolbox"
+# Append to existing PROMPT_COMMAND safely so other tools keep working
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"
 
 # Allow ctrl-S for history navigation (with ctrl-R)
-[[ $- == *i* ]] && stty -ixon
+if [[ $iatest -gt 0 ]]; then stty -ixon; fi
 
-# Ignore case on auto-completion
-# Note: bind used instead of sticking these in .inputrc
-if [[ $iatest -gt 0 ]]; then bind "set completion-ignore-case on"; fi
-
-# Show auto-completion list automatically, without double tab
-if [[ $iatest -gt 0 ]]; then bind "set show-all-if-ambiguous On"; fi
+# Interactive line-editing tweaks
+if [[ $iatest -gt 0 ]]; then
+    # Tab completion settings
+    bind 'set completion-ignore-case on'
+    bind 'set show-all-if-ambiguous on'
+    bind 'TAB:menu-complete'
+fi
 
 # Set the default editor
 export EDITOR=nvim
 export VISUAL=nvim
-alias spico='sudo pico'
-alias snano='sudo nano'
 alias vim='nvim'
 
 # To have colors for ls and all grep commands such as grep, egrep and zgrep
 export CLICOLOR=1
 export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
 #export GREP_OPTIONS='--color=auto' #deprecated
-
-# Check if ripgrep is installed
-if command -v rg &> /dev/null; then
-    # Alias grep to rg if ripgrep is installed
-    alias grep='rg'
-else
-    # Alias grep to /usr/bin/grep with GREP_OPTIONS if ripgrep is not installed
-    alias grep='/usr/bin/grep $GREP_OPTIONS'
-fi
-unset GREP_OPTIONS
+alias grep='/usr/bin/grep --color=auto'
 
 # Color for manpages in less makes manpages a little easier to read
 export LESS_TERMCAP_mb=$'\E[01;31m'
@@ -91,36 +71,16 @@ export LESS_TERMCAP_so=$'\E[01;44;33m'
 export LESS_TERMCAP_ue=$'\E[0m'
 export LESS_TERMCAP_us=$'\E[01;32m'
 
-#######################################################
-# MACHINE SPECIFIC ALIAS'S
-#######################################################
-
-# Alias's for SSH
-# alias SERVERNAME='ssh YOURWEBSITE.com -l USERNAME -p PORTNUMBERHERE'
-
-# Alias's to change the directory
-alias web='cd /var/www/html'
-
-# Alias's to mount ISO files
-# mount -o loop /home/NAMEOFISO.iso /home/ISOMOUNTDIR/
-# umount /home/NAMEOFISO.iso
-# (Both commands done as root only.)
 
 #######################################################
-# GENERAL ALIAS'S
+# GENERAL ALIAS'
 #######################################################
-# To temporarily bypass an alias, we precede the command with a \
-# EG: the ls command is aliased, but to use the normal ls command you would type \ls
 
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Edit this .bashrc file
-alias ebrc='edit ~/.bashrc'
-
-# Show help for this .bashrc file
-alias hlp='less ~/.bashrc_help'
+# PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
+alias xx='$HOME/maintenance*.sh'
+alias ff='fastfetch'
+alias c='clear'
 
 # alias to show the date
 alias da='date "+%Y-%m-%d %A %T %Z"'
@@ -134,13 +94,11 @@ alias ps='ps auxf'
 alias ping='ping -c 10'
 alias less='less -R'
 alias cls='clear'
-alias apt-get='sudo apt-get'
 alias multitail='multitail --no-repeat -c'
 alias freshclam='sudo freshclam'
 alias vi='nvim'
 alias svi='sudo vi'
 alias vis='nvim "+set si"'
-alias yayf="yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S"
 
 # Change directory aliases
 alias home='cd ~'
@@ -157,23 +115,23 @@ alias bd='cd "$OLDPWD"'
 alias rmd='/bin/rm  --recursive --force --verbose '
 
 # Alias's for multiple directory listing commands
-alias la='ls -Alh'                								# show hidden files
-alias ls='exa -a -F -H --icons --color=always --group-directories-first --git' 	# add colors and file type extensions
-alias lx='ls -lXBh'               								# sort by extension
-alias lk='ls -lSrh'               								# sort by size
-alias lc='ls -ltcrh'              								# sort by change time
-alias lu='ls -lturh'              								# sort by access time
-alias lr='ls -lRh'                								# recursive ls
-alias lt='ls -ltrh'               								# sort by date
-alias lm='ls -alh |more'          								# pipe through 'more'
-alias lw='ls -xAh'                								# wide listing format
-alias ll='ls -Fls'                								# long listing format
-alias labc='ls -lap'              								# alphabetical sort
-alias lf="ls -l | egrep -v '^d'"  								# files only
-alias ldir="ls -l | egrep '^d'"   								# directories only
-alias lla='ls -Al'                								# List and Hidden Files
-alias las='ls -A'                 								# Hidden Files
-alias lls='ls -l'                 								# List
+alias la='\ls -Alh'										# show hidden files
+alias ls='eza -a -F -H --icons --color=always --group-directories-first --git'	# add colors and file type extensions
+alias lx='\ls -lXBh'										# sort by extension
+alias lk='\ls -lSrh'										# sort by size
+alias lc='\ls -ltcrh'										# sort by change time
+alias lu='\ls -lturh'										# sort by access time
+alias lr='\ls -lRh'										# recursive ls
+alias lt='\ls -ltrh'										# sort by date
+alias lm='\ls -alh |more'									# pipe through 'more'
+alias lw='\ls -xAh'										# wide listing format
+alias ll='\ls -Fls'										# long listing format
+alias labc='\ls -lap'										# alphabetical sort
+alias lf="\ls -l | egrep -v '^d'"									# files only
+alias ldir="\ls -l | egrep '^d'"									# directories only
+alias lla='\ls -Al'										# List and Hidden Files
+alias las='\ls -A'										# Hidden Files
+alias lls='\ls -l'										# List
 
 # alias chmod commands
 alias mx='chmod a+x'
@@ -191,8 +149,11 @@ alias h="history | grep "
 alias p="ps aux | grep "
 alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
 
-# Search files in the current folder
-alias f="find . | grep "
+# Search files in the current folder (robust replacement for broken alias)
+f() {
+    # Usage: f pattern
+    sudo find . -type f -iname "*${1:-}*" 2>/dev/null
+}
 
 # Count all files (recursively) in the current folder
 countfiles() {
@@ -200,9 +161,6 @@ countfiles() {
         echo "$(find . -type ${t:0:1} | wc -l) $t"
     done 2> /dev/null
 }
-
-# To see if a command is aliased, a file, or a built-in command
-alias checkcommand="type -t"
 
 # Show open ports
 alias openports='netstat -nape --inet'
@@ -212,7 +170,6 @@ alias rebootsafe='sudo shutdown -r now'
 alias rebootforce='sudo shutdown -r -n now'
 
 # Alias's to show disk space and space used in a folder
-alias diskspace="du -S | sort -n -r |more"
 alias folders='du -h --max-depth=1'
 alias folderssort='find . -maxdepth 1 -type d -print0 | xargs -0 du -sk | sort -rn'
 alias tree='tree -CAhF --dirsfirst'
@@ -229,15 +186,6 @@ alias ungz='tar -xvzf'
 
 # Show all logs in /var/log
 alias logs="sudo find /var/log -type f -exec file {} \; | grep 'text' | cut -d' ' -f1 | sed -e's/:$//g' | grep -v '[0-9]$' | xargs tail -f"
-
-# SHA1
-alias sha1='openssl sha1'
-
-alias clickpaste='sleep 3; xdotool type "$(xclip -o -selection clipboard)"'
-
-# KITTY - alias to be able to use kitty features when connecting to remote servers(e.g use tmux on remote server)
-
-alias kssh="kitty +kitten ssh"
 
 # alias to cleanup unused docker containers, images, networks, and volumes
 
@@ -274,18 +222,6 @@ extract() {
 	done
 }
 
-# Searches for text in all files in the current folder
-ftext() {
-	# -i case-insensitive
-	# -I ignore binary files
-	# -H causes filename to be printed
-	# -r recursive search
-	# -n causes line number to be printed
-	# optional: -F treat search term as a literal, not a regular expression
-	# optional: -l only print filenames and not the matching lines ex. grep -irl "$1" *
-	grep -iIHrn --color=always "$1" . | less -r
-}
-
 # Copy file with a progress bar
 cpp() {
     set -e
@@ -306,56 +242,26 @@ cpp() {
     END { print "" }' total_size="$(stat -c '%s' "${1}")" count=0
 }
 
-# Copy and go to the directory
-cpg() {
-	if [ -d "$2" ]; then
-		cp "$1" "$2" && cd "$2"
-	else
-		cp "$1" "$2"
-	fi
-}
-
-# Move and go to the directory
-mvg() {
-	if [ -d "$2" ]; then
-		mv "$1" "$2" && cd "$2"
-	else
-		mv "$1" "$2"
-	fi
-}
-
 # Create and go to the directory
 mkdirg() {
 	mkdir -p "$1"
 	cd "$1"
 }
 
-# Goes up a specified number of directories  (i.e. up 4)
-up() {
-	local d=""
-	limit=$1
-	for ((i = 1; i <= limit; i++)); do
-		d=$d/..
-	done
-	d=$(echo $d | sed 's/^\///')
-	if [ -z "$d" ]; then
-		d=..
-	fi
-	cd $d
-}
-
-# Automatically do an ls after each cd, or z
-cd ()
-{
-	if [ -n "$1" ]; then
-		builtin cd "$@" && ls
-	else
-		builtin cd ~ && ls
-	fi
-}
-function z() {
-    __zoxide_z "$@" && ls
-}
+# Automatically do an ls after each cd, or z (interactive only)
+if [[ $iatest -gt 0 ]]; then
+    cd ()
+    {
+        if [ -n "$1" ]; then
+            builtin cd "$@" && ls
+        else
+            builtin cd ~ && ls
+        fi
+    }
+    function z() {
+        __zoxide_z "$@" && ls
+    }
+fi
 
 
 # Returns the last 2 fields of the working directory
@@ -372,7 +278,7 @@ distribution () {
         source /etc/os-release
         case $ID in
             fedora|rhel|centos)
-                dtype="redhat"   # Fedora, RHEL, CentOS
+                dtype="fedora"   # Fedora, RHEL, CentOS
                 ;;
             sles|opensuse*)
                 dtype="suse"
@@ -394,27 +300,16 @@ distribution () {
                 if [ -n "$ID_LIKE" ]; then
                     case $ID_LIKE in
                         *fedora*|*rhel*|*centos*)
-                            dtype="redhat"   # Fedora, RHEL, CentOS
-                            ;;
-                        *sles*|*opensuse*)
-                            dtype="suse"
+                            dtype="fedora"   # Fedora, RHEL, CentOS
                             ;;
                         *ubuntu*|*debian*|*pop*|*mint*)
                             dtype="debian"
                             ;;
-                        *gentoo*)
-                            dtype="gentoo"
-                            ;;
                         *arch*)
                             dtype="arch"
                             ;;
-                        *slackware*)
-                            dtype="slackware"
-                            ;;
                     esac
                 fi
-
-                # If ID or ID_LIKE is not recognized, keep dtype as unknown
                 ;;
         esac
     fi
@@ -426,37 +321,24 @@ distribution () {
 install_bashrc_support() {
 	local dtype
 	dtype=$(distribution)
-
 	case $dtype in
-        "redhat")
+        "fedora")
             if command -v dnf &> /dev/null; then
-                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
+                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
             else
-                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
+                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
             fi
             ;;
-		"suse")
-			sudo zypper install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa -y
-			;;
 		"debian")
-			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch -y
-			# Install exa via cargo...exa is not in apt on Debian 13 yet #sudo apt install exa -y
-			cargo install exa
+			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
 			;;
         "arch")
             if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship exa bat --noconfirm
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
             else
                 echo "Install paru or yay."
-            fi
-            ;;
-        "slackware")
-            if command -v slackpkg &> /dev/null; then
-                sudo slackpkg install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat exa
-            else
-                echo "slackpkg not found. Please install slackpkg to enable package installation."
             fi
             ;;
 		*)
@@ -468,82 +350,20 @@ install_bashrc_support() {
 # IP address lookup
 alias whatismyip="whatsmyip"
 function whatsmyip () {
-    # Internal IP Lookup.
+    # Determine active interface via routing table
+    local dev
+    dev=$(ip route get 1.1.1.1 2>/dev/null | awk '/dev/ {for(i=1;i<=NF;i++) if ($i=="dev") {print $(i+1); exit}}')
+    echo -n "Internal IP: "
     if command -v ip &> /dev/null; then
-        echo -n "Internal IP: "
-        ip addr show wlan0 | grep "inet " | awk '{print $2}' | cut -d/ -f1
+        ip -o -4 addr show "${dev:-eth0}" | awk '{print $4}' | cut -d/ -f1 | head -n1
     else
-        echo -n "Internal IP: "
-        ifconfig wlan0 | grep "inet " | awk '{print $2}'
+        ifconfig "${dev:-eth0}" | awk '/inet /{print $2}'
     fi
 
     # External IP Lookup
     echo -n "External IP: "
-    curl -4 ifconfig.me
+    curl -fsS4 ifconfig.me || curl -fsS ipinfo.io/ip || echo "unavailable"
 }
-
-# View Apache logs
-apachelog() {
-	if [ -f /etc/httpd/conf/httpd.conf ]; then
-		cd /var/log/httpd && ls -xAh && multitail --no-repeat -c -s 2 /var/log/httpd/*_log
-	else
-		cd /var/log/apache2 && ls -xAh && multitail --no-repeat -c -s 2 /var/log/apache2/*.log
-	fi
-}
-
-# Edit the Apache configuration
-apacheconfig() {
-	if [ -f /etc/httpd/conf/httpd.conf ]; then
-		sedit /etc/httpd/conf/httpd.conf
-	elif [ -f /etc/apache2/apache2.conf ]; then
-		sedit /etc/apache2/apache2.conf
-	else
-		echo "Error: Apache config file could not be found."
-		echo "Searching for possible locations:"
-		sudo updatedb && locate httpd.conf && locate apache2.conf
-	fi
-}
-
-# Edit the PHP configuration file
-phpconfig() {
-	if [ -f /etc/php.ini ]; then
-		sedit /etc/php.ini
-	elif [ -f /etc/php/php.ini ]; then
-		sedit /etc/php/php.ini
-	elif [ -f /etc/php5/php.ini ]; then
-		sedit /etc/php5/php.ini
-	elif [ -f /usr/bin/php5/bin/php.ini ]; then
-		sedit /usr/bin/php5/bin/php.ini
-	elif [ -f /etc/php5/apache2/php.ini ]; then
-		sedit /etc/php5/apache2/php.ini
-	else
-		echo "Error: php.ini file could not be found."
-		echo "Searching for possible locations:"
-		sudo updatedb && locate php.ini
-	fi
-}
-
-# Edit the MySQL configuration file
-mysqlconfig() {
-	if [ -f /etc/my.cnf ]; then
-		sedit /etc/my.cnf
-	elif [ -f /etc/mysql/my.cnf ]; then
-		sedit /etc/mysql/my.cnf
-	elif [ -f /usr/local/etc/my.cnf ]; then
-		sedit /usr/local/etc/my.cnf
-	elif [ -f /usr/bin/mysql/my.cnf ]; then
-		sedit /usr/bin/mysql/my.cnf
-	elif [ -f ~/my.cnf ]; then
-		sedit ~/my.cnf
-	elif [ -f ~/.my.cnf ]; then
-		sedit ~/.my.cnf
-	else
-		echo "Error: my.cnf file could not be found."
-		echo "Searching for possible locations:"
-		sudo updatedb && locate my.cnf
-	fi
-}
-
 
 # Trim leading and trailing spaces (for scripts)
 trim() {
@@ -553,71 +373,10 @@ trim() {
 	echo -n "$var"
 }
 
-#######################################################
-# GitHub Titus Additions
-#######################################################
+#########################################################
+# Search then install/uninstall packages using fzf
+#########################################################
 
-gcom() {
-	git add .
-	git commit -m "$1"
-}
-lazyg() {
-	git add .
-	git commit -m "$1"
-	git push
-}
-
-function hb {
-    if [ $# -eq 0 ]; then
-        echo "No file path specified."
-        return
-    elif [ ! -f "$1" ]; then
-        echo "File path does not exist."
-        return
-    fi
-}
-
-
-
-
-
-
-
-#######################################################
-# PiercingXX Additions
-#######################################################
-
-# Yazi set CWD on exit
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	yazi "$@" --cwd-file="$tmp"
-	IFS= read -r -d '' cwd < "$tmp"
-	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
-	rm -f -- "$tmp"
-}
-
-
-# Starship
-eval "$(starship init bash)"
-# Zoxide
-eval "$(zoxide init bash)"
-# FZF
-source /usr/share/fzf/key-bindings.bash
-source /usr/share/fzf/completion.bash
-
-# Tab completion settings
-bind 'set show-all-if-ambiguous on'
-bind 'TAB:menu-complete'
-
-# PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
-alias xx='$HOME/maintenance*.sh'
-alias ff='fastfetch'
-alias c='clear'
-
-
-# The ultimate way to search and install/uninstall packages using fzf with preview window
-alias ss='ss'
-alias ssu='ssu'
 # Software Search
 ss() {
     local dtype
@@ -635,7 +394,7 @@ ss() {
         "debian")
             apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
             ;;
-        "redhat")
+        "fedora")
             if command -v dnf &> /dev/null; then
                 dnf list available | awk '{print $1}' | fzf --multi --preview='dnf info {1}' --preview-window=down:75% | xargs -ro sudo dnf install
             else
@@ -646,7 +405,6 @@ ss() {
             echo "Unknown or unsupported distribution for ss alias."
             ;;
     esac
-
     # Flatpak support (works on any distro if flatpak is installed)
     if command -v flatpak &> /dev/null; then
         echo "Flatpak available! Select apps to install:"
@@ -656,7 +414,7 @@ ss() {
     fi
 }
 
-# Software Uninstaller - This took a bit more to get working.
+# Software Search Uninstaller || This took a bit more to get working.
 ssu_preview() {
     local line="$*"
     local dtype="${DTYPE:-$(distribution)}"
@@ -678,7 +436,7 @@ ssu_preview() {
             debian)
                 apt-cache show "$pkg"
                 ;;
-            redhat)
+            fedora)
                 if command -v dnf &>/dev/null; then dnf info "$pkg"; else yum info "$pkg"; fi
                 ;;
             *)
@@ -687,7 +445,6 @@ ssu_preview() {
         esac
     fi
 }
-# Software Uninstaller: 
 ssu() {
     local dtype selection
     dtype=$(distribution)
@@ -706,7 +463,7 @@ ssu() {
         debian)
             native_list_cmd="dpkg-query -W -f='\${binary:Package}\n'"
             ;;
-        redhat)
+        fedora)
             native_list_cmd="rpm -qa --qf '%{NAME}\n'"
             ;;
         *)
@@ -722,7 +479,7 @@ ssu() {
             fi
         } | DTYPE="$dtype" fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'ssu_preview {}' \
-                            --preview-window=down:75% --height=80% --border
+                            --preview-window=down:75% --border
     )
     [[ -z "$selection" ]] && return 0
     # Uninstall each selected entry
@@ -739,7 +496,7 @@ ssu() {
                 debian)
                     sudo apt-get purge -y "$pkg"
                     ;;
-                redhat)
+                fedora)
                     if command -v dnf &>/dev/null; then
                         sudo dnf remove -y "$pkg"
                     else
@@ -756,22 +513,37 @@ ssu() {
 
 
 #######################################################
-# Set the ultimate amazing command prompt
+# Source and initalize
 #######################################################
 
-alias hug="systemctl --user restart hugo"
-alias lanm="systemctl --user restart lan-mouse"
+# Yazi set CWD on exit
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
 
-# Check if the shell is interactive
-if [[ $- == *i* ]]; then
+# Starship
+if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
+# Zoxide
+if command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi
+# FZF (guarded)
+[[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
+[[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
+
+
+# Fastfetch and keybind only in interactive shells
+if [[ $iatest -gt 0 ]]; then
+    # Run fastfetch if available
+    if command -v fastfetch &>/dev/null; then fastfetch; fi
     # Bind Ctrl+f to insert 'zi' followed by a newline
     bind '"\C-f":"zi\n"'
 fi
 
-export PATH=$PATH:"$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:/.local/share/flatpak/exports/bin"
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:$HOME/.local/share/flatpak/exports/bin:$PATH"
 
-if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
-
-exec startx
-
+if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]] && command -v startx &>/dev/null; then
+    exec startx
 fi
