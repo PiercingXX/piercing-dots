@@ -219,6 +219,16 @@ root.buttons(gears.table.join(
 ))
 -- }}}
 
+-- Keyboard map indicator and switcher (Colemak only)
+mykeyboardlayout = awful.widget.keyboardlayout({
+    layouts = {
+        { layout = "us", variant = "colemak" }
+    }
+})
+-- Apply Colemak at startup
+awful.spawn.once("setxkbmap -layout us -variant colemak")
+
+
 -- {{{ Key bindings
 globalkeys = gears.table.join(
     -- Focus on tags
