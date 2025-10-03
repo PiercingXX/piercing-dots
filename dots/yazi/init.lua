@@ -1,4 +1,11 @@
 -- ~/.config/yazi/init.lua
+require("relative-motions"):setup({ show_numbers="relative", show_motion = true, enter_mode ="first" })
+require("recycle-bin"):setup()
+require("starship"):setup()
+require("full-border"):setup {
+	-- Available values: ui.Border.PLAIN, ui.Border.ROUNDED
+	type = ui.Border.ROUNDED,
+}
 require("bookmarks"):setup({
 	last_directory = { enable = false, persist = false, mode="dir" },
 	persist = "all",
@@ -16,3 +23,4 @@ require("bookmarks"):setup({
 		},
 	},
 })
+

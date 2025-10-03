@@ -1,18 +1,41 @@
 # yazi.toml
+
+###################################
 [mgr]
+###################################
 ratio = [1, 3, 4]
 show_hidden = true
 sort_by = "natural"
 sort_dir_first = true
-linemode = "size_and_permissions"
+linemode = "permissions"
 
+###################################
 [preview]
+###################################
 wrap = "yes"
 tab_size = 4
 max_width = 120
 max_height = 80
 
+
+
+###################################
+[plugin]
+###################################
+prepend_previewers = [
+    { name = "*.csv", run = "rich-preview"}, # for csv files
+    { name = "*.md", run = "rich-preview" }, # for markdown (.md) files
+    { name = "*.rst", run = "rich-preview"}, # for restructured text (.rst) files
+    { name = "*.ipynb", run = "rich-preview"}, # for jupyter notebooks (.ipynb)
+    { name = "*.json", run = "rich-preview"}, # for json (.json) files
+#    { name = "*.lang_type", run = "rich-preview"} # for particular language files eg. .py, .go., .lua, etc.
+]
+
+
+
+###################################
 [opener]
+###################################
 term = [
   { run = 'kitty --detach --directory \"$PWD\"', orphan = true, desc = "Kitty here" },
 ]
@@ -30,10 +53,11 @@ open = [
 	{ run = 'xdg-open "$@"', desc = "xdg-open" },
 ]
 
-# Video/audio players (VLC preferred as requested)
+# Video/audio players
 play = [
-	{ run = 'vlc "$@"', orphan = true, desc = "VLC" },
 	{ run = 'mpv --force-window -- "$@"', orphan = true, desc = "mpv" },
+	{ run = 'vlc "$@"', orphan = true, desc = "VLC" },
+	{ run = 'totem "$@"', orphan = true, desc = "GNOME Videos" },
 ]
 
 # Image viewers
@@ -67,7 +91,7 @@ archive = [
 ]
 
 [open]
-rules = [
+appendrules = [
 	# Code and text
 	{ name = "*.md",    use = "edit" },
 	{ name = "*.markdown", use = "edit" },
@@ -135,6 +159,7 @@ rules = [
 	{ name = "*.flac",  use = "play" },
 	{ name = "*.opus",  use = "play" },
 	{ name = "*.wav",   use = "play" },
+	{ name = "*.avi",   use = "play" },
 
 	# Documents
 	{ mime = "application/pdf", use = "pdf" },
