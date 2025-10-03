@@ -9,9 +9,23 @@ hsetroot -cover ~/.config/wall.png &
 flameshot &
 fcitx -d &
 launchpolybar &
+bspc rule -r "*"
+
+nm-applet &
+xrdb ~/.Xresources &
 
 killall bspswallow
 pidof bspswallow | bspswallow &
+
+# Force Colemak as the only XKB layout
+setxkbmap -layout us -variant colemak
+
+picom -b --experimental-backends &
+hsetroot -cover ~/.config/wall.png &
+flameshot &
+fcitx -d &
+launchpolybar &
+
 
 ###---MONITORS---###
 bspc monitor DisplayPort-0 -d 1 2 3 4 5 6 7
