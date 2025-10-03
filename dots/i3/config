@@ -4,6 +4,14 @@ set $mod Mod4
 ###---Styling---###
 font xft:Source Code Pro Medium 10
 
+# Use Colemak layout in i3 (applies on reload/restart)
+exec_always --no-startup-id setxkbmap -layout us -variant colemak
+###---Cursor speed---###
+exec --no-startup-id xinput set-prop 11 295 1.9
+# Enable natural (inverted) scrolling on the first touchpad found
+exec_always --no-startup-id sh -c 'dev="$(xinput list --name-only | grep -i touchpad | head -n1)"; [ -n "$dev" ] && xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 || true'
+
+
 client.focused #0d0d0d #171717 #ffffff #0d0d0d #0d0d0d
 client.unfocused #0d0d0d #363636 #888888 #292d2e #0d0d0d
 
@@ -42,7 +50,7 @@ bindsym $mod+n exec pkill fuzzel || cliphist list | fuzzel  --match-mode fzf --d
 
 
 # Local AI
-bindsym $mod+Control+a exec kitty ollama run skippy # Avoid conflict with $mod+a mntandroid
+bindsym $mod+a exec kitty ollama run skippy
 bindsym $mod+Shift+a exec kitty ollama run gpt-oss:20b
 bindsym $mod+Shift+Mod1+a exec kitty ollama run gemma3:27b-it-qat # Avoid conflict with $mod+Mod1+a (alsamixer)
 # Replace for lower powered hardware
