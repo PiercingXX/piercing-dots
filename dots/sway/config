@@ -1,0 +1,483 @@
+#---------p
+# mod key #
+#---------#
+    set $mod Mod4
+
+
+#-------------------------------------------#
+# switch between current and last workspace #
+#-------------------------------------------#
+#slash(/)
+    bindsym $mod+slash workspace back_and_forth
+
+
+#========================#
+#   Sway Configuration   #
+#========================#
+
+#------------------------#
+# Mod Key                #
+#------------------------#
+set $mod Mod4
+
+#------------------------#
+# Workspace Switching    #
+#------------------------#
+bindsym $mod+slash workspace back_and_forth  # Switch between current and last workspace
+bindsym $mod+period workspace next           # Next workspace
+bindsym $mod+comma workspace prev            # Previous workspace
+
+#------------------------#
+# Misc                   #
+#------------------------#
+output * adaptive_sync on
+
+#------------------------#
+# Autostart Applications #
+#------------------------#
+exec_always --no-startup-id mako
+exec_always --no-startup-id nm-applet --indicator
+exec_always --no-startup-id ~/.config/waybar/launch_waybar.sh
+exec_always dunst
+exec_always /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec_always --no-startup-id ~/.config/sway/dynamic_wallpaper.sh
+exec_always systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK
+exec_always hash dbus-update-activation-environment 2>/dev/null && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
+exec_always ~/.config/hypr/hyprland/scripts/SynoDrive.sh  # Synology Drive
+exec_always waybar                                        # Bar
+exec_always nm-applet                                     # Network Manager
+exec_always xdg-user-dirs-update                          # Update user dirs
+exec_always fcitx5                                        # Input method
+exec_always gnome-keyring-daemon --start --components=secrets
+exec_always systemctl --user start plasma-polkit-agent
+exec_always /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1
+exec_always /usr/libexec/polkit-gnome-authentication-agent-1
+exec_always dbus-update-activation-environment --all
+exec_always sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+exec_always easyeffects --gapplication-service             # Audio
+exec_always wl-paste --watch cliphist store               # Clipboard history
+exec_always wl-paste --type text --watch cliphist store
+exec_always wl-paste --type image --watch cliphist store
+exec_always systemctl --user start docker-desktop         # Docker
+
+#------------------------#
+# Input Configuration    #
+#------------------------#
+# Touchpad
+input "1739:52781:MSFT0001:01_06CB:CE2D_Touchpad" {
+    dwt enabled
+    tap enabled
+    natural_scroll enabled
+    middle_emulation enabled
+}
+focus_follows_mouse yes
+
+# Keyboard
+input "type:keyboard" {
+    xkb_layout us
+    xkb_variant colemak
+    xkb_options caps:backspace
+}
+
+default_border pixel 2
+default_floating_border pixel 2
+gaps inner 10
+gaps outer 5
+#bindsym $mod+shift+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 5
+#bindsym $mod+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 0
+
+smart_borders on
+#smart_gaps on
+
+#------------------------#
+# Floating Windows       #
+#------------------------#
+# Always float certain windows
+for_window [app_id="pop-up"] floating enable
+for_window [app_id="bubble"] floating enable
+for_window [app_id="task_dialog"] floating enable
+for_window [app_id="Preferences"] floating enable
+for_window [app_id="dialog"] floating enable
+for_window [app_id="menu"] floating enable
+for_window [app_id="Organizer"] floating enable
+for_window [app_id="About"] floating enable
+for_window [app_id="toolbox"] floating enable
+for_window [app_id="page-info"] floating enable
+for_window [app_id="webconsole"] floating enable
+for_window [app_id="Authy"] floating enable
+for_window [app_id="termfloat"] floating enable
+for_window [app_id="termfloat"] resize set height 540
+for_window [app_id="termfloat"] resize set width 960
+for_window [app_id="mpv"] floating enable
+for_window [app_id="mpv"] resize set height 540
+for_window [app_id="mpv"] resize set width 960
+for_window [app_id="Nautilus"] floating enable
+for_window [app_id="Nautilus"] resize set height 540
+for_window [app_id="Nautilus"] resize set width 960
+
+# Sticky floating windows
+for_window [app_id="danmufloat"] floating enable
+for_window [app_id="danmufloat"] sticky enable
+for_window [app_id="danmufloat"] resize set height 540
+for_window [app_id="danmufloat"] resize set width 960
+
+#------------------------#
+# GTK+ Theme             #
+#------------------------#
+set $gnome-schema org.gnome.desktop.interface
+exec_always {
+    gsettings set $gnome-schema gtk-theme 'Catppuccin'
+    gsettings set $gnome-schema icon-theme 'Papirus-Dark'
+    gsettings set $gnome-schema cursor-theme 'Catppuccin-cursor'
+    gsettings set $gnome-schema font-name 'jetbrains mono nerd font 12'
+}
+
+#------------------------#
+# Window Colors          #
+#------------------------#
+client.focused          #edecee #edecee #edecee
+client.unfocused        #29263c #15141b #6d6d6d
+client.focused_inactive #29263c #15141b #6d6d6d
+client.placeholder      #29263c #15141b #6d6d6d
+client.urgent           #ff6767 #ff6767 #edecee
+client.background       #15141b
+
+#------------------------#
+# Direction Keys (Vim)   #
+#------------------------#
+set $left  h
+set $down  j
+set $up    k
+set $right l
+
+#------------------------#
+# Terminal Emulator      #
+#------------------------#
+set $term-float kitty
+
+#------------------------#
+# Key Bindings           #
+#------------------------#
+    # ...existing code...
+        tap enabled
+        natural_scroll enabled
+        middle_emulation enabled
+    }
+    focus_follows_mouse yes
+
+    # Keyboard
+    input "type:keyboard" {           
+        xkb_layout us
+        xkb_variant colemak
+        xkb_options caps:backspace
+    }
+
+
+default_border pixel 2
+default_floating_border pixel 2
+gaps inner  10
+gaps outer  5
+#bindsym $mod+shift+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 5 
+#bindsym $mod+g exec swaymsg gaps outer all set 0 && swaymsg gaps inner all set 0
+
+# Activate smart borders (always)
+smart_borders on
+#smart_gaps on
+
+#------------------------------#
+# Always float certain windows #
+#------------------------------#
+#swaymsg -t get_tree | grep app_id
+    for_window [app_id="pop-up"]                     floating enable
+    for_window [app_id="bubble"]                     floating enable 
+    for_window [app_id="task_dialog"]                floating enable
+    for_window [app_id="Preferences"]                floating enable
+    for_window [app_id="dialog"]                     floating enable 
+    for_window [app_id="menu"]                       floating enable
+    for_window [app_id="Organizer"]                  floating enable
+    for_window [app_id="About"]                      floating enable
+    for_window [app_id="toolbox"]                    floating enable
+    for_window [app_id="page-info"]                  floating enable	
+    for_window [app_id="webconsole"]                 floating enable
+    for_window [app_id="Authy"]                      floating enable
+    for_window [app_id="termfloat"]                  floating enable
+    for_window [app_id="termfloat"]                  resize set height 540
+    for_window [app_id="termfloat"]                  resize set width 960
+    for_window [app_id="mpv"]                        floating enable 
+    for_window [app_id="mpv"]                        resize set height 540
+    for_window [app_id="mpv"]                        resize set width 960
+    for_window [app_id="Nautilus"]                   floating enable 
+    for_window [app_id="Nautilus"]                   resize set height 540
+    for_window [app_id="Nautilus"]                   resize set width 960
+
+#-------------------------------------------------------#
+# Sticky floating windows(sticky enable|disable|toggle) #
+#-------------------------------------------------------#
+    for_window [app_id="danmufloat"]                  floating enable
+    for_window [app_id="danmufloat"]                  sticky enable 
+    for_window [app_id="danmufloat"]                  resize set height 540
+    for_window [app_id="danmufloat"]                  resize set width 960
+
+
+
+#----------------#
+# set gtk+ theme #
+#----------------#
+    set $gnome-schema org.gnome.desktop.interface
+    exec_always {
+        gsettings set $gnome-schema gtk-theme 'Catppuccin'
+        gsettings set $gnome-schema icon-theme 'Papirus-Dark'
+        gsettings set $gnome-schema cursor-theme 'Catppuccin-cursor'
+        gsettings set $gnome-schema font-name 'jetbrains mono nerd font 12'
+    }
+
+
+#----------------------------------------#
+# window colors: border background text #
+#----------------------------------------#
+client.focused          #edecee #edecee #edecee
+client.unfocused        #29263c #15141b #6d6d6d
+client.focused_inactive #29263c #15141b #6d6d6d
+client.placeholder      #29263c #15141b #6d6d6d
+client.urgent           #ff6767 #ff6767 #edecee
+client.background       #15141b
+
+#-----------------------------------#
+# Home row direction keys, like vim #
+#-----------------------------------#
+    set $left  h
+    set $down  j
+    set $up    k
+    set $right l
+
+#----------------------------------#
+# Your preferred terminal emulator #
+#----------------------------------#
+    set $term-float kitty
+
+#----------------#
+# Key bindings --#
+#----------------#
+    # App shortcuts
+#
+
+# App launcher
+bindsym $mod exec true # Open app launcher
+bindsym $mod+Return exec ulauncher # Open ulauncher
+# bindsym $mod+Shift+f exec pkill fuzzel || fuzzel # Open fuzzel
+
+# Window management
+bindsym $mod+q kill # Kill active window
+bindsym $mod+w exec kitty # Open kitty
+bindsym $mod+Shift+z exec nautilus --new-window # Open nautilus
+bindsym $mod+z exec kitty yazi # Open yazi
+bindsym $mod+Shift+s exec pavucontrol # Launch pavucontrol (volume mixer)
+bindsym $mod+s exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center # Launch GNOME Settings
+bindsym $mod+Shift+f fullscreen # Toggle fullscreen mode
+bindsym $mod+f floating toggle # Toggle floating mode
+bindsym $mod+r exec pkill waybar && waybar &
+
+
+# Sway does not support layoutmsg togglesplit directly; use layout toggle split
+bindsym $mod+x layout toggle split # Toggle split mode
+
+# Applications
+bindsym $mod+c exec waterfox || flatpak run net.waterfox.waterfox # Internet Browser
+bindsym $mod+Shift+v exec code # Visual Studio Code
+bindsym $mod+v exec kitty nvim
+bindsym $mod+b exec obsidian || flatpak run md.obsidian.Obsidian # Obsidian
+bindsym $mod+g exec gimp || flatpak run org.gimp.GIMP
+bindsym Ctrl+Mod1+Delete exec kitty flatpak run io.missioncenter.MissionCenter
+
+# Clipboard History
+bindsym $mod+n exec pkill fuzzel || cliphist list | fuzzel --match-mode fzf --dmenu | cliphist decode | wl-copy # Clipboard history >> clipboard
+
+# Show Keybinds
+#bindsym $mod+slash exec kitty w3m ~/.config/hypr/keyhint.html
+
+# Local AI
+bindsym $mod+a exec kitty ollama run skippy
+bindsym $mod+Shift+a exec kitty ollama run gpt-oss:20b
+bindsym $mod+Mod1+a exec kitty ollama run gemma3:27b-it-qat
+# Replace for lower powered hardware
+# bindsym $mod+Shift+a exec kitty ollama run gemma3:1b-it-qat
+
+# Session
+bindsym $mod+grave exec ~/.config/sway/scripts/lockman.sh
+#bindsym $mod+grave exec hyprlock # Lock screen
+bindsym $mod+Shift+grave exec sleep 0.1 && systemctl suspend || loginctl suspend # Suspend system
+# bindsym Ctrl+Shift+Mod1+Delete exit # Logout - Hope you saved your work!
+bindsym Ctrl+Shift+Mod1+$mod+Delete exec systemctl poweroff || loginctl poweroff # Power off
+
+
+
+
+# Screenshots
+
+bindsym Print exec hyprshot -m region # Screenshot a region
+bindsym Shift+Print exec hyprshot -m window # Screenshot a window
+
+
+# Keybindings List
+
+    bindsym $mod+t exec xed ~/.config/sway/cheatsheet
+    # Start your launcher
+    bindsym Super_L exec ~/.config/rofi/launcher.sh
+
+    # Start your powermenu
+    bindsym $mod+Super_L exec ~/.config/rofi/powermenu.sh
+
+    # Reload the configuration file
+    bindsym $mod+Shift+c reload
+
+    # Exit sway (logs you out of your Wayland session)
+    bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+
+    # Drag floating windows by holding down $mod and left mouse button.
+    # Resize them with right mouse button + $mod.
+    # Despite the name, also works for non-floating windows.
+    # Change normal to inverse to use left mouse button for resizing and right
+    # mouse button for dragging.
+    floating_modifier $mod normal
+
+#----------------#
+# Moving around: #
+#----------------#
+    # Move your focus around
+    bindsym $mod+$left focus left
+    bindsym $mod+$down focus down
+    bindsym $mod+$up focus up
+    bindsym $mod+$right focus right
+    # Or use $mod+[up|down|left|right]
+    bindsym $mod+Left focus left
+    bindsym $mod+Down focus down
+    bindsym $mod+Up focus up
+    bindsym $mod+Right focus right
+
+    # Move the focused window with the same, but add Shift
+    bindsym $mod+Shift+$left move left
+    bindsym $mod+Shift+$down move down
+    bindsym $mod+Shift+$up move up
+    bindsym $mod+Shift+$right move right
+    # Ditto, with arrow keys
+    bindsym $mod+Shift+Left move left
+    bindsym $mod+Shift+Down move down
+    bindsym $mod+Shift+Up move up
+    bindsym $mod+Shift+Right move right
+#-------------#
+# Workspaces: #
+#-------------#
+    # Switch to workspace
+    bindsym $mod+1 workspace number 1
+    bindsym $mod+2 workspace number 2
+    bindsym $mod+3 workspace number 3
+    bindsym $mod+4 workspace number 4
+    bindsym $mod+5 workspace number 5
+    bindsym $mod+6 workspace number 6
+    bindsym $mod+7 workspace number 7
+    bindsym $mod+8 workspace number 8
+    bindsym $mod+9 workspace number 9
+    bindsym $mod+0 workspace number 10
+    # Move focused container to workspace
+    bindsym $mod+Shift+1 move container to workspace number 1
+    bindsym $mod+Shift+2 move container to workspace number 2
+    bindsym $mod+Shift+3 move container to workspace number 3
+    bindsym $mod+Shift+4 move container to workspace number 4
+    bindsym $mod+Shift+5 move container to workspace number 5
+    bindsym $mod+Shift+6 move container to workspace number 6
+    bindsym $mod+Shift+7 move container to workspace number 7
+    bindsym $mod+Shift+8 move container to workspace number 8
+    bindsym $mod+Shift+9 move container to workspace number 9
+    bindsym $mod+Shift+0 move container to workspace number 10
+    # move focused container to workspace(follow)
+    bindsym $mod+Ctrl+1 move container to workspace number 1,  workspace 1
+    bindsym $mod+Ctrl+2 move container to workspace number 2,  workspace 2
+    bindsym $mod+Ctrl+3 move container to workspace number 3,  workspace 3
+    bindsym $mod+Ctrl+4 move container to workspace number 4,  workspace 4
+    bindsym $mod+Ctrl+5 move container to workspace number 5,  workspace 5
+    bindsym $mod+Ctrl+6 move container to workspace number 6,  workspace 6
+    bindsym $mod+Ctrl+7 move container to workspace number 7,  workspace 7
+    bindsym $mod+Ctrl+8 move container to workspace number 8,  workspace 8
+    bindsym $mod+Ctrl+9 move container to workspace number 9,  workspace 9
+    bindsym $mod+Ctrl+0 move container to workspace number 10, workspace 10
+    # Note: workspaces can have any name you want, not just numbers.
+    # We just use 1-10 as the default.
+#---------------#
+# Layout stuff: #
+#---------------#
+    # You can "split" the current object of your focus with
+    # $mod+semicolon or $mod+apostrophe, for horizontal and vertical splits
+    # respectively.
+    bindsym $mod+semicolon splitv
+    bindsym $mod+apostrophe splith
+
+    # Switch the current container between different layout styles
+    #bindsym $mod+s layout stacking
+    #bindsym $mod+w layout tabbed
+
+
+    # Toggle the current focus between tiling and floating mode
+    #bindsym $mod+Shift+space floating toggle
+
+    # Swap focus between the tiling area and the floating area
+    #bindsym $mod+space focus mode_toggle
+
+    # Move focus to the parent container
+    #bindsym $mod+p focus parent
+    # Move focus the child container
+    #bindsym $mod+c focus child
+#-------------#
+# Scratchpad: #
+#-------------#
+## hide | show window(minus is "-" and plus is "+".)
+bindsym $mod+minus move scratchpad
+bindsym $mod+equal scratchpad show
+
+#----------------------#
+# Resizing containers: #
+#----------------------#
+
+mode "resize" {
+    # left will shrink the containers width
+    # right will grow the containers width
+    # up will shrink the containers height
+    # down will grow the containers height
+    bindsym $left resize shrink width 10px
+    bindsym $up resize grow height 10px
+    bindsym $down resize shrink height 10px
+    bindsym $right resize grow width 10px
+
+    # Ditto, with arrow keys
+    bindsym Left resize shrink width 10px
+    bindsym Up resize grow height 10px
+    bindsym Down resize shrink height 10px
+    bindsym Right resize grow width 10px
+
+    # Return to default mode
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+## Better to resize window
+bindsym Shift+Ctrl+h             resize shrink width  5 px or 5 ppt
+bindsym Shift+Ctrl+k             resize grow   height 5 px or 5 ppt
+bindsym Shift+Ctrl+j             resize shrink height 5 px or 5 ppt
+bindsym Shift+Ctrl+l             resize grow   width  5 px or 5 ppt
+bindsym Shift+Ctrl+Left          resize shrink width  5 px or 5 ppt
+bindsym Shift+Ctrl+Up            resize grow   height 5 px or 5 ppt
+bindsym Shift+Ctrl+Down          resize shrink height 5 px or 5 ppt
+bindsym Shift+Ctrl+Right         resize grow   width  5 px or 5 ppt
+
+
+
+#-------------------------------------------------#
+# Control volume,monitor brightness,media players #
+#-------------------------------------------------#
+    bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5%
+    bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5%
+    bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+    bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+    bindsym XF86MonBrightnessUp exec light -A 5
+    bindsym XF86MonBrightnessDown exec light -U 5
+    bindsym XF86AudioPlay exec playerctl play-pause
+    bindsym XF86AudioNext exec playerctl next
+    bindsym XF86AudioPrev exec playerctl previous

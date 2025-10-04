@@ -13,7 +13,7 @@
     "include": [
         "~/.config/waybar/modules.json"
     ],    
-    "modules-left": ["hyprland/workspaces", "hyprland/window"],
+    "modules-left": ["hyprland/workspaces", "hyprland/window", "sway/workspaces", "sway/layout", "sway/scratchpad", "sway/resize"],
 
     "modules-center": [
         "clock"

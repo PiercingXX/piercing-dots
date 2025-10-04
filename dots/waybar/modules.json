@@ -7,18 +7,18 @@
         "all-outputs": true,
         "sort-by-number": true,
         "format-icons": {
-          "1": "1",
-          "2": "2",
-          "3": "3",
-          "4": "4",
-          "5": "5",
-          "6": "6",
-          "7": "7",
-          "8": "8",
-          "9": "9",
-          "10": "10",
-          "focused": "",
-          "default": ""
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "focused": "",
+            "default": ""
         },
         "on-scroll-up": "hyprctl dispatch workspace e+1",
         "on-scroll-down": "hyprctl dispatch workspace e-1",
@@ -30,6 +30,58 @@
 	"icon":true,
 	"icon-size" : 20
     },
+
+    // Sway Workspaces
+    "sway/workspaces": {
+        "format": "{icon}",
+        "on-click": "switch",
+        "all-outputs": true,
+        "sort-by-number": true,
+        "format-icons": {
+            "1": "1",
+            "2": "2",
+            "3": "3",
+            "4": "4",
+            "5": "5",
+            "6": "6",
+            "7": "7",
+            "8": "8",
+            "9": "9",
+            "10": "10",
+            "focused": "",
+            "default": ""
+        },
+        "on-scroll-up": "swaymsg workspace next",
+        "on-scroll-down": "swaymsg workspace prev"
+    },
+    "sway/layout": {
+        "format": "{icon}",
+        "format-icons": {
+            "splith": "",
+            "splitv": "",
+            "tabbed": "",
+            "stacked": ""
+        },
+        "on-click": "swaymsg layout toggle split",
+        "on-click-right": "swaymsg layout toggle tabbed",
+        "tooltip-format": "{layout}"
+    },
+    "sway/scratchpad": {
+        "format": "{icon}",
+        "format-icons": {
+            "empty": "",
+            "filled": ""
+        },
+        "on-click": "swaymsg scratchpad show",
+        "tooltip-format": "{count} window(s) in scratchpad"
+    },
+    "sway/resize": {
+        "format": "",
+        "on-click": "swaymsg resize set width 800px height 600px",
+        "on-click-right": "swaymsg resize set width 100% height 100%",
+        "tooltip-format": "Resize focused window"
+    },
+
 
     // Power Menu
     "custom/exit": {
