@@ -77,7 +77,7 @@ builddir=$(pwd)
         cp -Rf dots/* /home/"$username"/.config/
         chown "$username":"$username" -R /home/"$username"/.config/*
         cd "$builddir" || exit
-    # Copy FZF to /urs
+    # Copy FZF to /usr
         sudo cp -rf resources/fzf /usr/share/fzf
         sudo chmod -R +x /usr/share/fzf/
     # Copy Backgrounds
