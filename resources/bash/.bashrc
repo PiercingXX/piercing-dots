@@ -379,39 +379,80 @@ trim() {
 
 # Software Search
 ss() {
-    local dtype
+    local dtype selection
     dtype=$(distribution)
+    local native_list_cmd native_preview_cmd
     case "$dtype" in
         "arch")
-            if command -v paru &> /dev/null; then
-                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
-            elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
+            if command -v paru &>/dev/null; then
+                native_list_cmd='paru -Slq'
+                native_preview_cmd='paru -Sii {1}'
+            elif command -v yay &>/dev/null; then
+                native_list_cmd='yay -Slq'
+                native_preview_cmd='yay -Sii {1}'
             else
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
+                native_list_cmd='pacman -Slq'
+                native_preview_cmd='pacman -Si {1}'
             fi
             ;;
         "debian")
-            apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
+            native_list_cmd='apt-cache pkgnames'
+            native_preview_cmd='apt-cache show {1}'
             ;;
         "fedora")
-            if command -v dnf &> /dev/null; then
-                dnf list available | awk '{print $1}' | fzf --multi --preview='dnf info {1}' --preview-window=down:75% | xargs -ro sudo dnf install
+            if command -v dnf &>/dev/null; then
+                native_list_cmd="dnf list available | awk '{print \$1}'"
+                native_preview_cmd='dnf info {1}'
             else
-                yum list available | awk '{print $1}' | fzf --multi --preview='yum info {1}' --preview-window=down:75% | xargs -ro sudo yum install
+                native_list_cmd="yum list available | awk '{print \$1}'"
+                native_preview_cmd='yum info {1}'
             fi
             ;;
         *)
             echo "Unknown or unsupported distribution for ss alias."
+            return 1
             ;;
     esac
-    # Flatpak support (works on any distro if flatpak is installed)
-    if command -v flatpak &> /dev/null; then
-        echo "Flatpak available! Select apps to install:"
-        flatpak remote-ls --app --columns=application flathub \
-            | fzf --multi --preview='flatpak remote-info flathub {}' --preview-window=down:75% \
-            | xargs -r -I{} flatpak install -y flathub {}
-    fi
+    # Compose combined menu
+    selection=$(
+        {
+            eval "$native_list_cmd" | sed 's/^/[N] /'
+            if command -v flatpak &>/dev/null; then
+                flatpak remote-ls --app --columns=application flathub | sed 's/^/[F] /'
+            fi
+        } | fzf --multi --prompt="Install (enter to select): " \
+                --preview='
+                    if [[ {} == "[F] "* ]]; then
+                        flatpak remote-info flathub "${{ {}#"[F] " }}"
+                    else
+                        '"$native_preview_cmd"'
+                    fi' \
+                --preview-window=down:75% --border
+    )
+    [[ -z "$selection" ]] && return 0
+    # Install each selected entry
+    while IFS= read -r line; do
+        if [[ $line == "[F] "* ]]; then
+            app=${line#"[F] "}
+            flatpak install -y flathub "$app"
+        elif [[ $line == "[N] "* ]]; then
+            pkg=${line#"[N] "}
+            case "$dtype" in
+                arch)
+                    if command -v paru &>/dev/null; then paru -S "$pkg";
+                    elif command -v yay &>/dev/null; then yay -S "$pkg";
+                    else sudo pacman -S "$pkg"; fi
+                    ;;
+                debian)
+                    sudo apt-get install "$pkg"
+                    ;;
+                fedora)
+                    if command -v dnf &>/dev/null; then sudo dnf install "$pkg";
+                    else sudo yum install "$pkg"; fi
+                    ;;
+            esac
+        fi
+    done <<< "$selection"
 }
 
 # Software Search Uninstaller || This took a bit more to get working.
