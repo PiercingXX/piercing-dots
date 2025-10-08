@@ -434,21 +434,21 @@ ss() {
     while IFS= read -r line; do
         if [[ $line == "[F] "* ]]; then
             app=${line#"[F] "}
-            flatpak install -y flathub "$app"
+            flatpak install -y flathub "$app" >/dev/null 2>&1
         elif [[ $line == "[N] "* ]]; then
             pkg=${line#"[N] "}
             case "$dtype" in
                 arch)
-                    if command -v paru &>/dev/null; then paru -S "$pkg";
-                    elif command -v yay &>/dev/null; then yay -S "$pkg";
-                    else sudo pacman -S "$pkg"; fi
+                    if command -v paru &>/dev/null; then paru -S "$pkg" >/dev/null 2>&1;
+                    elif command -v yay &>/dev/null; then yay -S "$pkg" >/dev/null 2>&1;
+                    else sudo pacman -S "$pkg" >/dev/null 2>&1; fi
                     ;;
                 debian)
-                    sudo apt-get install "$pkg"
+                    sudo apt-get install "$pkg" >/dev/null 2>&1
                     ;;
                 fedora)
-                    if command -v dnf &>/dev/null; then sudo dnf install "$pkg";
-                    else sudo yum install "$pkg"; fi
+                    if command -v dnf &>/dev/null; then sudo dnf install "$pkg" >/dev/null 2>&1;
+                    else sudo yum install "$pkg" >/dev/null 2>&1; fi
                     ;;
             esac
         fi
@@ -527,21 +527,21 @@ ssu() {
     while IFS= read -r line; do
         if [[ $line == "[F] "* ]]; then
             app=${line#"[F] "}
-            flatpak uninstall -y --delete-data "$app"
+            flatpak uninstall -y --delete-data "$app" >/dev/null 2>&1
         elif [[ $line == "[N] "* ]]; then
             pkg=${line#"[N] "}
             case "$dtype" in
                 arch)
-                    sudo pacman -Rns --noconfirm "$pkg"
+                    sudo pacman -Rns --noconfirm "$pkg" >/dev/null 2>&1
                     ;;
                 debian)
-                    sudo apt-get purge -y "$pkg"
+                    sudo apt-get purge -y "$pkg" >/dev/null 2>&1
                     ;;
                 fedora)
                     if command -v dnf &>/dev/null; then
-                        sudo dnf remove -y "$pkg"
+                        sudo dnf remove -y "$pkg" >/dev/null 2>&1
                     else
-                        sudo yum remove -y "$pkg"
+                        sudo yum remove -y "$pkg" >/dev/null 2>&1
                     fi
                     ;;
                 *)
