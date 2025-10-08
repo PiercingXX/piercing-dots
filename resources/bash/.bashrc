@@ -452,7 +452,7 @@ ss() {
                     ;;
             esac
         fi
-    done <<< "$selection"
+    done < <(printf '%s\n' "$selection")
 }
 
 # Software Search Uninstaller || This took a bit more to get working.
@@ -549,7 +549,7 @@ ssu() {
                     ;;
             esac
         fi
-    done <<< "$selection"
+    done < <(printf '%s\n' "$selection")
 }
 
 
