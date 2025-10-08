@@ -434,21 +434,21 @@ ss() {
     while IFS= read -r line; do
         if [[ $line == "[F] "* ]]; then
             app=${line#"[F] "}
-            flatpak install -y flathub "$app" >/dev/null 2>&1
+            flatpak install -y flathub "$app" >/dev/null 2>&1 && echo "Installed Flatpak: $app"
         elif [[ $line == "[N] "* ]]; then
             pkg=${line#"[N] "}
             case "$dtype" in
                 arch)
-                    if command -v paru &>/dev/null; then paru -S "$pkg" >/dev/null 2>&1;
-                    elif command -v yay &>/dev/null; then yay -S "$pkg" >/dev/null 2>&1;
-                    else sudo pacman -S "$pkg" >/dev/null 2>&1; fi
+                    if command -v paru &>/dev/null; then paru -S "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg";
+                    elif command -v yay &>/dev/null; then yay -S "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg";
+                    else sudo pacman -S "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg"; fi
                     ;;
                 debian)
-                    sudo apt-get install "$pkg" >/dev/null 2>&1
+                    sudo apt-get install "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg"
                     ;;
                 fedora)
-                    if command -v dnf &>/dev/null; then sudo dnf install "$pkg" >/dev/null 2>&1;
-                    else sudo yum install "$pkg" >/dev/null 2>&1; fi
+                    if command -v dnf &>/dev/null; then sudo dnf install "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg";
+                    else sudo yum install "$pkg" >/dev/null 2>&1 && echo "Installed: $pkg"; fi
                     ;;
             esac
         fi
@@ -527,21 +527,21 @@ ssu() {
     while IFS= read -r line; do
         if [[ $line == "[F] "* ]]; then
             app=${line#"[F] "}
-            flatpak uninstall -y --delete-data "$app" >/dev/null 2>&1
+            flatpak uninstall -y --delete-data "$app" >/dev/null 2>&1 && echo "Uninstalled Flatpak: $app"
         elif [[ $line == "[N] "* ]]; then
             pkg=${line#"[N] "}
             case "$dtype" in
                 arch)
-                    sudo pacman -Rns --noconfirm "$pkg" >/dev/null 2>&1
+                    sudo pacman -Rns --noconfirm "$pkg" >/dev/null 2>&1 && echo "Uninstalled: $pkg"
                     ;;
                 debian)
-                    sudo apt-get purge -y "$pkg" >/dev/null 2>&1
+                    sudo apt-get purge -y "$pkg" >/dev/null 2>&1 && echo "Uninstalled: $pkg"
                     ;;
                 fedora)
                     if command -v dnf &>/dev/null; then
-                        sudo dnf remove -y "$pkg" >/dev/null 2>&1
+                        sudo dnf remove -y "$pkg" >/dev/null 2>&1 && echo "Uninstalled: $pkg"
                     else
-                        sudo yum remove -y "$pkg" >/dev/null 2>&1
+                        sudo yum remove -y "$pkg" >/dev/null 2>&1 && echo "Uninstalled: $pkg"
                     fi
                     ;;
                 *)
