@@ -529,10 +529,11 @@ function y() {
 if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
 # Zoxide
 if command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi
-# FZF (guarded)
+# FZF
 [[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
 [[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
-
+# Jump
+eval "$(jump shell)"
 
 # Fastfetch and keybind only in interactive shells
 if [[ $iatest -gt 0 ]]; then
