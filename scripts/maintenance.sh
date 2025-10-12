@@ -191,7 +191,7 @@ update_bashrc() {
             fi
         # Yazi Update
             if command_exists yazi; then
-                ya pack -u
+                ya pkg upgrade
             fi
         # Hyprland update
             if pgrep -x "Hyprland" > /dev/null; then
