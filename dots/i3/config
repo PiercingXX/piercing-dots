@@ -53,7 +53,6 @@ bindsym $mod+n exec pkill fuzzel || cliphist list | fuzzel  --match-mode fzf --d
 bindsym $mod+a exec kitty ollama run skippy
 bindsym $mod+Shift+a exec kitty ollama run gpt-oss:20b
 bindsym $mod+Shift+Mod1+a exec kitty ollama run gemma3:27b-it-qat # Avoid conflict with $mod+Mod1+a (alsamixer)
-# Replace for lower powered hardware
 # bindsym $mod+Shift+a exec kitty ollama run gemma3:1b-it-qat
 
 # Reload the configuration file
@@ -89,7 +88,6 @@ bar {
     tray_output primary
     output HDMI-1
     output primary
-
     position bottom
     status_command i3status
 }
@@ -108,8 +106,8 @@ exec --no-startup-id feh --bg-scale --no-fehbg ~/.config/wall.png
 # Compositor
 exec --no-startup-id picom -b
 
-
-
+# Synology Drive
+exec --no-startup-id QT_QPA_PLATFORM="xcb" synology-drive autostart
 
 
 ###---Cursor speed---###
