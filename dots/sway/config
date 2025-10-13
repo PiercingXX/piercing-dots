@@ -1,16 +1,3 @@
-#---------p
-# mod key #
-#---------#
-    set $mod Mod4
-
-
-#-------------------------------------------#
-# switch between current and last workspace #
-#-------------------------------------------#
-#slash(/)
-    bindsym $mod+slash workspace back_and_forth
-
-
 #========================#
 #   Sway Configuration   #
 #========================#

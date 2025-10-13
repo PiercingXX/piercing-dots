@@ -12,8 +12,9 @@ exec --no-startup-id xinput set-prop 11 295 1.9
 exec_always --no-startup-id sh -c 'dev="$(xinput list --name-only | grep -i touchpad | head -n1)"; [ -n "$dev" ] && xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 || true'
 
 
-client.focused #0d0d0d #171717 #ffffff #0d0d0d #0d0d0d
+client.focused #ffffff #171717 #ffffff #ffffff #ffffff
 client.unfocused #0d0d0d #363636 #888888 #292d2e #0d0d0d
+default_border pixel 2
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
@@ -22,8 +23,7 @@ floating_modifier $mod
 bindsym $mod+q kill
 
 # start dmenu (a program launcher)
-bindsym $mod+Space exec dmenu_run
-# bindcode $mod4 exec dmenu_run
+bindsym $mod+Space exec rofi -show drun
 
 bindsym $mod+w exec kitty # Open kitty
 bindsym Mod1+Tab exec nwg-drawer -c 7 -is 70 -spacing 13
@@ -31,7 +31,6 @@ bindsym $mod+Shift+z exec nautilus --new-window # Open nautilus
 bindsym $mod+z exec kitty yazi # Open yazi
 bindsym $mod+Shift+s exec pavucontrol # Launch pavucontrol (volume mixer)
 bindsym $mod+s exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center # Launch GNOME Settings
-bindsym $mod+Control+r exec pkill waybar && waybar & # Reload waybar (avoid $mod+r resize mode)
 bindsym Print exec hyprshot -m region # Screenshot a region
 bindsym Shift+Print exec hyprshot -m window # Screenshot a window
 bindsym $mod+x layout toggle split # Toggle split mode
@@ -73,7 +72,7 @@ bindsym $mod+control+shift+Print exec scrnshot selecttime
 bindsym F7 exec toggleTouch
 
 #Session
-bindsym $mod+grave exec hyprlock # Lock screen
+bindsym $mod+grave exec i3lock # Lock screen
 bindsym $mod+Shift+grave exec sleep 0.1 && systemctl suspend || loginctl suspend # Suspend system
 # bindsym Control+Shift+Mod1+Delete exit # Logout - Hope you saved your work!
 bindsym Control+Shift+Mod1+$mod+Delete exec systemctl poweroff || loginctl poweroff # Power off
@@ -131,10 +130,9 @@ bindsym $mod+Right exec light -A 5 && pkill -SIGRTMIN+4 i3block
 bindsym $mod+Left exec light -U 5 && pkill -SIGRTMIN+4 i3block
 
 
-
-
-
-
+###---Window management---###
+# change focus between tiling / floating windows
+bindsym $mod+Tab focus mode_toggle
 bindsym $mod+Shift+f fullscreen toggle # Toggle fullscreen mode
 bindsym $mod+f floating toggle # Toggle floating mode
 
@@ -155,7 +153,7 @@ bindsym $mod+Shift+l move right
 #bindsym $mod+Shift+t layout tabbed
 #bindsym $mod+Shift+i layout toggle split
 #bindsym $mod+Shift+space floating toggle
-#bindsym $mod+space focus mode_toggle
+
 
 # Define names for default workspaces for which we configure key bindings later on.
 # We use variables to avoid repeating the names in multiple places.
@@ -183,7 +181,7 @@ bindsym $mod+8 workspace $ws8
 bindsym $mod+9 workspace $ws9
 bindsym $mod+0 workspace $ws10
 
-# move focused container to workspace
+# move focused container to workspace (like alt key in hyprland)
 bindsym $mod+Shift+1 move container to workspace $ws1
 bindsym $mod+Shift+2 move container to workspace $ws2
 bindsym $mod+Shift+3 move container to workspace $ws3
@@ -210,7 +208,6 @@ bindsym $mod+Control+0 move container to workspace $ws10; workspace $ws10
 # resize window (you can also use the mouse for that)
 mode "resize" {
         # These bindings trigger as soon as you enter the resize mode
-
         # Pressing left will shrink the window’s width.
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.
