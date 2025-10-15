@@ -6,24 +6,72 @@ font xft:Source Code Pro Medium 10
 
 # Use Colemak layout in i3 (applies on reload/restart)
 exec_always --no-startup-id setxkbmap -layout us -variant colemak
+
 ###---Cursor speed---###
 exec --no-startup-id xinput set-prop 11 295 1.9
+exec --no-startup-id xsetroot -cursor_name left_ptr
+exec --no-startup-id xrdb -merge ~/.Xresources
+exec --no-startup-id export XCURSOR_SIZE=16
+
 # Enable natural (inverted) scrolling on the first touchpad found
 exec_always --no-startup-id sh -c 'dev="$(xinput list --name-only | grep -i touchpad | head -n1)"; [ -n "$dev" ] && xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 || true'
 
 
-client.focused #ffffff #171717 #ffffff #ffffff #ffffff
+
+# Status Bar
+bar {
+    tray_output HDMI-1
+    tray_output primary
+    output HDMI-1
+    output primary
+    position top
+    status_command i3status
+}
+#exec --no-startup-id i3status
+exec --no-startup-id i3blocks -c ~/.config/i3blocks/config
+
+#Wifi Applet
+exec --no-startup-id nm-applet
+
+# Load Xresources
+exec --no-startup-id xrdb ~/.Xresources
+
+# Set wallpaper
+exec --no-startup-id feh --bg-scale --no-fehbg ~/.config/wall.png
+
+# Compositor
+exec --no-startup-id picom -b
+
+
+
+
+
+
+
+
+
+
+# Window colors
+# class                 border  backgr. text    indicator child_border
+client.focused #0d0d0d #171717 #ffffff #0d0d0d #0d0d0d
 client.unfocused #0d0d0d #363636 #888888 #292d2e #0d0d0d
-default_border pixel 2
+
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
+
+
+
+
+
+
 
 # kill focused window
 bindsym $mod+q kill
 
 # start dmenu (a program launcher)
-bindsym $mod+Space exec rofi -show drun
+bindsym $mod+Space exec ulauncher
+# bindcode $mod4 exec ulauncher
 
 bindsym $mod+w exec kitty # Open kitty
 bindsym Mod1+Tab exec nwg-drawer -c 7 -is 70 -spacing 13
@@ -52,15 +100,16 @@ bindsym $mod+n exec pkill fuzzel || cliphist list | fuzzel  --match-mode fzf --d
 bindsym $mod+a exec kitty ollama run skippy
 bindsym $mod+Shift+a exec kitty ollama run gpt-oss:20b
 bindsym $mod+Shift+Mod1+a exec kitty ollama run gemma3:27b-it-qat # Avoid conflict with $mod+Mod1+a (alsamixer)
+# Replace for lower powered hardware
 # bindsym $mod+Shift+a exec kitty ollama run gemma3:1b-it-qat
 
 # Reload the configuration file
 bindsym $mod+Shift+c reload
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
 bindsym $mod+Shift+r restart
+# Reload i3blocks config
+bindsym $mod+Shift+b exec pkill -SIGUSR1 i3blocks
 
-###---Go To Location Open Terminal---###
-bindsym $mod+g exec openterminalin
 
 ###---Screenshot---###
 bindsym $mod+Print exec scrnshot full
@@ -72,7 +121,7 @@ bindsym $mod+control+shift+Print exec scrnshot selecttime
 bindsym F7 exec toggleTouch
 
 #Session
-bindsym $mod+grave exec i3lock # Lock screen
+bindsym $mod+grave exec hyprlock # Lock screen
 bindsym $mod+Shift+grave exec sleep 0.1 && systemctl suspend || loginctl suspend # Suspend system
 # bindsym Control+Shift+Mod1+Delete exit # Logout - Hope you saved your work!
 bindsym Control+Shift+Mod1+$mod+Delete exec systemctl poweroff || loginctl poweroff # Power off
@@ -80,37 +129,7 @@ bindsym Control+Shift+Mod1+$mod+Delete exec systemctl poweroff || loginctl power
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
 
 
-###---Start external scripts---###
-# Status Bar
-bar {
-    tray_output HDMI-1
-    tray_output primary
-    output HDMI-1
-    output primary
-    position bottom
-    status_command i3status
-}
-#exec --no-startup-id i3status
-exec --no-startup-id i3blocks -c ~/.config/i3blocks/config
 
-#Wifi Applet
-exec --no-startup-id nm-applet
-
-# Load Xresources
-exec --no-startup-id xrdb ~/.Xresources
-
-# Set wallpaper
-exec --no-startup-id feh --bg-scale --no-fehbg ~/.config/wall.png
-
-# Compositor
-exec --no-startup-id picom -b
-
-# Synology Drive
-exec --no-startup-id QT_QPA_PLATFORM="xcb" synology-drive autostart
-
-
-###---Cursor speed---###
-exec --no-startup-id xinput set-prop 11 295 1.9
 
 
 ###---System Control---###
@@ -130,9 +149,10 @@ bindsym $mod+Right exec light -A 5 && pkill -SIGRTMIN+4 i3block
 bindsym $mod+Left exec light -U 5 && pkill -SIGRTMIN+4 i3block
 
 
-###---Window management---###
-# change focus between tiling / floating windows
-bindsym $mod+Tab focus mode_toggle
+
+
+
+
 bindsym $mod+Shift+f fullscreen toggle # Toggle fullscreen mode
 bindsym $mod+f floating toggle # Toggle floating mode
 
@@ -153,7 +173,7 @@ bindsym $mod+Shift+l move right
 #bindsym $mod+Shift+t layout tabbed
 #bindsym $mod+Shift+i layout toggle split
 #bindsym $mod+Shift+space floating toggle
-
+#bindsym $mod+space focus mode_toggle
 
 # Define names for default workspaces for which we configure key bindings later on.
 # We use variables to avoid repeating the names in multiple places.
@@ -181,7 +201,7 @@ bindsym $mod+8 workspace $ws8
 bindsym $mod+9 workspace $ws9
 bindsym $mod+0 workspace $ws10
 
-# move focused container to workspace (like alt key in hyprland)
+# move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace $ws1
 bindsym $mod+Shift+2 move container to workspace $ws2
 bindsym $mod+Shift+3 move container to workspace $ws3
@@ -208,6 +228,7 @@ bindsym $mod+Control+0 move container to workspace $ws10; workspace $ws10
 # resize window (you can also use the mouse for that)
 mode "resize" {
         # These bindings trigger as soon as you enter the resize mode
+
         # Pressing left will shrink the window’s width.
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.

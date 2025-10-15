@@ -125,6 +125,7 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 ######################
 ### Customizations ###
 ######################
+gsettings set org.gnome.settings-daemon.plugins.housekeeping.donation-reminder-enabled 'false'
 gsettings set org.gnome.desktop.interface enable-animations 'false'
 gsettings set org.gnome.desktop.interface clock-format '24h'
 gsettings set org.gnome.desktop.interface clock-show-weekday 'true'

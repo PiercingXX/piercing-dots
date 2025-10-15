@@ -1,0 +1,13 @@
+#!/bin/bash
+# i3blocks power button script
+
+echo "⏻"
+
+# Optional: handle click events for shutdown, reboot, etc.
+# Uncomment and customize the following if you want click actions:
+#
+# case $BLOCK_BUTTON in
+    1) systemctl poweroff ;;   # Left click: shutdown
+    2) systemctl reboot ;;     # Middle click: reboot
+#   3) systemctl suspend ;;    # Right click: suspend
+# esac
