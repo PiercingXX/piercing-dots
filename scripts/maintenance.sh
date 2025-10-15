@@ -29,6 +29,11 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+# Ensure user can force shutdown without password
+if ! sudo grep -q "$USER ALL=NOPASSWD: /sbin/shutdown" /etc/sudoers; then
+    echo "$USER ALL=NOPASSWD: /sbin/shutdown" | sudo tee -a /etc/sudoers > /dev/null
+fi
+
 # Reliable-ish internet check:
 # 1) Prefer nm-online or networkctl if available (fast readiness)
 # 2) Try HTTP(S) endpoints that return 204 or fixed text (detects DNS + HTTP + captive portals)

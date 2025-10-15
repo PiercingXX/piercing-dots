@@ -165,9 +165,12 @@ countfiles() {
 # Show open ports
 alias openports='netstat -nape --inet'
 
-# Alias's for safe and forced reboots
+# Alias's for safe and forced reboots and shutdowns
 alias rebootsafe='sudo shutdown -r now'
 alias rebootforce='sudo shutdown -r -n now'
+alias shutdownsafe='sudo shutdown -h now'
+alias shutdownforce='sudo shutdown -h -n now'
+
 
 # Alias's to show disk space and space used in a folder
 alias folders='du -h --max-depth=1'
