@@ -32,46 +32,11 @@ gsettings set org.gnome.shell.keybindings toggle-message-tray "@as []"
 
 #########################
 ### Window Management ###
-#########################
-# Super+Num to switch Workspace
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-2 "['<Super>2']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-3 "['<Super>3']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-4 "['<Super>4']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-5 "['<Super>5']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-6 "['<Super>6']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-7 "['<Super>7']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-8 "['<Super>8']"
-gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-9 "['<Super>9']"
-# Super+Shift+Num to move App to Workspace
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-1 "['<Shift><Super>1']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-2 "['<Shift><Super>2']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-3 "['<Shift><Super>3']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-4 "['<Shift><Super>4']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-5 "['<Shift><Super>5']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-6 "['<Shift><Super>6']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-7 "['<Shift><Super>7']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-8 "['<Shift><Super>8']"
-gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-9 "['<Shift><Super>9']"
-# Alt for Pinned apps
-gsettings set org.gnome.shell.keybindings switch-to-application-1 "['<Alt>1']"
-gsettings set org.gnome.shell.keybindings switch-to-application-2 "['<Alt>2']"
-gsettings set org.gnome.shell.keybindings switch-to-application-3 "['<Alt>3']"
-gsettings set org.gnome.shell.keybindings switch-to-application-4 "['<Alt>4']"
-gsettings set org.gnome.shell.keybindings switch-to-application-5 "['<Alt>5']"
-gsettings set org.gnome.shell.keybindings switch-to-application-6 "['<Alt>6']"
-gsettings set org.gnome.shell.keybindings switch-to-application-7 "['<Alt>7']"
-gsettings set org.gnome.shell.keybindings switch-to-application-8 "['<Alt>8']"
-gsettings set org.gnome.shell.keybindings switch-to-application-9 "['<Alt>9']"
 
-
-########################
-### Custom Shortcuts ###
-########################
 gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super>s']"
-gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['>Super>grave']"
-gsettings set org.gnome.shell.extensions.pop-shell toggle-floating "['<Super>f']"
+gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['<Super>grave']"
+gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>f']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Shift><Super>z']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys calculator "['<Shift><Super>c']"
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
@@ -93,7 +58,7 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/ binding '<Super>z'
 # 3 Neovim
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ name 'Neovim'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'kitty -- vi'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ command 'kitty -- nvim'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/ binding '<Super>V'
 # 4 Mission Center
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ name 'Mission Center'
@@ -129,6 +94,7 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 ### Customizations ###
 ######################
 gsettings set org.gnome.settings-daemon.plugins.housekeeping.donation-reminder-enabled 'false'
+gsettings set org.gnome.desktop.notifications show-banners 'false'
 gsettings set org.gnome.desktop.interface enable-animations 'false'
 gsettings set org.gnome.desktop.interface clock-format '24h'
 gsettings set org.gnome.desktop.interface clock-show-weekday 'true'
@@ -216,6 +182,7 @@ gsettings set org.gnome.shell favorite-apps "['net.waterfox.waterfox.desktop', '
 gsettings set org.gnome.shell disable-user-extensions 'false'
 
 # Pop Shell 
+gsettings set org.gnome.shell.extensions.pop-shell toggle-floating "['<Shift><Super>f']"
 dconf write /org/gnome/shell/extensions/pop-cosmic/show-workspaces-button 'false'
 dconf write /org/gnome/shell/extensions/pop-cosmic/show-applications-button 'false'
 dconf write /org/gnome/shell/extensions/pop-shell/hint-color-rgba "'rgb(255,255,255)'"
@@ -231,6 +198,7 @@ gsettings set org.gnome.shell.extensions.pop-shell tile-by-default 'true'
 
 # Super Key
 dconf write /org/gnome/shell/extensions/super-key/overlay/key/action "'ulauncher'"
+gsettings set org.gnome.shell.extensions.super-key overlay-key 'ulauncher'
 
 # Useless Gaps
 dconf write /org/gnome/shell/extensions/useless-gaps/gap-size "20"
