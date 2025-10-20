@@ -98,10 +98,13 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- Autosave all files when leaving buffer or window
 vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
-	pattern = "*",
-	callback = function()
-		if vim.bo.modified then vim.cmd("write") end
-	end,
+    pattern = "*",
+    callback = function()
+        -- Only write normal file buffers
+        if vim.bo.modified and vim.bo.buftype == "" then
+            vim.cmd("write")
+        end
+    end,
 })
 
 -- Autosave all .md files on text change
