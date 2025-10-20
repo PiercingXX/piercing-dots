@@ -18,7 +18,9 @@
     end, { desc = 'Open Yazi in new tab at window CWD', silent = true })
 
 
-
+-- Page jump recenter page aftes move
+    vim.keymap.set("n", "<C-u>", "<C-u>zz")
+    vim.keymap.set("n", "<C-d>", "<C-d>zz")
 -- Cycle tabs
     vim.keymap.set('n', '<leader>L', '<Cmd>tabnext<CR>', { silent = true, desc = 'Next tab' })
     vim.keymap.set('n', '<leader>H',  '<Cmd>tabprevious<CR>', { silent = true, desc = 'Prev tab' })
