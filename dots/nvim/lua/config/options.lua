@@ -15,14 +15,14 @@ vim.opt.relativenumber = true
 
 -- Tabs
 vim.opt.smarttab = true
-vim.opt.expandtab = true -- Convert tabs to spaces
-vim.opt.shiftwidth = 4 -- Amount to indent with << and >>
-vim.opt.tabstop = 4 -- How many spaces are shown per Tab
-vim.opt.softtabstop = 4 -- How many spaces are applied when pressing Tab
+vim.opt.expandtab = true
+vim.opt.shiftwidth = 4
+vim.opt.tabstop = 4
+vim.opt.softtabstop = 4
 vim.opt.smartindent = true
-vim.opt.autoindent = true -- Keep identation from previous line
+vim.opt.autoindent = true
 
--- Disable Nvim splash screen
+
 vim.opt.shortmess:append "I"
 
 
@@ -88,24 +88,30 @@ vim.opt.cmdheight = 2
 
 -- Highlight text for some time after yanking
 vim.api.nvim_create_autocmd("TextYankPost", {
-  group = vim.api.nvim_create_augroup("YankHighlight", { clear = true }),
-  pattern = "*",
-  callback = function()
-    vim.highlight.on_yank()
-  end,
-  desc = "Highlight yank",
+	group = vim.api.nvim_create_augroup("YankHighlight", { clear = true }),
+	pattern = "*",
+	callback = function()
+		vim.highlight.on_yank()
+	end,
+	desc = "Highlight yank",
 })
 
+-- Autosave journal file on BufLeave or BufWinLeave
+vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
+	pattern = "/media/Archived-Storage/[03] Other/My Life/02 Journal/*.md",
+	callback = function()
+		if vim.bo.modified then vim.cmd("write") end
+	end,
+})
 
-function OpenInObsidian()
-  local file = vim.fn.expand("<cfile>")
-  if file:match("%.md$") then
-    local vault = "notes"
-    local vault_path = vim.fn.expand("~/path/to/vault/")
-    local relative_path = file:gsub(vault_path, "")
-    local obsidian_url = "obsidian://open?vault=" .. vault .. "&file=" .. vim.fn.fnameescape(relative_path)
-    vim.fn.system({ "open", obsidian_url })
-  else
-    vim.cmd("silent open " .. file)
-  end
-end
+-- Autosave journal on text change
+vim.api.nvim_create_augroup("JournalAutosave", { clear = true })
+vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
+	group = "JournalAutosave",
+	pattern = "*/02 Journal/*.md",
+	callback = function()
+		print("Autosave triggered")
+		if vim.bo.modified then vim.cmd("write") end
+	end,
+	desc = "Autosave journal on change",
+})
