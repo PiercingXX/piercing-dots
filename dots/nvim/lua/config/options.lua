@@ -96,22 +96,21 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight yank",
 })
 
--- Autosave journal file on BufLeave or BufWinLeave
+-- Autosave all files when leaving buffer or window
 vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
-	pattern = "/media/Archived-Storage/[03] Other/My Life/02 Journal/*.md",
+	pattern = "*",
 	callback = function()
 		if vim.bo.modified then vim.cmd("write") end
 	end,
 })
 
--- Autosave journal on text change
-vim.api.nvim_create_augroup("JournalAutosave", { clear = true })
+-- Autosave all .md files on text change
+vim.api.nvim_create_augroup("MarkdownAutosave", { clear = true })
 vim.api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
-	group = "JournalAutosave",
-	pattern = "*/02 Journal/*.md",
-	callback = function()
-		print("Autosave triggered")
-		if vim.bo.modified then vim.cmd("write") end
-	end,
-	desc = "Autosave journal on change",
+    group = "MarkdownAutosave",
+    pattern = "*.md",
+    callback = function()
+        if vim.bo.modified then vim.cmd("write") end
+    end,
+    desc = "Autosave all markdown files on change",
 })
