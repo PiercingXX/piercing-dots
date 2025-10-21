@@ -18,9 +18,7 @@
     end, { desc = 'Open Yazi in new tab at window CWD', silent = true })
 
 
--- Page jump recenter page aftes move
-    vim.keymap.set("n", "<C-u>", "<C-u>zz")
-    vim.keymap.set("n", "<C-d>", "<C-d>zz")
+
 -- Cycle tabs
     vim.keymap.set('n', '<leader>L', '<Cmd>tabnext<CR>', { silent = true, desc = 'Next tab' })
     vim.keymap.set('n', '<leader>H',  '<Cmd>tabprevious<CR>', { silent = true, desc = 'Prev tab' })
@@ -78,9 +76,14 @@
         vim.cmd('tabnew ' .. vim.fn.fnameescape(note_file))
     end, { desc = "Open today's journal in new tab", silent = true })
 
-    -- Note Formatting
-    -- create a new line with 2 spaces around it
-        vim.keymap.set("n", "<leader>tt", "o<Esc>o<Esc>o<Esc>k")
-    -- Insert current time
-        vim.keymap.set('n', '<C-t>', 'a<C-r>=strftime("%H:%M:%S")<CR>  <Esc>', { desc = 'Insert current time', silent = true })
-        vim.keymap.set('i', '<C-t>', '<C-r>=strftime("%H:%M:%S")<CR>  ', { desc = 'Insert current time (insert mode)' })
+-- Note Formatting
+    vim.keymap.set('n', '<C-t>', function()
+        local time = os.date('%H:%M:%S')
+        vim.api.nvim_put({ '', '  ' .. time .. '  ', '' }, 'l', true, true)
+    end, { desc = 'Insert current time', silent = true })
+
+    vim.keymap.set('i', '<C-t>', function()
+        local time = os.date('%H:%M:%S')
+        vim.api.nvim_put({ '', '  ' .. time .. '  ', '' }, 'l', true, true)
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+    end, { desc = 'Insert current time (insert mode)', silent = true })
