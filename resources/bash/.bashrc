@@ -199,6 +199,39 @@ alias docker-clean=' \
 #######################################################
 # SPECIAL FUNCTIONS
 #######################################################
+
+# Install the needed support files for this .bashrc file
+install_bashrc_support() {
+	local dtype
+	dtype=$(distribution)
+	case $dtype in
+        "fedora")
+            if command -v dnf &> /dev/null; then
+                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+            else
+                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+            fi
+            ;;
+		"debian")
+			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
+			;;
+        "arch")
+            if command -v paru &> /dev/null; then
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+            elif command -v yay &> /dev/null; then
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+            else
+                echo "Install paru or yay."
+            fi
+            ;;
+		*)
+			echo "Unknown distribution"
+			;;
+	esac
+}
+
+
+
 # Extracts any archive(s) (if unp isn't installed)
 extract() {
 	for archive in "$@"; do
@@ -316,36 +349,6 @@ distribution () {
     fi
 
     echo $dtype
-}
-
-# Automatically install the needed support files for this .bashrc file
-install_bashrc_support() {
-	local dtype
-	dtype=$(distribution)
-	case $dtype in
-        "fedora")
-            if command -v dnf &> /dev/null; then
-                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
-            else
-                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
-            fi
-            ;;
-		"debian")
-			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
-			;;
-        "arch")
-            if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
-            elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
-            else
-                echo "Install paru or yay."
-            fi
-            ;;
-		*)
-			echo "Unknown distribution"
-			;;
-	esac
 }
 
 # IP address lookup
