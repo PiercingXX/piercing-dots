@@ -63,20 +63,20 @@
 
 
 
--- Journal/Notes Keymaps
-    -- Journal/Note in a new tab
+-- Notes Keymap
+    -- Note in a new tab
     vim.keymap.set('n', '<leader>n', function()
-        local note_dir = vim.fn.expand('/media/Archived-Storage/[03] Other/My Life/02 Journal')
+        local note_dir = vim.fn.expand('/media/Archived-Storage/[03] Other/My Life/02 Daily Note')
         local date = os.date('%Y-%m-%d')
         local note_file = note_dir .. '/' .. date .. '.md'
         if vim.fn.filereadable(note_file) == 0 then
             vim.fn.mkdir(note_dir, 'p')
-            vim.fn.writefile({ '# Journal for ' .. date, '' }, note_file)
+            vim.fn.writefile({ '# Daily Note ' .. date, '', '---', '' }, note_file)
         end
         vim.cmd('tabnew ' .. vim.fn.fnameescape(note_file))
-    end, { desc = "Open today's journal in new tab", silent = true })
+    end, { desc = "Open today's notes in new tab", silent = true })
 
--- Note Formatting
+-- Note Formatting from within Nvim
 vim.keymap.set('n', '<C-t>', function()
     local time = os.date('%H:%M:%S')
     local row = vim.api.nvim_win_get_cursor(0)[1]
