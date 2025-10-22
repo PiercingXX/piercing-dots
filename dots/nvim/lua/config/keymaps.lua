@@ -77,13 +77,22 @@
     end, { desc = "Open today's journal in new tab", silent = true })
 
 -- Note Formatting
-    vim.keymap.set('n', '<C-t>', function()
-        local time = os.date('%H:%M:%S')
-        vim.api.nvim_put({ '', '  ' .. time .. '  ', '' }, 'l', true, true)
-    end, { desc = 'Insert current time', silent = true })
+vim.keymap.set('n', '<C-t>', function()
+    local time = os.date('%H:%M:%S')
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    vim.api.nvim_put({ '', '  ' .. time .. '  ', '' }, 'l', true, true)
+    -- Move cursor to the time line, after the time
+    vim.api.nvim_win_set_cursor(0, { row + 2, #('  ' .. time .. '  ') })
+    vim.cmd('startinsert')
+end, { desc = 'Insert current time and start typing', silent = true })
 
-    vim.keymap.set('i', '<C-t>', function()
-        local time = os.date('%H:%M:%S')
+vim.keymap.set('i', '<C-t>', function()
+    local time = os.date('%H:%M:%S')
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+    vim.schedule(function()
+        local row = vim.api.nvim_win_get_cursor(0)[1]
         vim.api.nvim_put({ '', '  ' .. time .. '  ', '' }, 'l', true, true)
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
-    end, { desc = 'Insert current time (insert mode)', silent = true })
+        vim.api.nvim_win_set_cursor(0, { row + 2, #('  ' .. time .. '  ') })
+        vim.cmd('startinsert')
+    end)
+end, { desc = 'Insert current time (insert mode)', silent = true })

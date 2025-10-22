@@ -82,6 +82,11 @@ bindsym $mod+s exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center # Launch GN
 bindsym Print exec hyprshot -m region # Screenshot a region
 bindsym Shift+Print exec hyprshot -m window # Screenshot a window
 bindsym $mod+x layout toggle split # Toggle split mode
+# Open Daily Notes (i3 keybinding)
+bindsym $mod+n exec kitty -- ~/open_daily_notes.sh
+# Open Maintenance Script (i3 keybinding)
+bindsym $mod+u exec kitty -- ~/maintenance.sh
+
 
 # Applications
 bindsym $mod+c exec waterfox || flatpak run net.waterfox.waterfox # Internet Browser

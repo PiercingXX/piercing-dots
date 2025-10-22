@@ -44,6 +44,11 @@ builddir=$(pwd)
         cp -f scripts/maintenance.sh /home/"$username"/
         chown "$username":"$username" /home/"$username"/maintenance.sh
         chmod +x /home/"$username"/maintenance.sh
+    # Update open_daily_notes Script
+        rm -f /home/"$username"/open_daily_notes.sh
+        cp -f scripts/open_daily_notes.sh /home/"$username"/
+        chown "$username":"$username" /home/"$username"/open_daily_notes.sh
+        chmod +x /home/"$username"/open_daily_notes.sh
     # Make Directories if needed
         # .font directory
             if [ ! -d "$HOME/.fonts" ]; then
