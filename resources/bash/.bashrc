@@ -78,7 +78,8 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 
 
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
-alias xx='$HOME/maintenance*.sh'
+alias xx='$HOME/.scripts/maintenance*.sh'
+alias ss='$HOME/.scripts/terminal_software_manager.sh'
 alias ff='fastfetch'
 alias c='clear'
 
@@ -371,144 +372,6 @@ trim() {
 	var="${var#"${var%%[![:space:]]*}"}" # remove leading whitespace characters
 	var="${var%"${var##*[![:space:]]}"}" # remove trailing whitespace characters
 	echo -n "$var"
-}
-
-#########################################################
-# Search then install/uninstall packages using fzf
-#########################################################
-
-# Software Search
-ss() {
-    local dtype
-    dtype=$(distribution)
-    case "$dtype" in
-        "arch")
-            if command -v paru &> /dev/null; then
-                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
-            elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
-            else
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
-            fi
-            ;;
-        "debian")
-            apt-cache pkgnames | fzf --multi --preview='apt-cache show {1}' --preview-window=down:75% | xargs -ro sudo apt-get install
-            ;;
-        "fedora")
-            if command -v dnf &> /dev/null; then
-                dnf list available | awk '{print $1}' | fzf --multi --preview='dnf info {1}' --preview-window=down:75% | xargs -ro sudo dnf install
-            else
-                yum list available | awk '{print $1}' | fzf --multi --preview='yum info {1}' --preview-window=down:75% | xargs -ro sudo yum install
-            fi
-            ;;
-        *)
-            echo "Unknown or unsupported distribution for ss alias."
-            ;;
-    esac
-    # Flatpak support (works on any distro if flatpak is installed)
-    if command -v flatpak &> /dev/null; then
-        echo "Flatpak available! Select apps to install:"
-        flatpak remote-ls --app --columns=application flathub \
-            | fzf --multi --preview='flatpak remote-info flathub {}' --preview-window=down:75% \
-            | xargs -r -I{} flatpak install -y flathub {}
-    fi
-}
-
-# Software Search Uninstaller || This took a bit more to get working.
-ssu_preview() {
-    local line="$*"
-    local dtype="${DTYPE:-$(distribution)}"
-    if [[ $line == "[F] "* ]]; then
-        local app=${line#"[F] "}
-        if command -v flatpak &>/dev/null; then
-            flatpak info "$app"
-        else
-            echo "Flatpak not installed"
-        fi
-    else
-        local pkg=${line#"[N] "}
-        case "$dtype" in
-            arch)
-                if command -v paru &>/dev/null; then paru -Qi "$pkg";
-                elif command -v yay &>/dev/null; then yay -Qi "$pkg";
-                else pacman -Qi "$pkg"; fi
-                ;;
-            debian)
-                apt-cache show "$pkg"
-                ;;
-            fedora)
-                if command -v dnf &>/dev/null; then dnf info "$pkg"; else yum info "$pkg"; fi
-                ;;
-            *)
-                echo "Unknown distro"
-                ;;
-        esac
-    fi
-}
-ssu() {
-    local dtype selection
-    dtype=$(distribution)
-    # Build native list command per distro
-    local native_list_cmd
-    case "$dtype" in
-        arch)
-            if command -v paru &>/dev/null; then
-                native_list_cmd='paru -Qq'
-            elif command -v yay &>/dev/null; then
-                native_list_cmd='yay -Qq'
-            else
-                native_list_cmd='pacman -Qq'
-            fi
-            ;;
-        debian)
-            native_list_cmd="dpkg-query -W -f='\${binary:Package}\n'"
-            ;;
-        fedora)
-            native_list_cmd="rpm -qa --qf '%{NAME}\n'"
-            ;;
-        *)
-            native_list_cmd='echo'
-            ;;
-    esac
-    # Compose combined menu
-    selection=$(
-        {
-            eval "$native_list_cmd" | sed 's/^/[N] /'
-            if command -v flatpak &>/dev/null; then
-                flatpak list --app --columns=application | sed 's/^/[F] /'
-            fi
-        } | DTYPE="$dtype" fzf --multi --prompt="Uninstall (enter to select): " \
-                            --preview 'ssu_preview {}' \
-                            --preview-window=down:75% --border
-    )
-    [[ -z "$selection" ]] && return 0
-    # Uninstall each selected entry
-    while IFS= read -r line; do
-        if [[ $line == "[F] "* ]]; then
-            app=${line#"[F] "}
-            flatpak uninstall -y --delete-data "$app"
-        elif [[ $line == "[N] "* ]]; then
-            pkg=${line#"[N] "}
-            case "$dtype" in
-                arch)
-                    sudo pacman -Rns --noconfirm "$pkg"
-                    ;;
-                debian)
-                    sudo apt-get purge -y "$pkg"
-                    ;;
-                fedora)
-                    if command -v dnf &>/dev/null; then
-                        sudo dnf remove -y "$pkg"
-                    else
-                        sudo yum remove -y "$pkg"
-                    fi
-                    ;;
-                *)
-                    echo "Unknown or unsupported distribution for uninstall: $pkg"
-                    ;;
-            esac
-        fi
-    done <<< "$selection"
 }
 
 
