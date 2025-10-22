@@ -103,39 +103,6 @@ if ! command_exists rsync; then
     fi
 fi
 
-
-
-# Auto‑update Maintenance.sh from PiercingXX GitHub
-auto_update() {
-    local GITHUB_RAW_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/resources/.scripts/maintenance.sh"
-    local TMP_FILE
-    TMP_FILE=$(mktemp)
-    # Download the latest script
-    if ! curl -fsSL "$GITHUB_RAW_URL" -o "$TMP_FILE"; then
-        echo -e "${RED}Failed to download update from GitHub.${NC}"
-        rm -f "$TMP_FILE"
-        return 1
-    fi
-    # If downloaded file differs from current one, copy to the home folder
-    if ! cmp -s "$0" "$TMP_FILE"; then
-        echo -e "${YELLOW}Updating maintenance script from GitHub...${NC}"
-        local HOME_SCRIPT="$HOME/maintenance.sh"
-        if ! cp "$TMP_FILE" "$HOME_SCRIPT"; then
-            echo -e "${RED}Failed to copy the script to $HOME_SCRIPT. Check permissions.${NC}"
-            rm -f "$TMP_FILE"
-            return 1
-        fi
-        chmod +x "$HOME_SCRIPT"
-        msg_box "Maintenance.sh was updated. Press [Enter] twice to proceed."
-        # Re‑execute the updated script from the home folder with a flag
-        exec "$HOME_SCRIPT" "--resume-update" "$@"
-    fi
-    # Clean up temporary file if no update was performed
-    rm -f "$TMP_FILE"
-    return 0
-}
-
-
 # Function to update local .bashrc from Piercing‑dots GitHub
 update_bashrc() {
     local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/resources/bash/.bashrc"
@@ -155,6 +122,61 @@ update_bashrc() {
     rm -f "$TMP_FILE"
     return 0
 }
+
+
+
+
+
+
+# Unified function to update all scripts in ~/.scripts from GitHub repo
+auto_update_scripts() {
+    local GITHUB_REPO="Piercingxx/piercing-dots"
+    local REMOTE_PATH="resources/.scripts"
+    local LOCAL_DIR="$HOME/.scripts"
+    local MAINTENANCE_SCRIPT="maintenance.sh"
+    local MAINTENANCE_UPDATED=0
+
+    # Ensure local scripts directory exists
+    mkdir -p "$LOCAL_DIR"
+
+    # Get list of scripts from GitHub (requires 'jq')
+    local SCRIPTS
+    SCRIPTS=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/contents/$REMOTE_PATH" | jq -r '.[] | select(.type=="file") | .name')
+
+    for script in $SCRIPTS; do
+        local RAW_URL="https://raw.githubusercontent.com/$GITHUB_REPO/main/$REMOTE_PATH/$script"
+        local TMP_FILE
+        TMP_FILE=$(mktemp)
+        if ! curl -fsSL "$RAW_URL" -o "$TMP_FILE"; then
+            echo -e "${RED}Failed to download $script from GitHub.${NC}"
+            rm -f "$TMP_FILE"
+            continue
+        fi
+        # Only replace if different
+        if ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
+            cp "$TMP_FILE" "$LOCAL_DIR/$script"
+            chmod +x "$LOCAL_DIR/$script"
+            echo "Updated $script"
+            # If maintenance.sh was updated, set flag
+            if [[ "$script" == "$MAINTENANCE_SCRIPT" ]]; then
+                MAINTENANCE_UPDATED=1
+            fi
+        fi
+        rm -f "$TMP_FILE"
+    done
+
+    if [[ $MAINTENANCE_UPDATED -eq 1 ]]; then
+        msg_box "Maintenance.sh was updated. Press [Enter] twice to proceed."
+        # Optionally, re-execute the updated script if needed
+        # exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
+    fi
+
+    echo "All scripts checked and updated if needed!"
+}
+
+
+
+
 
 
 # Function to update universal stuff
@@ -268,7 +290,7 @@ while true; do
             # PiercingXX Maintenance.sh update check
                 # Skip auto‑update if we are resuming
                 if [[ "$RESUME_UPDATE" -eq 0 ]]; then
-                    auto_update "$@"
+                    auto_update_scripts "$@"
                 fi
             # Update local .bashrc from Piercing‑dots GitHub
                 update_bashrc

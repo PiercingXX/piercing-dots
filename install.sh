@@ -39,17 +39,16 @@ username=$(id -u -n 1000)
 builddir=$(pwd)
 
 # PiercingXX Rice
-    # Update Maintenance Script (run 'xx' in terminal)
-        rm -f /home/"$username"/maintenance.sh
-        cp -f scripts/maintenance.sh /home/"$username"/
-        chown "$username":"$username" /home/"$username"/maintenance.sh
-        chmod +x /home/"$username"/maintenance.sh
-    # Update open_daily_notes Script
-        rm -f /home/"$username"/open_daily_notes.sh
-        cp -f scripts/open_daily_notes.sh /home/"$username"/
-        chown "$username":"$username" /home/"$username"/open_daily_notes.sh
-        chmod +x /home/"$username"/open_daily_notes.sh
-    # Make Directories if needed
+    # Create .scripts directory if it doesn't exist and place all scripts there
+        if [ ! -d /home/"$username"/.scripts ]; then
+            mkdir -p /home/"$username"/.scripts
+            chown "$username":"$username" /home/"$username"/.scripts
+        fi    
+    # Update scripts
+    rm -f /home/"$username"/.scripts/*
+    cp -f resources/.scripts/* /home/"$username"/.scripts/
+    chown -R "$username":"$username" /home/"$username"/.scripts
+    chmod +x /home/"$username"/.scripts/*
         # .font directory
             if [ ! -d "$HOME/.fonts" ]; then
                 mkdir -p "$HOME/.fonts"
