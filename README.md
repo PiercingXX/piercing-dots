@@ -7,8 +7,6 @@ _A curated collection of dotfiles + a one‑stop distro-agnostic maintenance scr
 ## 📦 What is Piercing‑Dots?
 
 **Piercing‑Dots** – *Your One‑Stop Shop for “Easy” Linux  
-> **If you’re still wrestling with a terminal, you’re probably doing it wrong.**
-
 
 This single line will *obliterate* your current system state: it updates your distro, cleans stale packages, and **overwrites** your dotfiles *without* a backup—because who needs safety nets, right?  
     - **`maintenance.sh`** – Detects your distro, runs a full‑system update, and auto‑patches any script changes you push to this repo.  
