@@ -1,83 +1,81 @@
 # Piercing‑Dots
 
-_A curated collection of dotfiles + a one‑stop distro-agnostic maintenance script for Linux._
+_A curated dotfiles collection + a one‑stop Linux maintenance script._
 
 ---
 
 ## 📦 What is Piercing‑Dots?
 
-**Piercing‑Dots** – *Your One‑Stop Shop for “Easy” Linux  
+**Piercing‑Dots** automates your Linux setup: updates your distro, cleans stale packages, and overwrites dotfiles—no backups.
 
-This single line will *obliterate* your current system state: it updates your distro, cleans stale packages, and **overwrites** your dotfiles *without* a backup—because who needs safety nets, right?  
-    - **`maintenance.sh`** – Detects your distro, runs a full‑system update, and auto‑patches any script changes you push to this repo.  
-    - **`terminal_software_manager.sh`** – Installs or removes *any* software from the terminal, even if you’ve forgotten the exact package name.  
-    - **`open_daily_note.sh`** – Launches a fresh Neovim buffer for your daily musings, syncing to a cloud folder on my server (you’ll have to set that up yourself, genius).
+- **maintenance.sh** – Detects your distro, updates system, auto-patches scripts.
+- **terminal_software_manager.sh** – Installs/removes software from the terminal.
+- **open_daily_note.sh** – Opens a Neovim buffer for daily notes (cloud sync optional).
 
-The “Favorite” Configs (Because You’ll Never Be Satisfied)
-    - **Window Manager Dots** – Hyprland, Awesome, BSPWM, i3, Sway – all pre‑tuned for maximum efficiency.  
-    - **GIMP** – My *PiercingXX* layout strips away clutter, keeps the classic shortcuts, and looks like a minimalist’s wet dream.  
-    - **Yazi / Kitty** – File navigation so slick it feels like a dance.  
-    - **Gnome** – A full‑blown `customization.sh` that emulates the keybindings of the WM’s above, because why not be consistent?  
-    - **Neovim** – *PiercingXX* setup to replace both VS Code and Obsidian; it’s the future, not the past.
+### Favorite Configs
 
-> **Bottom line:** If you’re still using a GUI to manage packages, you’re living in the Stone Age. Grab this repo and let the automation do the heavy lifting while you sit back and marvel at your newfound efficiency.
+- **Window Manager Dots** – Hyprland, Awesome, BSPWM, i3, Sway.
+- **GIMP** – Minimalist layout, classic shortcuts.
+- **Yazi / Kitty** – Fast file navigation.
+- **Gnome** – Consistent keybindings via customization.sh.
+- **Neovim** – Setup to replace VS Code and Obsidian.
 
-
+> **Tip:** Use automation, not GUIs, for package management.
 
 ---
 
 ## 🌟 The Dots
 
-> All dotfiles are stored under 'dots'. Feel free to cherry‑pick or fork.
-
-- The same keybinds are used universally (mostly) across all DEs
-		```Hit "<Super>+<?>" to get the full list ```
-
+All dotfiles are in `dots`. Universal keybinds:
+```
+<Super>+<?> for full list
+```
 
 ---
 
-## 📄 [maintenance.sh](vscode-file://vscode-app/opt/visual-studio-code/resources/app/out/vs/code/electron-browser/workbench/workbench.html) – Beautiful Simplicity 
+## 📄 maintenance.sh – Simplicity
 
 The script will:
 
-1. **Self‑update** from GitHub.
-2. Detect your distro and present a **whiptail menu**.
-3. Offer options to update the system, mirrors, install the full “Rice”, or just GIMP presets.
-4. Run a suite of _universal_ updates (Neovim, pip, npm, cargo, fwupd, flatpak, Docker, Hyprland, …).
+- Self-update from GitHub.
+- Detect your distro and present a **whiptail menu**.
+- Offer options to update the system, mirrors, install the full “Rice”, or just GIMP presets.
+- Run universal updates (Neovim, pip, npm, cargo, fwupd, flatpak, Docker, Hyprland, etc).
 
 ---
 
-##  🚀 Gnome Customization - The Rice
+## 🚀 Gnome Customization
 
-The `gnome-customizations.sh` script applies a curated set of tweaks that give your Gnome desktop a polished look.
+The `gnome-customizations.sh` script applies curated tweaks for a polished Gnome desktop.
 
-- This script is meant to be ran as a part of any of the Distro-mods I have in my git repo. It can be ran separately but edit it first so you aren't stuck with issues.
-- This will apply a number of configs for gnome itself as well as several Gnome-extensions. 
-	- dconf* is required to run gnome-customizations.sh
-- Simulates Window Managers like Hyprland, simular to PopOS but smoother.
-- Adjusts system settings such as **keybinds**, **cursor theme**, **icon theme**, **background settings**, and **panel layout**.
-- Enables useful shortcuts and accessibility options (e.g., **Alt‑Tab** enhancements, **focus‑follows‑mouse**).
-- Applies a consistent color scheme and font settings across all Gnome applications.
+- Intended for use with any Distro-mod in this repo. Can be run separately (edit first to avoid issues).
+- Applies configs for Gnome and several extensions (requires dconf).
+- Simulates WMs like Hyprland; smoother than PopOS.
+- Adjusts keybinds, cursor/icon theme, backgrounds, panel layout.
+- Enables shortcuts and accessibility options (e.g., Alt‑Tab enhancements, focus‑follows‑mouse).
+- Consistent color scheme and fonts across Gnome apps.
 
-Running the script is as simple as `./gnome-customizations.sh` from the `scripts` directory, and it will automatically detect your user and apply the changes without further manual intervention.
+Run with:
+```
+./gnome-customizations.sh
+```
+from the `scripts` directory. Auto-detects user and applies changes.
 
 ---
 
 ## 🛠️ Usage
 
-1. **Choose an option**
-    - `Update System` – Updates OS .
-    - `Update Mirrors` – Refreshes Arch mirrors.
-    - `PiercingXX Rice` – Installs/Updates the full dotfile set.
-    - `Piercing Gimp Only` – Installs only GIMP dots.
-    - `Rice-No Hyprland` – Installs everything except Hyprland config but will still update the Hypr keybinds (useful when running same setup on multiple devices).
-    - `Reboot System` – Does what you think it will.
-    - `Exit` – Quit.
+Choose an option:
 
-> **Note:** The script will ask for your password when needed (e.g., `sudo`).
+- `Update System` – Updates OS.
+- `Update Mirrors` – Refreshes Arch mirrors.
+- `PiercingXX Rice` – Installs/updates the full dotfile set.
+- `Piercing Gimp Only` – Installs only GIMP dots.
+- `Rice-No Hyprland` – Installs everything except Hyprland config, but updates Hypr keybinds.
+- `Reboot System` – Reboots.
+- `Exit` – Quit.
 
-
-<img width="961" height="775" alt="2025-08-26-190921_hyprshot" src="https://github.com/user-attachments/assets/ce7b6549-24b8-40ab-b648-10589cc57fdd" />
+> **Note:** The script will ask for your password when needed (e.g., `sudo`).
 
 ---
 
@@ -88,7 +86,7 @@ Running the script is as simple as `./gnome-customizations.sh` from the `scri
 3. Commit your changes.
 4. Open a Pull Request.
 
-Please keep the [maintenance.sh](vscode-file://vscode-app/opt/visual-studio-code/resources/app/out/vs/code/electron-browser/workbench/workbench.html) script **POSIX‑friendly** and avoid hard‑coding paths.
+Please keep `maintenance.sh` **POSIX-friendly** and avoid hard-coded paths.
 
 ---
 
@@ -100,5 +98,5 @@ See the LICENSE file for details.
 ---
 
 ## 📞 Support & Contact
-  
+
 *Don't.*
