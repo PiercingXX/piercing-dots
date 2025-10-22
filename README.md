@@ -6,11 +6,28 @@ _A curated collection of dotfiles + a one‑stop distro-agnostic maintenance scr
 
 ## 📦 What is Piercing‑Dots?
 
-Piercing‑Dots is my **personal dotfile repository** that includes a powerful, self‑updating Bash script.
+**Piercing‑Dots** – *Your One‑Stop Shop for “Easy” Linux  
+> **If you’re still wrestling with a terminal, you’re probably doing it wrong.**
 
-- **All your favorite configs** (Gnome, Hyprland, BSPWM, Awesome, i3, Neovim, Kitty, Yazi, etc.) are in one place.
-- **One command** to keep your system, packages, and dotfiles in sync (dotfiles will overwrite w/ no backup).
-- **Distribution Agnostic** support (Arch, Fedora, Debian/Ubuntu/Pop!_OS, etc.).
+
+This single line will *obliterate* your current system state: it updates your distro, cleans stale packages, and **overwrites** your dotfiles *without* a backup—because who needs safety nets, right?  
+    - **`maintenance.sh`** – Detects your distro, runs a full‑system update, and auto‑patches any script changes you push to this repo.  
+    - **`terminal_software_manager.sh`** – Installs or removes *any* software from the terminal, even if you’ve forgotten the exact package name.  
+    - **`open_daily_note.sh`** – Launches a fresh Neovim buffer for your daily musings, syncing to a cloud folder on my server (you’ll have to set that up yourself, genius).
+
+## The “Favorite” Configs (Because You’ll Never Be Satisfied)  
+    - **Window Manager Dots** – Hyprland, Awesome, BSPWM, i3, Sway – all pre‑tuned for maximum efficiency.  
+    - **GIMP** – My *PiercingXX* layout strips away clutter, keeps the classic shortcuts, and looks like a minimalist’s wet dream.  
+    - **Yazi / Kitty** – File navigation so slick it feels like a dance.  
+    - **Gnome** – A full‑blown `customization.sh` that emulates the keybindings of the WM’s above, because why not be consistent?  
+    - **Neovim** – *PiercingXX* setup to replace both VS Code and Obsidian; it’s the future, not the past.
+
+> **Bottom line:** If you’re still using a GUI to manage packages, you’re living in the Stone Age. Grab this repo and let the automation do the heavy lifting while you sit back and marvel at your newfound efficiency.
+
+
+
+
+
 
 ---
 
