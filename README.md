@@ -15,7 +15,7 @@ This single line will *obliterate* your current system state: it updates your di
     - **`terminal_software_manager.sh`** – Installs or removes *any* software from the terminal, even if you’ve forgotten the exact package name.  
     - **`open_daily_note.sh`** – Launches a fresh Neovim buffer for your daily musings, syncing to a cloud folder on my server (you’ll have to set that up yourself, genius).
 
-## The “Favorite” Configs (Because You’ll Never Be Satisfied)  
+The “Favorite” Configs (Because You’ll Never Be Satisfied)
     - **Window Manager Dots** – Hyprland, Awesome, BSPWM, i3, Sway – all pre‑tuned for maximum efficiency.  
     - **GIMP** – My *PiercingXX* layout strips away clutter, keeps the classic shortcuts, and looks like a minimalist’s wet dream.  
     - **Yazi / Kitty** – File navigation so slick it feels like a dance.  
@@ -23,9 +23,6 @@ This single line will *obliterate* your current system state: it updates your di
     - **Neovim** – *PiercingXX* setup to replace both VS Code and Obsidian; it’s the future, not the past.
 
 > **Bottom line:** If you’re still using a GUI to manage packages, you’re living in the Stone Age. Grab this repo and let the automation do the heavy lifting while you sit back and marvel at your newfound efficiency.
-
-
-
 
 
 
