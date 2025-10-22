@@ -38,45 +38,46 @@ pretty_name() {
 username=$(id -u -n 1000)
 builddir=$(pwd)
 
-# PiercingXX Rice
+
+#Create necessary directories and copy configuration files
     # Create .scripts directory if it doesn't exist and place all scripts there
         if [ ! -d /home/"$username"/.scripts ]; then
             mkdir -p /home/"$username"/.scripts
             chown "$username":"$username" /home/"$username"/.scripts
         fi    
     # Update scripts
-    rm -f /home/"$username"/.scripts/*
-    cp -f resources/.scripts/* /home/"$username"/.scripts/
-    chown -R "$username":"$username" /home/"$username"/.scripts
-    chmod +x /home/"$username"/.scripts/*
-        # .font directory
-            if [ ! -d "$HOME/.fonts" ]; then
-                mkdir -p "$HOME/.fonts"
-                chown -R "$username":"$username" "$HOME"/.fonts
-            fi
-        # .icons directory
-            if [ ! -d "$HOME/.icons" ]; then
-                mkdir -p /home/"$username"/.icons
-                chown -R "$username":"$username" /home/"$username"/.icons
-            fi
-        # Background and Profile Image Directories
-            if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
-                mkdir -p /home/"$username"/Pictures/backgrounds
-                chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
-            fi
-            if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
-                mkdir -p /home/"$username"/Pictures/profile-image
-                chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
-            fi
-        # fstab external drive mounting directory
-            if [ ! -d "/media/Working-Storage" ]; then
-                sudo mkdir -p /media/Working-Storage
-                sudo chown "$username":"$username" /media/Working-Storage
-            fi
-            if [ ! -d "/media/Archived-Storage" ]; then
-                sudo mkdir -p /media/Archived-Storage
-                sudo chown "$username":"$username" /media/Archived-Storage
-            fi
+        rm -f /home/"$username"/.scripts/*
+        cp -f resources/.scripts/* /home/"$username"/.scripts/
+        chown -R "$username":"$username" /home/"$username"/.scripts
+        chmod +x /home/"$username"/.scripts/*
+    # .font directory
+        if [ ! -d "$HOME/.fonts" ]; then
+            mkdir -p "$HOME/.fonts"
+            chown -R "$username":"$username" "$HOME"/.fonts
+        fi
+    # .icons directory
+        if [ ! -d "$HOME/.icons" ]; then
+            mkdir -p /home/"$username"/.icons
+            chown -R "$username":"$username" /home/"$username"/.icons
+        fi
+    # Background and Profile Image Directories
+        if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
+            mkdir -p /home/"$username"/Pictures/backgrounds
+            chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
+        fi
+        if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
+            mkdir -p /home/"$username"/Pictures/profile-image
+            chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
+        fi
+    # fstab external drive mounting directory
+        if [ ! -d "/media/Working-Storage" ]; then
+            sudo mkdir -p /media/Working-Storage
+            sudo chown "$username":"$username" /media/Working-Storage
+        fi
+        if [ ! -d "/media/Archived-Storage" ]; then
+            sudo mkdir -p /media/Archived-Storage
+            sudo chown "$username":"$username" /media/Archived-Storage
+        fi
     # Clone Piercing Dots Repo
         cp -Rf dots/* /home/"$username"/.config/
         chown "$username":"$username" -R /home/"$username"/.config/*

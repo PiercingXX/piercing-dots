@@ -124,10 +124,6 @@ update_bashrc() {
 }
 
 
-
-
-
-
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
     local GITHUB_REPO="Piercingxx/piercing-dots"
@@ -166,9 +162,7 @@ auto_update_scripts() {
     done
 
     if [[ $MAINTENANCE_UPDATED -eq 1 ]]; then
-        msg_box "Maintenance.sh was updated. Press [Enter] twice to proceed."
-        # Optionally, re-execute the updated script if needed
-        # exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
+        exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
     fi
 
     echo "All scripts checked and updated if needed!"
