@@ -38,7 +38,21 @@ elif grep -qi grub /proc/cmdline || [ -f /etc/default/grub ]; then
   # GRUB
   echo "Detected GRUB."
   sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
-  sudo update-grub
+  # Detect and use the correct GRUB update command
+  if command -v update-grub >/dev/null 2>&1; then
+    sudo update-grub
+  elif command -v grub-mkconfig >/dev/null 2>&1; then
+    # Try common grub.cfg locations
+    if [ -d /boot/grub ]; then
+      sudo grub-mkconfig -o /boot/grub/grub.cfg
+    elif [ -d /boot/grub2 ]; then
+      sudo grub-mkconfig -o /boot/grub2/grub.cfg
+    else
+      echo "Could not find grub.cfg location. Please update GRUB config manually."
+    fi
+  else
+    echo "No GRUB update command found. Please update GRUB config manually."
+  fi
   enable_beep_systemd
 else
   echo "Bootloader not detected. Applying beep to rc.local."

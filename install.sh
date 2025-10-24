@@ -102,5 +102,12 @@ builddir=$(pwd)
     # Replace .bashrc
         cp -f resources/bash/.bashrc /home/"$username"/.bashrc
         source /home/"$username"/.bashrc
+    # Set Boot Beep
+        echo -e "${YELLOW}Setting Boot Beep...${NC}"
+            cd scripts || exit
+            chmod u+x set_boot_beep.sh
+            ./set_boot_beep.sh
+            cd "$builddir" || exit
+        echo -e "${GREEN}Boot Beep Set successfully!${NC}"
     # Set PRETTY_NAME in /etc/os-release
         pretty_name
