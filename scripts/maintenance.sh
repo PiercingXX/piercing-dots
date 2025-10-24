@@ -165,7 +165,7 @@ auto_update_scripts() {
         exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
     fi
 
-    echo "All scripts checked and updated if needed!"
+    echo "All scripts are up to date!"
 }
 
 

@@ -37,25 +37,25 @@ Buttons
 */
 
 #lock {
-	margin: 30px;
-	border-radius: 20px;
+	margin: 10px;
+	border-radius: 10px;
 	background-image: image(url("icons/lock.png"));
 }
 
 #logout {
-	margin: 30px;
-	border-radius: 20px;
+	margin: 10px;
+	border-radius: 10px;
 	background-image: image(url("icons/logout.png"));
 }
 
 #shutdown {
-	margin: 30px;
-	border-radius: 20px;
+	margin: 10px;
+	border-radius: 10px;
 	background-image: image(url("icons/shutdown.png"));
 }
 
 #reboot {
-	margin: 30px;
-	border-radius: 20px;
+	margin: 10px;
+	border-radius: 10px;
 	background-image: image(url("icons/reboot.png"));
 }
