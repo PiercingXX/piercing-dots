@@ -273,7 +273,13 @@ globalkeys = gears.table.join(
                     history_path = awful.util.get_cache_dir() .. "/history_eval"
                   }
               end,
-              {description = "lua execute prompt", group = "awesome"})
+              {description = "lua execute prompt", group = "awesome"}),
+
+    -- Script Keybinds
+    awful.key({ modkey }, "m", function () awful.spawn("kitty ~/.scripts/maintenance.sh") end, {description = "Open maintenance script", group = "scripts"}),
+    awful.key({ modkey }, "n", function () awful.spawn("kitty ~/.scripts/open_daily_note.sh") end, {description = "Open daily note to edit", group = "scripts"}),
+    awful.key({ modkey, "Shift" }, "n", function () awful.spawn("kitty ~/.scripts/open_daily_note.sh --view") end, {description = "Open daily note to view only", group = "scripts"}),
+    awful.key({ modkey }, "i", function () awful.spawn("kitty ~/.scripts/inventory.sh") end, {description = "Open inventory script", group = "scripts"})
 
 )
 

@@ -264,6 +264,12 @@ bindsym $mod+Shift+f fullscreen # Toggle fullscreen mode
 bindsym $mod+f floating toggle # Toggle floating mode
 bindsym $mod+r exec pkill waybar && waybar &
 
+# Scripts
+bindsym $mod+m exec kitty ~/.scripts/maintenance.sh # Open maintenance script
+bindsym $mod+n exec kitty ~/.scripts/open_daily_note.sh # Open daily note to edit
+bindsym $mod+Shift+n exec kitty ~/.scripts/open_daily_note.sh --view # Open daily note to view only
+bindsym $mod+i exec kitty ~/.scripts/inventory.sh # Open inventory script
+
 
 # Sway does not support layoutmsg togglesplit directly; use layout toggle split
 bindsym $mod+x layout toggle split # Toggle split mode
@@ -277,7 +283,7 @@ bindsym $mod+g exec gimp || flatpak run org.gimp.GIMP
 bindsym Ctrl+Mod1+Delete exec kitty flatpak run io.missioncenter.MissionCenter
 
 # Clipboard History
-bindsym $mod+n exec pkill fuzzel || cliphist list | fuzzel --match-mode fzf --dmenu | cliphist decode | wl-copy # Clipboard history >> clipboard
+bindsym $mod+Shift+h exec pkill fuzzel || cliphist list | fuzzel --match-mode fzf --dmenu | cliphist decode | wl-copy # Clipboard history >> clipboard
 
 # Show Keybinds
 #bindsym $mod+slash exec kitty w3m ~/.config/hypr/keyhint.html
