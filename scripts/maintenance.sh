@@ -126,6 +126,7 @@ update_bashrc() {
 
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
+
     local GITHUB_REPO="Piercingxx/piercing-dots"
     local REMOTE_PATH="resources/.scripts"
     local LOCAL_DIR="$HOME/.scripts"
@@ -149,20 +150,28 @@ auto_update_scripts() {
             continue
         fi
         # Only replace if different
-        if ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
-            cp "$TMP_FILE" "$LOCAL_DIR/$script"
-            chmod +x "$LOCAL_DIR/$script"
-            echo "Updated $script"
-            # If maintenance.sh was updated, set flag
-            if [[ "$script" == "$MAINTENANCE_SCRIPT" ]]; then
+        if [[ "$script" == "$MAINTENANCE_SCRIPT" ]]; then
+            # Compare with the actual running script
+            local CURRENT_SCRIPT_PATH
+            CURRENT_SCRIPT_PATH="$(realpath "$0")"
+            if ! cmp -s "$CURRENT_SCRIPT_PATH" "$TMP_FILE"; then
+                cp "$TMP_FILE" "$CURRENT_SCRIPT_PATH"
+                chmod +x "$CURRENT_SCRIPT_PATH"
+                echo "Updated $script (main script)"
                 MAINTENANCE_UPDATED=1
+            fi
+        else
+            if ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
+                cp "$TMP_FILE" "$LOCAL_DIR/$script"
+                chmod +x "$LOCAL_DIR/$script"
+                echo "Updated $script"
             fi
         fi
         rm -f "$TMP_FILE"
     done
 
     if [[ $MAINTENANCE_UPDATED -eq 1 ]]; then
-        exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
+        exec "$(realpath "$0")" "--resume-update" "$@"
     fi
 
     echo "All scripts are up to date!"
