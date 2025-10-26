@@ -1,7 +1,33 @@
 #!/usr/bin/env bash
 # GitHub.com/PiercingXX
 
-# Simple Backup & Restore App using rsync
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# Auto-install rsync if missing
+if ! command_exists rsync; then
+    echo -e "${yellow}rsync not found – attempting install...${nc}"
+    case "$DISTRO" in
+        arch)
+            sudo pacman -S --noconfirm rsync ;;
+        fedora)
+            sudo dnf install -y rsync >/dev/null 2>&1 ;;
+        debian|ubuntu|pop|linuxmint|mint)
+            sudo apt install -y rsync >/dev/null 2>&1 ;;
+        *)
+            echo -e "${yellow}Unsupported distro for auto rsync install. Skipping.${nc}"
+            ;;
+    esac
+    if command_exists rsync; then
+        echo -e "${green}rsync installed successfully.${nc}"
+    else
+        echo -e "${yellow}Could not install rsync; will full replace config.${nc}"
+    fi
+fi
+
+
 
 while true; do
     if ! command -v gum &>/dev/null; then

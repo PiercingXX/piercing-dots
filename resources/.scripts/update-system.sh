@@ -1,5 +1,50 @@
 #!/bin/bash
-# Update System Script (split from maintenance.sh)
+# GitHub.com/PiercingXX
+
+# Unified function to update all scripts in ~/.scripts from GitHub repo
+auto_update_scripts() {
+    local GITHUB_REPO="Piercingxx/piercing-dots"
+    local REMOTE_PATH="resources/.scripts"
+    local LOCAL_DIR="$HOME/.scripts"
+    local MAINTENANCE_SCRIPT="maintenance.sh"
+    local MAINTENANCE_UPDATED=0
+
+    # Ensure local scripts directory exists
+    mkdir -p "$LOCAL_DIR"
+
+    # Get list of scripts from GitHub (requires 'jq')
+    local SCRIPTS
+    SCRIPTS=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/contents/$REMOTE_PATH" | jq -r '.[] | select(.type=="file") | .name')
+
+    for script in $SCRIPTS; do
+        local RAW_URL="https://raw.githubusercontent.com/$GITHUB_REPO/main/$REMOTE_PATH/$script"
+        local TMP_FILE
+        TMP_FILE=$(mktemp)
+        if ! curl -fsSL "$RAW_URL" -o "$TMP_FILE"; then
+            echo -e "${yellow}Failed to download $script from GitHub.${nc}"
+            rm -f "$TMP_FILE"
+            continue
+        fi
+        # Only replace if different
+        if ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
+            cp "$TMP_FILE" "$LOCAL_DIR/$script"
+            chmod +x "$LOCAL_DIR/$script"
+            echo -e "${green}Updated $script${nc}"
+            # If maintenance.sh was updated, set flag
+            if [[ "$script" == "$MAINTENANCE_SCRIPT" ]]; then
+                MAINTENANCE_UPDATED=1
+            fi
+        fi
+        rm -f "$TMP_FILE"
+    done
+
+    if [[ $MAINTENANCE_UPDATED -eq 1 ]]; then
+        exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
+    fi
+
+    echo -e "${green}All scripts checked and updated if needed!${nc}"
+}
+
 
 # Detect distribution
 if [ -f /etc/os-release ]; then
@@ -21,70 +66,8 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Reliable-ish internet check
-check_internet() {
-    local timeout=4
-    if command_exists nm-online; then
-        nm-online -q -t "$timeout" && return 0
-    fi
-    if command_exists networkctl; then
-        networkctl -q is-online --timeout="$timeout" && return 0
-    fi
-    local urls=(
-        "https://connectivitycheck.gstatic.com/generate_204"
-        "http://www.google.com/generate_204"
-        "http://www.msftncsi.com/ncsi.txt"
-        "http://www.msftconnecttest.com/connecttest.txt"
-    )
-    for url in "${urls[@]}"; do
-        local code
-        code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
-        if [[ "$code" == "204" ]]; then
-            return 0
-        fi
-        if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
-            local body
-            body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
-            if [[ "$body" == "Microsoft NCSI" || "$body" == "Microsoft Connect Test" ]]; then
-                return 0
-            fi
-        fi
-    done
-    local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
-    for host in "${hosts[@]}"; do
-        if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
-            return 0
-        fi
-    done
-    return 1
-}
 
-# Require internet before continuing
-if ! check_internet; then
-    echo "Internet connectivity is required to continue."
-    exit 1
-fi
 
-# Auto-install rsync if missing
-if ! command_exists rsync; then
-    echo -e "${yellow}rsync not found – attempting install...${nc}"
-    case "$DISTRO" in
-        arch)
-            sudo pacman -S --noconfirm rsync ;;
-        fedora)
-            sudo dnf install -y rsync >/dev/null 2>&1 ;;
-        debian|ubuntu|pop|linuxmint|mint)
-            sudo apt install -y rsync >/dev/null 2>&1 ;;
-        *)
-            echo -e "${yellow}Unsupported distro for auto rsync install. Skipping.${nc}"
-            ;;
-    esac
-    if command_exists rsync; then
-        echo -e "${green}rsync installed successfully.${nc}"
-    else
-        echo -e "${yellow}Could not install rsync; will full replace config.${nc}"
-    fi
-fi
 
 # Update .bashrc from GitHub
 update_bashrc() {
@@ -144,8 +127,12 @@ universal_update() {
 }
 
 # Main logic
+echo -e "${blue}PiercingXX System Update${nc}"
+echo -e "${green}Starting system update...${nc}\n"
 clear
 echo -e "${blue}PiercingXX System Update${nc}"
+echo -e "${green}Checking for script updates...${nc}"
+auto_update_scripts
 echo -e "${green}Starting system update...${nc}\n"
 update_bashrc
 if [[ "$DISTRO" == "arch" ]]; then

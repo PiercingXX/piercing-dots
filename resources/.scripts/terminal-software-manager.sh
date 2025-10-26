@@ -47,11 +47,11 @@ install_software() {
     case "$dtype" in
         "arch")
             if command -v paru &> /dev/null; then
-                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:75% | xargs -ro paru -S
+                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:50% | xargs -ro paru -S
             elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:75% | xargs -ro yay -S
+                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:50% | xargs -ro yay -S
             else
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:75% | xargs -ro sudo pacman -S
+                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:50% | xargs -ro sudo pacman -S
             fi
             ;;
         "debian")
@@ -60,7 +60,7 @@ install_software() {
                 if command -v flatpak &>/dev/null; then \
                     flatpak remote-ls --app flathub --columns=name; \
                 fi \
-            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:75% | xargs -ro -I{} bash -c "
+            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if apt-cache show \"\$1\" &>/dev/null; then
                     sudo apt-get install \"\$1\"
                 elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
@@ -74,7 +74,7 @@ install_software() {
                 if command -v flatpak &>/dev/null; then \
                     flatpak remote-ls --app flathub --columns=name; \
                 fi \
-            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:75% | xargs -ro -I{} bash -c "
+            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if dnf info \"\$1\" &>/dev/null; then
                     sudo dnf install \"\$1\"
                 elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
@@ -114,7 +114,7 @@ uninstall_software() {
     [ -z "$pkgs" ] && return 0
     selection=$(printf "%s\n" "$pkgs" | fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'echo {}' \
-                            --preview-window=down:75% --border)
+                            --preview-window=down:50% --border)
     [[ -z "$selection" ]] && return 0
     while IFS= read -r pkg; do
         case "$dtype" in
