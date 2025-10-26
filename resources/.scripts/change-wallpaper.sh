@@ -73,7 +73,7 @@ if [ "$mode" = "Same wallpaper on all displays" ]; then
         exit 0
     fi
     {
-        awk '/^preload|^#|^splash|^$|^ipc/ {print}' "$CONF"
+        awk '!/^preload / && !/^wallpaper /' "$CONF"
         for display in "${displays[@]}"; do
             echo "preload = $selected"
         done
@@ -101,7 +101,7 @@ else
         selected_wallpapers[$display]="$wp"
     done
     {
-        awk '/^preload|^#|^splash|^$|^ipc/ {print}' "$CONF"
+        awk '!/^preload / && !/^wallpaper /' "$CONF"
         for display in "${displays[@]}"; do
             echo "preload = ${selected_wallpapers[$display]}"
         done
