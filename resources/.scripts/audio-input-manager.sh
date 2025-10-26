@@ -1,6 +1,5 @@
 #!/bin/bash
-# audio-input-manager.sh: Terminal UI to change audio input device (microphone)
-# Auto-detects PipeWire, PulseAudio, or ALSA
+# GitHub.com/PiercingXX
 
 set -e
 
@@ -30,7 +29,6 @@ case "$audio_system" in
     pipewire)
     if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
             echo "🎤 Available audio input devices:"
-            # Extract the 'Sources:' block under 'Audio' using grep and awk
             sources=()
             in_sources=0
             while IFS= read -r line; do
@@ -70,7 +68,6 @@ case "$audio_system" in
             fi
         elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
             echo "🔈 Available audio output devices:"
-            # Extract the 'Sinks:' block under 'Audio' using grep and awk
             sinks=()
             in_sinks=0
             while IFS= read -r line; do

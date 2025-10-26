@@ -1,13 +1,18 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+# Ensure user can force shutdown and reboot without password
+for cmd in /sbin/shutdown /sbin/reboot; do
+    if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
+        echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
+    fi
+done
+
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
     local GITHUB_REPO="Piercingxx/piercing-dots"
     local REMOTE_PATH="resources/.scripts"
     local LOCAL_DIR="$HOME/.scripts"
-    local MAINTENANCE_SCRIPT="maintenance.sh"
-    local MAINTENANCE_UPDATED=0
 
     # Ensure local scripts directory exists
     mkdir -p "$LOCAL_DIR"
@@ -25,26 +30,17 @@ auto_update_scripts() {
             rm -f "$TMP_FILE"
             continue
         fi
-        # Only replace if different
-        if ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
+        # Only replace if different or missing
+        if [ ! -f "$LOCAL_DIR/$script" ] || ! cmp -s "$LOCAL_DIR/$script" "$TMP_FILE"; then
             cp "$TMP_FILE" "$LOCAL_DIR/$script"
             chmod +x "$LOCAL_DIR/$script"
             echo -e "${green}Updated $script${nc}"
-            # If maintenance.sh was updated, set flag
-            if [[ "$script" == "$MAINTENANCE_SCRIPT" ]]; then
-                MAINTENANCE_UPDATED=1
-            fi
         fi
         rm -f "$TMP_FILE"
     done
 
-    if [[ $MAINTENANCE_UPDATED -eq 1 ]]; then
-        exec "$LOCAL_DIR/$MAINTENANCE_SCRIPT" "--resume-update" "$@"
-    fi
-
     echo -e "${green}All scripts checked and updated if needed!${nc}"
 }
-
 
 # Detect distribution
 if [ -f /etc/os-release ]; then
@@ -65,9 +61,6 @@ nc='\033[0m'
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
-
-
-
 
 # Update .bashrc from GitHub
 update_bashrc() {

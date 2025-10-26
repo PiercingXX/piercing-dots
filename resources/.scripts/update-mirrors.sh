@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update Mirrors Script (split from maintenance.sh)
+# GitHub.com/PiercingXX
 
 # Detect distribution
 if [ -f /etc/os-release ]; then

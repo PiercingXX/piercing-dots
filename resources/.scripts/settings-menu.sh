@@ -144,7 +144,7 @@ while true; do
 			"🌐 Update Mirrors")
 				~/.scripts/update-mirrors.sh
 				;;
-			"✨ Update PiercingXX")
+			"✨ Update PiercingXX Rice")
 				~/.scripts/update-piercingXX.sh
 				;;
 			"🖼️ Change Wallpaper")

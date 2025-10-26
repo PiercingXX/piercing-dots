@@ -1,4 +1,5 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
 
 # Change wallpaper using hyprpaper, based on hyprpaper.conf
 

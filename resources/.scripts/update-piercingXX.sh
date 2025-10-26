@@ -1,5 +1,5 @@
 #!/bin/bash
-# Update PiercingXX Script (split from maintenance.sh)
+# GitHub.com/PiercingXX
 
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
