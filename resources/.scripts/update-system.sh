@@ -132,7 +132,7 @@ echo -e "${green}Starting system update...${nc}\n"
 clear
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Checking for script updates...${nc}"
-auto_update_scripts
+auto_update_scripts "$@"
 echo -e "${green}Starting system update...${nc}\n"
 update_bashrc
 if [[ "$DISTRO" == "arch" ]]; then
