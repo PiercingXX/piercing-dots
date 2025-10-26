@@ -25,8 +25,9 @@ while true; do
 
 	options=(
 		"🚀 Update System"
-		"✨ Update PiercingXX"
 		"📦 Terminal Software Manager"
+		"✨ Update PiercingXX Rice"
+		"🖼️ Change Wallpaper"
 		"📶 WiFi Manager"
 		"🔵 Bluetooth Manager"
 		"👤 User Management"
@@ -36,9 +37,10 @@ while true; do
 	if [[ "$DISTRO" == "arch" ]]; then
 		options=(
 			"🚀 Update System"
-			"🌐 Update Mirrors"
-			"✨ Update PiercingXX"
 			"📦 Terminal Software Manager"
+			"🌐 Update Mirrors"
+			"✨ Update PiercingXX Rice"
+			"🖼️ Change Wallpaper"
 			"📶 WiFi Manager"
 			"🔵 Bluetooth Manager"
 			"👤 User Management"
@@ -48,7 +50,7 @@ while true; do
 	fi
 
 	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="Settings Menu")
-		case "$choice" in
+	case "$choice" in
 			"🚀 Update System")
 				~/.scripts/update-system.sh
 				;;
@@ -60,6 +62,9 @@ while true; do
 				;;
 			"✨ Update PiercingXX")
 				~/.scripts/update-piercingXX.sh
+				;;
+			"🖼️ Change Wallpaper")
+				~/.scripts/change-wallpaper.sh
 				;;
 			"📶 WiFi Manager")
 				~/.scripts/wifi_manager.sh
