@@ -1,47 +1,120 @@
 #!/bin/bash
-# GitHub.com/PiercingXX
-
-# Change wallpaper using hyprpaper, based on hyprpaper.conf
+# Hyprland wallpaper changer using hyprpaper and yazi
 
 CONF="$HOME/.config/hypr/hyprpaper.conf"
-DEFAULT_CONF="/home/dr3k/Documents/GitHub/piercing-dots/dots/hypr/hyprpaper.conf"
+WALLPAPER_DIR="$HOME/Pictures/backgrounds"
 
-# If user config doesn't exist, copy default
-if [ ! -f "$CONF" ]; then
-    mkdir -p "$(dirname "$CONF")"
-    cp "$DEFAULT_CONF" "$CONF"
-fi
-
-
-# List all images in $HOME/Pictures/Backgrounds
-WALLPAPER_DIR="$HOME/Pictures/Backgrounds"
+# Ensure wallpaper directory exists
 if [ ! -d "$WALLPAPER_DIR" ]; then
-    echo "No $WALLPAPER_DIR directory found."
-    exit 1
-fi
-mapfile -t wallpapers < <(find "$WALLPAPER_DIR" -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.jpeg' \ ))
-if [ ${#wallpapers[@]} -eq 0 ]; then
-    echo "No wallpapers found in $WALLPAPER_DIR."
+    mkdir -p "$WALLPAPER_DIR"
+    echo "Created $WALLPAPER_DIR directory. Please add wallpapers to this directory."
     exit 1
 fi
 
-# Use gum to select wallpaper
-if ! command -v gum &>/dev/null; then
-    echo "gum not found. Please install gum for a modern menu."
+# Check for required tools
+tool_missing=false
+for tool in hyprctl yazi; do
+    if ! command -v "$tool" &>/dev/null; then
+        echo "$tool not found. Please install $tool."
+        tool_missing=true
+    fi
+done
+if [ "$tool_missing" = true ]; then
     exit 1
 fi
 
-
-selected=$(printf "%s\n" "${wallpapers[@]}" | gum choose --header "Select a wallpaper to set")
-[ -z "$selected" ] && exit 0
-
-
-# Update all wallpaper lines in config to use the selected image
-sed -i "/^wallpaper =/s|,.*|,$selected|" "$CONF"
-
-# Reload hyprpaper (if running)
-if pgrep -x hyprpaper >/dev/null; then
-    pkill -SIGUSR1 hyprpaper
+# Get connected displays (only valid display names)
+mapfile -t displays < <(hyprctl monitors -j | grep -o '"name": *"[^"]*"' | awk -F '"' '{print $4}' | grep -E '^[A-Za-z]+-[0-9]+$')
+if [ ${#displays[@]} -eq 0 ]; then
+    echo "No displays found."
+    exit 1
 fi
 
-echo "Wallpaper set to $selected."
+# Ask user for mode if multiple displays
+if [ ${#displays[@]} -gt 1 ]; then
+    if command -v gum &>/dev/null; then
+        mode=$(printf "Same wallpaper on all displays\nDifferent wallpaper for each display" | gum choose --header "Multiple displays detected. How do you want to set wallpapers?")
+    else
+        echo "Multiple displays detected."
+        echo "1) Same wallpaper on all displays"
+        echo "2) Different wallpaper for each display"
+        read -rp "Choose [1-2]: " mode_choice
+        if [ "$mode_choice" = "2" ]; then
+            mode="Different wallpaper for each display"
+        else
+            mode="Same wallpaper on all displays"
+        fi
+    fi
+else
+    mode="Same wallpaper on all displays"
+fi
+
+# Function to select a wallpaper using yazi (with image preview)
+select_wallpaper_yazi() {
+    echo "Launching yazi in $WALLPAPER_DIR..." 1>&2
+    local chooser_file selected_file
+    chooser_file=$(mktemp)
+    yazi "$WALLPAPER_DIR" --chooser-file "$chooser_file"
+    selected_file=$(cat "$chooser_file")
+    rm -f "$chooser_file"
+    echo "yazi returned: $selected_file" 1>&2
+    # Ensure absolute path
+    if [ -n "$selected_file" ] && [ "${selected_file:0:1}" != "/" ]; then
+        selected_file="$WALLPAPER_DIR/$selected_file"
+    fi
+    echo "$selected_file"
+}
+
+# Write new config (preload and wallpaper lines)
+if [ "$mode" = "Same wallpaper on all displays" ]; then
+    selected=$(select_wallpaper_yazi)
+    if [ -z "$selected" ]; then
+        echo "No wallpaper selected. Exiting."
+        exit 0
+    fi
+    {
+        awk '/^preload|^#|^splash|^$|^ipc/ {print}' "$CONF"
+        for display in "${displays[@]}"; do
+            echo "preload = $selected"
+        done
+        for display in "${displays[@]}"; do
+            echo "wallpaper = $display,$selected"
+        done
+    } > "${CONF}.tmp" && mv "${CONF}.tmp" "$CONF"
+    echo "Wallpaper set to $selected for displays: ${displays[*]}"
+    # IPC: Preload, then set wallpaper
+    hyprctl hyprpaper preload "$selected"
+    for display in "${displays[@]}"; do
+        hyprctl hyprpaper wallpaper "$display,$selected"
+    done
+else
+    declare -A selected_wallpapers
+    for display in "${displays[@]}"; do
+        echo "\n--- Selecting wallpaper for display: $display ---"
+        echo "Monitor info:"
+        hyprctl monitors | grep -A 5 "^\s*ID.*$display" || echo "(No extra info found for $display)"
+        wp=$(select_wallpaper_yazi)
+        if [ -z "$wp" ]; then
+            echo "No wallpaper selected for $display. Exiting."
+            exit 0
+        fi
+        selected_wallpapers[$display]="$wp"
+    done
+    {
+        awk '/^preload|^#|^splash|^$|^ipc/ {print}' "$CONF"
+        for display in "${displays[@]}"; do
+            echo "preload = ${selected_wallpapers[$display]}"
+        done
+        for display in "${displays[@]}"; do
+            echo "wallpaper = $display,${selected_wallpapers[$display]}"
+        done
+    } > "${CONF}.tmp" && mv "${CONF}.tmp" "$CONF"
+    echo "Wallpapers set for displays: ${displays[*]}"
+    # IPC: Preload, then set wallpaper
+    for display in "${displays[@]}"; do
+        hyprctl hyprpaper preload "${selected_wallpapers[$display]}"
+    done
+    for display in "${displays[@]}"; do
+        hyprctl hyprpaper wallpaper "$display,${selected_wallpapers[$display]}"
+    done
+fi
