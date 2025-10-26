@@ -23,7 +23,6 @@ if ! command -v gum &>/dev/null; then
 fi
 
 
-# Gum menu for device type with emojis and card profile switching
 choice=$(printf "🔈 Output (Speakers/Headset)\n🎤 Microphone (Input)\n🛠️ Switch Card Profile" | gum choose --header="Select device type to manage:")
 
 case "$audio_system" in

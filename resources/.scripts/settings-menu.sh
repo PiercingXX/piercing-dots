@@ -59,7 +59,6 @@ if ! check_internet; then
     exit 1
 fi
 
-
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
     echo "gum not found. Installing..."
@@ -95,12 +94,12 @@ while true; do
 		"🚀 Update System"
 		"📦 Terminal Software Manager"
 		"🎤 Audio Input Manager"
-		"✨ Update PiercingXX Rice"
-		"🖼️ Change Wallpaper"
 		"📶 WiFi Manager"
 		"🔵 Bluetooth Manager"
-		"👤 User Management"
+		"🖼️ Change Wallpaper"
 		"🗄️ Backup & Restore"
+		"👤 User Management"
+		"✨ Update PiercingXX Rice"
 		"🚪 Quit"
 	)
 	if [[ "$DISTRO" == "arch" ]]; then
@@ -108,18 +107,18 @@ while true; do
 			"🚀 Update System"
 			"📦 Terminal Software Manager"
 			"🎤 Audio Input Manager"
-			"🌐 Update Mirrors"
-			"✨ Update PiercingXX Rice"
-			"🖼️ Change Wallpaper"
 			"📶 WiFi Manager"
 			"🔵 Bluetooth Manager"
-			"👤 User Management"
+			"🖼️ Change Wallpaper"
 			"🗄️ Backup & Restore"
+			"👤 User Management"
+			"✨ Update PiercingXX Rice"
+			"🌐 Update Mirrors"
 			"🚪 Quit"
 		)
 	fi
 
-	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="Settings Menu")
+	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="PiercingXX - Settings Menu")
 	case "$choice" in
 			"🚀 Update System")
 				~/.scripts/update-system.sh
