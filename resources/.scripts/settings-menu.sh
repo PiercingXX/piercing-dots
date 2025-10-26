@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# GitHub.com/PiercingXX
 
 # Settings Menu TUI
 
@@ -13,35 +14,35 @@ while true; do
 		echo "gum is not installed and could not be installed automatically. Please install gum for a modern menu (https://github.com/charmbracelet/gum)."
 		exit 1
 	fi
-	choice=$(gum choose --header="Settings Menu" \
-		"🛠 Update & Clean" \
-		"📦 Terminal Software Manager" \
-		"📶 WiFi Manager" \
-		"🔵 Bluetooth Manager" \
-		"👤 User Management" \
-        "🗄️ Backup & Restore" \
-		"🚪 Quit")
+		choice=$(gum choose --header="Settings Menu" \
+			"🚀 Update & Clean" \
+			"📦 Terminal Software Manager" \
+			"📶 WiFi Manager" \
+			"🔵 Bluetooth Manager" \
+			"👤 User Management" \
+			"🗄️ Backup & Restore" \
+			"🚪 Quit")
 	case "$choice" in
-		"🛠 Update & Clean")
-			./maintenance.sh
-			;;
-		"📦 Terminal Software Manager")
-			./terminal_software_manager.sh
-			;;
-		"📶 WiFi Manager")
-			./wifi_manager.sh
-			;;
-		"🔵 Bluetooth Manager")
-			./bluetooth_manager.sh
-			;;
-		"👤 User Management")
-			./user_management.sh
-			;;
-		"🗄️ Backup & Restore")
-			./backup_restore.sh
-			;;
-		"🚪 Quit"|"")
-			exit 0
-			;;
+			"🚀 Update & Clean")
+				~/.scripts/maintenance.sh
+				;;
+			"📦 Terminal Software Manager")
+				~/.scripts/terminal_software_manager.sh
+				;;
+			"📶 WiFi Manager")
+				~/.scripts/wifi_manager.sh
+				;;
+			"🔵 Bluetooth Manager")
+				~/.scripts/bluetooth_manager.sh
+				;;
+			"👤 User Management")
+				~/.scripts/user_management.sh
+				;;
+			"🗄️ Backup & Restore")
+				~/.scripts/backup_restore.sh
+				;;
+			"🚪 Quit"|"")
+				exit 0
+				;;
 	esac
 done

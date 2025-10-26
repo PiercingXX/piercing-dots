@@ -227,8 +227,7 @@ builddir=$(pwd)
 # Function to display a message box using gum
 msg_box() {
     gum style --border double --margin "1 2" --padding "1 2" --foreground 212 "$1"
-    read -n 1 -s -r -p "Press any key to continue..."
-    echo
+    gum confirm "Press Enter to continue..." || true
 }
 
 # Distro-specific menu using gum

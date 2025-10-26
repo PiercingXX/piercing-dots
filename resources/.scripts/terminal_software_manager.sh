@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# GitHub.com/PiercingXX
 
 #########################################################
 # Software Manager: Install and Uninstall Packages

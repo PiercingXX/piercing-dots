@@ -11,40 +11,44 @@ fi
 #######################
 ### Clear Shortcuts ###
 #######################
-gsettings set org.gnome.settings-daemon.plugins.media-keys home "@as []"
 gsettings set org.gnome.mutter.wayland.keybindings restore-shortcuts "@as []"
+gsettings set org.gnome.settings-daemon.plugins.media-keys home "@as []"
 gsettings set org.gnome.settings-daemon.plugins.media-keys email "@as []"
 gsettings set org.gnome.settings-daemon.plugins.media-keys logout "@as []"
-gsettings set org.gnome.shell.keybindings toggle-quick-settings "@as []"
-gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
-gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
+gsettings set org.gnome.settings-daemon.plugins.media-keys www "@as []"
+gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "@as []"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screenreader "@as []"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "@as []"
+gsettings set org.gnome.desktop.wm.keybindings switch-input-source "@as []"
 gsettings set org.gnome.desktop.wm.keybindings switch-group "@as []"
 gsettings set org.gnome.desktop.wm.keybindings switch-group-backward "@as []"
-gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking "@as []"
-gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking-global "@as []"
-gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
 gsettings set org.gnome.desktop.wm.keybindings toggle-maximized "@as []"
 gsettings set org.gnome.shell.keybindings toggle-application-view "@as []"
 gsettings set org.gnome.shell.keybindings toggle-message-tray "@as []"
 gsettings set org.gnome.shell.keybindings focus-active-notification "@as []"
+gsettings set org.gnome.shell.keybindings toggle-quick-settings "@as []"
+gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
+gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking "@as []"
+gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking-global "@as []"
+gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
+
+
 
 
 #########################
 ### Window Management ###
 
 gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
+gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super>s']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['<Super>grave']"
-gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>f']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Shift><Super>z']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys calculator "['<Shift><Super>c']"
-gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
+gsettings set org.gnome.desktop.wm.keybindings toggle-fullscreen "['<Super>f']"
 gsettings set org.gnome.desktop.wm.keybindings switch-applications "['<Alt>Tab']"
 gsettings set org.gnome.desktop.wm.keybindings switch-applications-backward "['<Shift><Alt>Tab']"
 # Reserve slots for custom keybindings
-gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom10/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/']"
+gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom7/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom10/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/']"
 # 0 Waterfox
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'Waterfox'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command 'flatpak run net.waterfox.waterfox'
@@ -109,6 +113,10 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/ name 'Open Inventory Directory'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/ command 'kitty bash -c '~/.scripts/inventory.sh''
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/ binding '<Super>i'
+# 16 Settings TUI Menu
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ name 'Settings Menu'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ command 'kitty bash -c '~/.scripts/settings-menu.sh''
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ binding '<Super>s'
 
 ######################
 ### Customizations ###
