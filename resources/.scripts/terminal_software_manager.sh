@@ -54,30 +54,32 @@ install_software() {
             fi
             ;;
         "debian")
-            (
-                apt-cache pkgnames
-                if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=name
+            ( \
+                apt-cache pkgnames; \
+                if command -v flatpak &>/dev/null; then \
+                    flatpak remote-ls --app flathub --columns=name; \
+                fi \
+            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:75% | xargs -ro -I{} bash -c "
+                if apt-cache show \"\$1\" &>/dev/null; then
+                    sudo apt-get install \"\$1\"
+                elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
+                    flatpak install -y flathub \"\$1\"
                 fi
-            ) | fzf --multi --preview='apt-cache show {1} || flatpak remote-info flathub {1}' --preview-window=down:75% | xargs -ro -I{} bash -c '
-                if apt-cache show "{}" &>/dev/null; then
-                    sudo apt-get install "{}"
-                elif flatpak remote-info flathub "{}" &>/dev/null; then
-                    flatpak install -y flathub "{}"
-                fi
+            " --
             ;;
         "fedora")
-            (
-                rpm -qa --qf '%{NAME}\n'
-                if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=name
+            ( \
+                rpm -qa --qf "%{NAME}\n"; \
+                if command -v flatpak &>/dev/null; then \
+                    flatpak remote-ls --app flathub --columns=name; \
+                fi \
+            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:75% | xargs -ro -I{} bash -c "
+                if dnf info \"\$1\" &>/dev/null; then
+                    sudo dnf install \"\$1\"
+                elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
+                    flatpak install -y flathub \"\$1\"
                 fi
-            ) | fzf --multi --preview='dnf info {1} || flatpak remote-info flathub {1}' --preview-window=down:75% | xargs -ro -I{} bash -c '
-                if dnf info "{}" &>/dev/null; then
-                    sudo dnf install "{}"
-                elif flatpak remote-info flathub "{}" &>/dev/null; then
-                    flatpak install -y flathub "{}"
-                fi
+            " --
             ;;
     esac
 }
@@ -107,16 +109,13 @@ uninstall_software() {
             native_list_cmd='echo'
             ;;
     esac
-    selection=$(
-        {
-            eval "$native_list_cmd" | sed 's/^/[N] /'
-        } | fzf --multi --prompt="Uninstall (enter to select): " \
+    pkgs=$(eval "$native_list_cmd")
+    [ -z "$pkgs" ] && return 0
+    selection=$(printf "%s\n" "$pkgs" | fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'echo {}' \
-                            --preview-window=down:75% --border
-    )
+                            --preview-window=down:75% --border)
     [[ -z "$selection" ]] && return 0
-    while IFS= read -r line; do
-        pkg=${line#"[N] "}
+    while IFS= read -r pkg; do
         case "$dtype" in
             arch)
                 sudo pacman -Rns --noconfirm "$pkg"
@@ -139,28 +138,39 @@ uninstall_software() {
 }
 
 # Main script execution
-# ...existing code...
-if [ -z "$1" ]; then
-    echo "Select mode:"
-    select mode in "Install" "Uninstall" "Quit"; do
+while true; do
+    if [ -z "$1" ]; then
+        if ! command -v gum &>/dev/null; then
+            if command -v paru &>/dev/null; then
+                echo "gum not found. Installing gum with paru..."
+                paru --noconfirm -S gum
+            fi
+        fi
+        if ! command -v gum &>/dev/null; then
+            echo "gum is not installed and could not be installed automatically. Please install gum for a modern menu (https://github.com/charmbracelet/gum)."
+            exit 1
+        fi
+        mode=$(gum choose --header="Software Manager" "📦 Install" "🗑️ Uninstall" "🚪 Quit")
         case $mode in
-            Install) set -- install; break ;;
-            Uninstall) set -- uninstall; break ;;
-            Quit) exit 0 ;;
+            "📦 Install") set -- install ;;
+            "🗑️ Uninstall") set -- uninstall ;;
+            "🚪 Quit"|"") exit 0 ;;
         esac
-    done
-fi
+    fi
 
-case "$1" in
-    install)
-        install_software
-        ;;
-    uninstall)
-        uninstall_software
-        ;;
-    *)
-        echo "Usage: $0 {install|uninstall}"
-        exit 1
-        ;;
-esac
+    case "$1" in
+        install)
+            install_software
+            ;;
+        uninstall)
+            uninstall_software
+            ;;
+        *)
+            echo "Usage: $0 {install|uninstall}"
+            exit 1
+            ;;
+    esac
+    # Reset $1 so the menu shows again
+    set --
+done
 # ...existing code...
