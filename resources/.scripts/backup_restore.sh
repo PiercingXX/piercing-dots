@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+# GitHub.com/PiercingXX
 
-# Simple Backup & Restore App using rsync and gum
+# Simple Backup & Restore App using rsync
 
 while true; do
     if ! command -v gum &>/dev/null; then

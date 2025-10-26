@@ -224,53 +224,44 @@ auto_update_scripts() {
 username=$(id -u -n 1000)
 builddir=$(pwd)
 
-# Function to display a message box
+# Function to display a message box using gum
 msg_box() {
-    whiptail --msgbox "$1" 0 0 0
+    gum style --border double --margin "1 2" --padding "1 2" --foreground 212 "$1"
+    gum confirm "Press Enter to continue..." || true
 }
 
-# Distro-specific menu
-case "$DISTRO" in
-    arch)
-        menu() {
-            whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
-                --menu "Run Options In Order:" 0 0 0 \
-                "Update System"         "Update System" \
-                "Update Mirrors"        "Update Mirrors" \
-                "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
-                "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
-                "Rice-No Hyprland"      "Piercing Rice w/o Hyprdots but with Hypr Keybinds" \
-                "Reboot System"         "Reboot the system" \
-                "Exit"                  "Exit the script" 3>&1 1>&2 2>&3
-        }
-        ;;
-    fedora)
-        menu() {
-            whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
-                --menu "Run Options In Order:" 0 0 0 \
-                "Update System"         "Update System" \
-                "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
-                "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
-                "Reboot System"         "Reboot the system" \
-                "Exit"                  "Exit the script" 3>&1 1>&2 2>&3
-        }
-        ;;
-    debian|ubuntu|pop|linuxmint)
-        menu() {
-            whiptail --backtitle "GitHub.com/PiercingXX" --title "Main Menu" \
-                --menu "Run Options In Order:" 0 0 0 \
-                "Update System"         "Update System" \
-                "PiercingXX Rice"       "Gnome Piercing Rice (Distro Agnostic)" \
-                "Piercing Gimp Only"    "Piercing Gimp Presets (Distro Agnostic)" \
-                "Reboot System"         "Reboot the system" \
-                "Exit"                  "Exit the script" 3>&1 1>&2 2>&3
-        }
-        ;;
-    *)
-        echo "Unsupported distribution: $DISTRO"
-        exit 1
-        ;;
-esac
+# Distro-specific menu using gum
+menu() {
+    local options=(
+        "Update System"
+        "Update Mirrors"
+        "PiercingXX Rice"
+        "Piercing Gimp Only"
+        "Rice-No Hyprland"
+        "Reboot System"
+        "Exit"
+    )
+    # Adjust menu for distro
+    case "$DISTRO" in
+        arch)
+            ;; # all options
+        fedora|debian|ubuntu|pop|linuxmint|mint)
+            # Remove mirrors and Rice-No Hyprland for non-arch
+            options=(
+                "Update System"
+                "PiercingXX Rice"
+                "Piercing Gimp Only"
+                "Reboot System"
+                "Exit"
+            )
+            ;;
+        *)
+            echo "Unsupported distribution: $DISTRO"
+            exit 1
+            ;;
+    esac
+    printf "%s\n" "${options[@]}" | gum choose --header "Run Options In Order:" --cursor.foreground 212 --selected.foreground 212
+}
 
 # Main menu loop
 while true; do
@@ -380,8 +371,5 @@ while true; do
             exit 0
             ;;
     esac
-    while true; do
-        read -p "Press [Enter] to continue..." 
-        break
-    done
+    gum confirm "Press Enter to continue..." || true
 done

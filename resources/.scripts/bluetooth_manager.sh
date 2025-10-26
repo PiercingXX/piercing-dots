@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# GitHub.com/PiercingXX
 
 # Bluetooth Manager using bluetuith
 
