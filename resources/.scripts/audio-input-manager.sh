@@ -22,12 +22,14 @@ if ! command -v gum &>/dev/null; then
     exit 1
 fi
 
-# Gum menu for device type with emojis
-choice=$(printf "🎤 Microphone (Input)\n🔈 Output (Speakers/Headset)" | gum choose --header="Select device type to manage:")
+
+# Gum menu for device type with emojis and card profile switching
+choice=$(printf "🔈 Output (Speakers/Headset)\n🎤 Microphone (Input)\n🛠️ Switch Card Profile" | gum choose --header="Select device type to manage:")
 
 case "$audio_system" in
     pipewire)
-    if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+        if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            # ...original input device code...
             echo "🎤 Available audio input devices:"
             sources=()
             in_sources=0
@@ -67,59 +69,121 @@ case "$audio_system" in
                 echo "Invalid selection."
             fi
         elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            # ...original output device code...
             echo "🔈 Available audio output devices:"
-            sinks=()
-            in_sinks=0
-            while IFS= read -r line; do
-                if [[ $line =~ ^[[:space:]]*├─[[:space:]]Sinks: ]]; then
-                    in_sinks=1
-                    continue
+            mapfile -t sinks < <(pactl list sinks | grep -E 'Name:|Description:|Sink #' | sed 's/^\s*//')
+            # Get the current default sink name
+            default_sink=$(pactl info | grep 'Default Sink:' | awk -F': ' '{print $2}')
+            count=0
+            for ((i=0; i<${#sinks[@]}; i++)); do
+                if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
+                    count=$((count+1))
+                    name="${sinks[$((i+1))]#Name: }"
+                    desc="${sinks[$((i+2))]#Description: }"
+                    current=""
+                    if [[ "$name" == "$default_sink" ]]; then
+                        current="[CURRENT] "
+                    fi
+                    printf "🔊 %2d. %s%s (%s)\n" "$count" "$current" "$desc" "$name"
                 fi
-                if [[ $in_sinks -eq 1 ]]; then
-                    if [[ $line =~ ^[[:space:]]*│ ]]; then
-                        sinks+=("$line")
-                    else
+            done
+            read -p "Enter the number of the output device to set as default: " num
+            count=0
+            selected_name=""
+            for ((i=0; i<${#sinks[@]}; i++)); do
+                if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
+                    count=$((count+1))
+                    if [[ $count -eq $num ]]; then
+                        selected_name="${sinks[$((i+1))]#Name: }"
                         break
                     fi
                 fi
-            done < <(wpctl status)
-            if [ ${#sinks[@]} -eq 0 ]; then
-                echo "No audio output devices found."
-                exit 1
+            done
+            if [ -n "$selected_name" ]; then
+                pactl set-default-sink "$selected_name"
+                echo "Set default output to $selected_name."
+            else
+                echo "Invalid selection."
             fi
-            for i in "${!sinks[@]}"; do
-                line="${sinks[$i]}"
-                current=""
-                if [[ $line == *'*'* ]]; then
-                    current="[CURRENT] "
+        elif [[ "$choice" == "🛠️ Switch Card Profile" ]]; then
+            echo "Available audio cards:"
+            mapfile -t cards < <(pactl list short cards)
+            for i in "${!cards[@]}"; do
+                card_name=$(echo "${cards[$i]}" | awk '{print $2}')
+                card_desc=$(pactl list cards | grep -A10 "Name: $card_name" | grep 'device.description' | head -1 | cut -d'=' -f2 | tr -d '" ')
+                printf "%2d. %s (%s)\n" $((i+1)) "$card_name" "$card_desc"
+            done
+            read -p "Enter the number of the card to manage: " cardnum
+            card_name=$(echo "${cards[$((cardnum-1))]}" | awk '{print $2}')
+            echo "Available profiles for $card_name:"
+            profiles=()
+            while IFS= read -r line; do
+                [[ $line =~ ^\s*([a-zA-Z0-9:_\-\+]+): ]] && profiles+=("${BASH_REMATCH[1]}")
+            done < <(pactl list cards | awk "/Name: $card_name/{flag=1;next}/^Card #/{flag=0}flag" | grep -A20 'Profiles:' | grep -v 'Profiles:' | grep -v 'Active Profile:')
+            for i in "${!profiles[@]}"; do
+                printf "%2d. %s\n" $((i+1)) "${profiles[$i]}"
+            done
+            read -p "Enter the number of the profile to activate: " profnum
+            profile_name="${profiles[$((profnum-1))]}"
+            pactl set-card-profile "$card_name" "$profile_name"
+            echo "Set $card_name to profile $profile_name."
+        fi
+        ;;
+    pulseaudio)
+        if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            echo "🎤 Available audio input devices:"
+            pactl list short sources | nl -w2 -s'. '
+            read -p "Enter the number of the input device to set as default: " num
+            device_name=$(pactl list short sources | awk '{print $2}' | sed -n "${num}p")
+            if [ -n "$device_name" ]; then
+                pactl set-default-source "$device_name"
+                echo "Set default input to $device_name."
+            else
+                echo "Invalid selection."
+            fi
+        elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            echo "🔈 DEBUG: Raw output from 'pactl list sinks':"
+            pactl list sinks
+            echo "\n🔈 Available audio output devices:"
+            # Show all sinks with index, name, and description for HDMI/DP visibility
+            mapfile -t sinks < <(pactl list sinks | grep -E 'Name:|Description:|Sink #' | sed 's/^\s*//')
+            count=0
+            for ((i=0; i<${#sinks[@]}; i++)); do
+                if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
+                    count=$((count+1))
+                    name="${sinks[$((i+1))]#Name: }"
+                    desc="${sinks[$((i+2))]#Description: }"
+                    printf "🔊 %2d. %s (%s)\n" "$count" "$desc" "$name"
                 fi
-                id=$(echo "$line" | grep -oE '[0-9]+\. ' | head -1 | tr -d '.')
-                name=$(echo "$line" | sed -E 's/^.*[0-9]+\. //')
-                printf "🔊 %2d. %s%s (ID: %s)\n" $((i+1)) "$current" "$name" "$id"
             done
             read -p "Enter the number of the output device to set as default: " num
-            if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -ge 1 ] && [ "$num" -le ${#sinks[@]} ]; then
-                device_id=$(echo "${sinks[$((num-1))]}" | grep -oE '[0-9]+\. ' | head -1 | tr -d '.')
-                wpctl set-default $device_id
-                echo "Set default output to $device_id."
+            # Find the selected sink name
+            count=0
+            selected_name=""
+            for ((i=0; i<${#sinks[@]}; i++)); do
+                if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
+                    count=$((count+1))
+                    if [[ $count -eq $num ]]; then
+                        selected_name="${sinks[$((i+1))]#Name: }"
+                        break
+                    fi
+                fi
+            done
+            if [ -n "$selected_name" ]; then
+                pactl set-default-sink "$selected_name"
+                echo "Set default output to $selected_name."
             else
                 echo "Invalid selection."
             fi
         fi
         ;;
-    pulseaudio)
-        echo "Available audio input devices:" 
-        pactl list short sources | nl -w2 -s'. '
-        read -p "Enter the number of the input device to set as default: " num
-        device_name=$(pactl list short sources | awk '{print $2}' | sed -n "${num}p")
-        if [ -n "$device_name" ]; then
-            pactl set-default-source $device_name
-            echo "Set default input to $device_name."
-        else
-            echo "Invalid selection."
-        fi
-        ;;
     alsa)
-        echo "ALSA does not support switching default input easily via script. Use 'alsamixer' or edit asoundrc."
+        if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            echo "ALSA does not support switching default input easily via script. Use 'alsamixer' or edit asoundrc."
+        elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            echo "🔈 Available audio output devices (ALSA):"
+            aplay -l | grep '^card' || echo "No output devices found."
+            echo "Switching default output is not easily scriptable in ALSA. Use 'alsamixer' or edit asoundrc."
+        fi
         ;;
 esac

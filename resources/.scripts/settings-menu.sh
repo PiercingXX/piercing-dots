@@ -60,10 +60,6 @@ if ! check_internet; then
 fi
 
 
-
-
-
-
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
     echo "gum not found. Installing..."
@@ -74,16 +70,6 @@ if ! command -v gum &> /dev/null; then
         exit 1
     fi
 fi
-
-
-
-
-
-
-
-
-
-
 
 if [ -f /etc/os-release ]; then
 	. /etc/os-release
