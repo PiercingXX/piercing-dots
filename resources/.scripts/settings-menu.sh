@@ -3,7 +3,15 @@
 
 # Settings Menu TUI
 
+if [ -f /etc/os-release ]; then
+	. /etc/os-release
+	DISTRO=$ID
+else
+	DISTRO="unknown"
+fi
+
 while true; do
+	clear
 	if ! command -v gum &>/dev/null; then
 		if command -v paru &>/dev/null; then
 			echo "gum not found. Installing gum with paru..."
@@ -14,20 +22,44 @@ while true; do
 		echo "gum is not installed and could not be installed automatically. Please install gum for a modern menu (https://github.com/charmbracelet/gum)."
 		exit 1
 	fi
-		choice=$(gum choose --header="Settings Menu" \
-			"🚀 Update & Clean" \
-			"📦 Terminal Software Manager" \
-			"📶 WiFi Manager" \
-			"🔵 Bluetooth Manager" \
-			"👤 User Management" \
-			"🗄️ Backup & Restore" \
-			"🚪 Quit")
-	case "$choice" in
-			"🚀 Update & Clean")
-				~/.scripts/maintenance.sh
+
+	options=(
+		"🚀 Update System"
+		"✨ Update PiercingXX"
+		"📦 Terminal Software Manager"
+		"📶 WiFi Manager"
+		"🔵 Bluetooth Manager"
+		"👤 User Management"
+		"🗄️ Backup & Restore"
+		"🚪 Quit"
+	)
+	if [[ "$DISTRO" == "arch" ]]; then
+		options=(
+			"🚀 Update System"
+			"🌐 Update Mirrors"
+			"✨ Update PiercingXX"
+			"📦 Terminal Software Manager"
+			"📶 WiFi Manager"
+			"🔵 Bluetooth Manager"
+			"👤 User Management"
+			"🗄️ Backup & Restore"
+			"🚪 Quit"
+		)
+	fi
+
+	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="Settings Menu")
+		case "$choice" in
+			"🚀 Update System")
+				~/.scripts/update-system.sh
 				;;
 			"📦 Terminal Software Manager")
 				~/.scripts/terminal_software_manager.sh
+				;;
+			"🌐 Update Mirrors")
+				~/.scripts/update-mirrors.sh
+				;;
+			"✨ Update PiercingXX")
+				~/.scripts/update-piercingXX.sh
 				;;
 			"📶 WiFi Manager")
 				~/.scripts/wifi_manager.sh
@@ -42,7 +74,8 @@ while true; do
 				~/.scripts/backup_restore.sh
 				;;
 			"🚪 Quit"|"")
+				clear
 				exit 0
 				;;
-	esac
+		esac
 done
