@@ -12,13 +12,17 @@ fi
 
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
-    echo "gum not found. Installing..."
-    if command -v pacman &> /dev/null; then
-        sudo pacman -S --noconfirm gum
-    else
-        echo "Please install gum manually."
-        exit 1
-    fi
+	echo "gum not found. Installing..."
+	if command -v pacman &> /dev/null; then
+		sudo pacman -S --noconfirm gum
+	elif command -v apt &> /dev/null; then
+		sudo apt update && sudo apt install -y gum
+	elif command -v dnf &> /dev/null; then
+		sudo dnf install -y gum
+	else
+		echo "Please install gum manually."
+		exit 1
+	fi
 fi
 
 	options=(
