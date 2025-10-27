@@ -217,9 +217,9 @@ install_bashrc_support() {
 			;;
         "arch")
             if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
             else
                 echo "Install paru or yay."
             fi
@@ -395,11 +395,11 @@ function y() {
 if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
 # Zoxide
 if command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi
+# Jump
+if command -v jump &>/dev/null; then eval "$(jump shell)"; fi
 # FZF
 [[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
 [[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
-# Jump
-eval "$(jump shell)"
 
 # Fastfetch and keybind only in interactive shells
 if [[ $iatest -gt 0 ]]; then
