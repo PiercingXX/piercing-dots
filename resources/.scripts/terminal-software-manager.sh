@@ -47,11 +47,11 @@ install_software() {
     case "$dtype" in
         "arch")
             if command -v paru &> /dev/null; then
-                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:50% | xargs -ro paru -S
+                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:50% | xargs -ro paru -S --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:50% | xargs -ro yay -S
+                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:50% | xargs -ro yay -S --noconfirm
             else
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:50% | xargs -ro sudo pacman -S
+                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:50% | xargs -ro sudo pacman -S --noconfirm
             fi
             ;;
         "debian")
@@ -62,7 +62,7 @@ install_software() {
                 fi \
             ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if apt-cache show \"\$1\" &>/dev/null; then
-                    sudo apt-get install \"\$1\"
+                    sudo apt-get install -y \"\$1\"
                 elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
                     flatpak install -y flathub \"\$1\"
                 fi
@@ -76,7 +76,7 @@ install_software() {
                 fi \
             ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if dnf info \"\$1\" &>/dev/null; then
-                    sudo dnf install \"\$1\"
+                    sudo dnf install -y \"\$1\"
                 elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
                     flatpak install -y flathub \"\$1\"
                 fi
