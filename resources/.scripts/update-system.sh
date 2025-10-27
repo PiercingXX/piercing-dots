@@ -1,13 +1,18 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
 
+# Define colors
+yellow='\033[1;33m'
+green='\033[0;32m'
+blue='\033[0;34m'
+nc='\033[0m'
+
 # Ensure user can force shutdown and reboot without password
 for cmd in /sbin/shutdown /sbin/reboot; do
     if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
         echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
     fi
 done
-
 
 # Reliable-ish internet check
 check_internet() {
@@ -53,7 +58,6 @@ if ! check_internet; then
     exit 1
 fi
 
-
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
     local GITHUB_REPO="Piercingxx/piercing-dots"
@@ -97,12 +101,6 @@ else
     exit 1
 fi
 
-# Define colors
-yellow='\033[1;33m'
-green='\033[0;32m'
-blue='\033[0;34m'
-nc='\033[0m'
-
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -139,16 +137,23 @@ universal_update() {
         sudo npm update -g --silent --no-progress
     fi
     if command_exists cargo; then
-        cargo install --list | awk '/^.*:/{print $1}' | xargs -r cargo install
+        if cargo install-update --version >/dev/null 2>&1; then
+            cargo install-update -a
+        else
+            cargo install cargo-update
+            cargo install-update -a
+        fi
     fi
     if command_exists fwupd; then
         fwupd refresh && fwupd update
     fi
     if command_exists flatpak; then
         flatpak update -y
+        flatpak uninstall --unused -y
     fi
     nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
     if command_exists docker; then
+        docker system prune -af --volumes
         mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
         echo -e "${yellow}Updating ${#images[@]} Docker image(s)...${nc}"
         for img in "${images[@]}"; do
@@ -165,6 +170,47 @@ universal_update() {
     fi
 }
 
+system_clean() {
+    echo -e "${blue}Cleaning up system...${nc}"
+    case "$DISTRO" in
+        arch)
+            # Remove orphaned packages and clean cache
+            if command_exists paru; then
+                paru -Qtdq | xargs -r paru -Rns --
+            elif command_exists yay; then
+                yay -Qtdq | xargs -r yay -Rns --
+            else
+                sudo pacman -Qtdq | xargs -r sudo pacman -Rns --
+            fi
+            sudo pacman -Sc --noconfirm
+            ;;
+        fedora)
+            sudo dnf autoremove -y
+            sudo dnf clean all
+            ;;
+        debian|ubuntu|pop|linuxmint|mint)
+            sudo apt autoremove -y
+            sudo apt clean
+            ;;
+        *)
+            echo -e "${yellow}No cleaning steps defined for $DISTRO.${nc}"
+            ;;
+    esac
+    # Clean Snaps
+    if command_exists snap; then
+        sudo snap set system refresh.retain=2
+        # Remove all disabled snaps
+        mapfile -t snap_args < <(snap list --all | awk '/disabled/{print $1, $2}' | while read -r snapname version; do printf '%q ' "$snapname" --revision="$version"; done)
+        if [ "${#snap_args[@]}" -gt 0 ]; then
+            sudo snap remove --purge "${snap_args[@]}"
+        fi
+    fi
+    # Silently clean user cache
+    rm -rf ~/.cache/* 2>/dev/null
+    echo -e "${green}System cleaning complete!${nc}"
+}
+
+
 # Main logic
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Starting system update...${nc}\n"
@@ -178,17 +224,20 @@ if [[ "$DISTRO" == "arch" ]]; then
     if command_exists paru; then
         paru -Syu --noconfirm
         universal_update
+        system_clean
     elif command_exists yay; then
         yay -Syu --noconfirm
         universal_update
+        system_clean
     else
         sudo pacman -Syu --noconfirm
         universal_update
+        system_clean
     fi
 elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
-    sudo dnf autoremove -y
     universal_update
+    system_clean
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
@@ -198,6 +247,7 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     sudo apt autoremove -y
     sudo apt update && sudo apt upgrade -y || true
     universal_update
+    system_clean
     if command_exists snap; then
         sudo snap refresh
     fi
