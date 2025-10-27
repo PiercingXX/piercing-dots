@@ -200,7 +200,7 @@ system_clean() {
     if command_exists snap; then
         sudo snap set system refresh.retain=2
         # Remove all disabled snaps
-        mapfile -t snap_args < <(snap list --all | awk '/disabled/{print $1, $2}' | while read -r snapname version; do printf '%q ' "$snapname" --revision="$version"; done)
+        mapfile -t snap_args < <(snap list --all | awk '/disabled/{print $1, $2}' | while read -r snapname version; do printf "%q " "$snapname" --revision="$version"; done)
         if [ "${#snap_args[@]}" -gt 0 ]; then
             sudo snap remove --purge "${snap_args[@]}"
         fi
