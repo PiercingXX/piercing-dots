@@ -8,6 +8,52 @@ for cmd in /sbin/shutdown /sbin/reboot; do
     fi
 done
 
+
+# Reliable-ish internet check
+check_internet() {
+    local timeout=4
+    if command_exists nm-online; then
+        nm-online -q -t "$timeout" && return 0
+    fi
+    if command_exists networkctl; then
+        networkctl -q is-online --timeout="$timeout" && return 0
+    fi
+    local urls=(
+        "https://connectivitycheck.gstatic.com/generate_204"
+        "http://www.google.com/generate_204"
+        "http://www.msftncsi.com/ncsi.txt"
+        "http://www.msftconnecttest.com/connecttest.txt"
+    )
+    for url in "${urls[@]}"; do
+        local code
+        code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
+        if [[ "$code" == "204" ]]; then
+            return 0
+        fi
+        if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
+            local body
+            body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
+            if [[ "$body" == "Microsoft NCSI" || "$body" == "Microsoft Connect Test" ]]; then
+                return 0
+            fi
+        fi
+    done
+    local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
+    for host in "${hosts[@]}"; do
+        if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Require internet before continuing
+if ! check_internet; then
+    echo "Internet connectivity is required to continue."
+    exit 1
+fi
+
+
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
     local GITHUB_REPO="Piercingxx/piercing-dots"

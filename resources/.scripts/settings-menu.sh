@@ -10,55 +10,6 @@ else
     exit 1
 fi
 
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# Reliable-ish internet check
-check_internet() {
-    local timeout=4
-    if command_exists nm-online; then
-        nm-online -q -t "$timeout" && return 0
-    fi
-    if command_exists networkctl; then
-        networkctl -q is-online --timeout="$timeout" && return 0
-    fi
-    local urls=(
-        "https://connectivitycheck.gstatic.com/generate_204"
-        "http://www.google.com/generate_204"
-        "http://www.msftncsi.com/ncsi.txt"
-        "http://www.msftconnecttest.com/connecttest.txt"
-    )
-    for url in "${urls[@]}"; do
-        local code
-        code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
-        if [[ "$code" == "204" ]]; then
-            return 0
-        fi
-        if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
-            local body
-            body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
-            if [[ "$body" == "Microsoft NCSI" || "$body" == "Microsoft Connect Test" ]]; then
-                return 0
-            fi
-        fi
-    done
-    local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
-    for host in "${hosts[@]}"; do
-        if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Require internet before continuing
-if ! check_internet; then
-    echo "Internet connectivity is required to continue."
-    exit 1
-fi
-
 # Check/install gum if missing
 if ! command -v gum &> /dev/null; then
     echo "gum not found. Installing..."
@@ -69,26 +20,6 @@ if ! command -v gum &> /dev/null; then
         exit 1
     fi
 fi
-
-if [ -f /etc/os-release ]; then
-	. /etc/os-release
-	DISTRO=$ID
-else
-	DISTRO="unknown"
-fi
-
-while true; do
-	clear
-	if ! command -v gum &>/dev/null; then
-		if command -v paru &>/dev/null; then
-			echo "gum not found. Installing gum with paru..."
-			paru --noconfirm -S gum
-		fi
-	fi
-	if ! command -v gum &>/dev/null; then
-		echo "gum is not installed and could not be installed automatically. Please install gum for a modern menu (https://github.com/charmbracelet/gum)."
-		exit 1
-	fi
 
 	options=(
 		"🚀 Update System"
@@ -155,4 +86,3 @@ while true; do
 				exit 0
 				;;
 		esac
-done
