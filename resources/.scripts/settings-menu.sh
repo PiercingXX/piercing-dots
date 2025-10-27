@@ -53,40 +53,45 @@ fi
 		)
 	fi
 
+
+while true; do
 	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="PiercingXX - Settings Menu")
 	case "$choice" in
-			"🚀 Update System")
-				~/.scripts/update-system.sh
-				;;
-			"📦 Terminal Software Manager")
-				~/.scripts/terminal-software-manager.sh
-				;;
-			"🌐 Update Mirrors")
-				~/.scripts/update-mirrors.sh
-				;;
-			"✨ Update PiercingXX Rice")
-				~/.scripts/update-piercingXX.sh
-				;;
-			"🖼️ Change Wallpaper")
-				~/.scripts/change-wallpaper.sh
-				;;
-			"📶 WiFi Manager")
-				~/.scripts/wifi-manager.sh
-				;;
-			"🔵 Bluetooth Manager")
-				~/.scripts/bluetooth-manager.sh
-				;;
-			"👤 User Management")
-				~/.scripts/user-management.sh
-				;;
-			"🗄️ Backup & Restore")
-				~/.scripts/backup-restore.sh
-				;;
-            "🎤 Audio Input Manager")
-                ~/.scripts/audio-input-manager.sh
-                ;;
-			"🚪 Quit"|"")
-				clear
-				exit 0
-				;;
-		esac
+		"🚀 Update System")
+			bash ~/.scripts/update-system.sh
+			;;
+		"📦 Terminal Software Manager")
+			bash ~/.scripts/terminal-software-manager.sh
+			;;
+		"🌐 Update Mirrors")
+			bash ~/.scripts/update-mirrors.sh
+			;;
+		"✨ Update PiercingXX Rice")
+			bash ~/.scripts/update-piercingXX.sh
+			;;
+		"🖼️ Change Wallpaper")
+			bash ~/.scripts/change-wallpaper.sh
+			;;
+		"📶 WiFi Manager")
+			bash ~/.scripts/wifi-manager.sh
+			;;
+		"🔵 Bluetooth Manager")
+			bash ~/.scripts/bluetooth-manager.sh
+			;;
+		"👤 User Management")
+			bash ~/.scripts/user-management.sh
+			;;
+		"🗄️ Backup & Restore")
+			bash ~/.scripts/backup-restore.sh
+			;;
+		"🎤 Audio Input Manager")
+			bash ~/.scripts/audio-input-manager.sh
+			;;
+		"🚪 Quit"|"")
+			clear
+			exit 0
+			;;
+	esac
+	echo
+	read -p "Press Enter to return to the menu..." _
+done
