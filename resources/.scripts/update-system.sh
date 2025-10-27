@@ -7,12 +7,6 @@ green='\033[0;32m'
 blue='\033[0;34m'
 nc='\033[0m'
 
-# Ensure user can force shutdown and reboot without password
-for cmd in /sbin/shutdown /sbin/reboot; do
-    if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
-        echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
-    fi
-done
 
 # Reliable-ish internet check
 check_internet() {
@@ -57,6 +51,20 @@ if ! check_internet; then
     echo "Internet connectivity is required to continue."
     exit 1
 fi
+
+# Ask for sudo password up front and keep sudo alive
+sudo -v
+# Keep-alive: update existing sudo time stamp until script finishes
+( while true; do sudo -n true; sleep 60; done ) &
+sudo_keepalive_pid=$!
+
+
+# Ensure user can force shutdown and reboot without password
+for cmd in /sbin/shutdown /sbin/reboot; do
+    if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
+        echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
+    fi
+done
 
 # Unified function to update all scripts in ~/.scripts from GitHub repo
 auto_update_scripts() {
@@ -253,4 +261,6 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     fi
 fi
 echo -e "${green}System Updated Successfully!${nc}"
+# Kill the sudo keep-alive background process
+kill $sudo_keepalive_pid
 read -n 1 -s -r -p "Press any key to continue..."; echo
