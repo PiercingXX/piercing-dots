@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # GitHub.com/PiercingXX
 
 clear
@@ -38,6 +38,7 @@ fi
 		"🗄️ Backup & Restore"
 		"👤 User Management"
 		"✨ Update PiercingXX Rice"
+		"🧹 Clean System"
 		"🚪 Quit"
 	)
 	if [[ "$DISTRO" == "arch" ]]; then
@@ -53,6 +54,7 @@ fi
 			"👤 User Management"
 			"✨ Update PiercingXX Rice"
 			"🌐 Update Mirrors"
+			"🧹 Clean System"
 			"🚪 Quit"
 		)
 	fi
@@ -97,6 +99,9 @@ while true; do
 			;;
 		"🎤 Audio Input Manager")
 			bash ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh
+			;;
+		"🧹 Clean System")
+			bash ~/.scripts/PiercingXX-Settings-Menu/clean-system.sh
 			;;
 		"🚪 Quit"|"")
 			clear

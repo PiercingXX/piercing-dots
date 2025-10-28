@@ -50,7 +50,6 @@ check_internet() {
     return 1
 }
 
-clear
 # Require internet before continuing
 if ! check_internet; then
     echo "Internet connectivity is required to continue."
@@ -59,34 +58,13 @@ fi
 
 # Ask for sudo password up front and keep sudo alive
 sudo -v
-# Function to start/refresh the sudo keep-alive process
-start_sudo_keepalive() {
-    # If a previous keep-alive is running, kill it
-    if [[ -n "$sudo_keepalive_pid" ]] && kill -0 "$sudo_keepalive_pid" 2>/dev/null; then
-        kill "$sudo_keepalive_pid" 2>/dev/null
-    fi
-    # Start a new keep-alive process with a shorter interval
-    ( while true; do sudo -n true; sleep 20; done ) &
-    sudo_keepalive_pid=$!
-}
-
-# Start the keep-alive process
-start_sudo_keepalive
-# Ensure the keep-alive process is killed on script exit
-trap 'kill $sudo_keepalive_pid 2>/dev/null' EXIT
-
-# Optionally, restart keep-alive if it dies (run in background)
-( while true; do
-    if ! kill -0 "$sudo_keepalive_pid" 2>/dev/null; then
-        start_sudo_keepalive
-    fi
-    sleep 5
-done ) &
+# Keep-alive: update existing sudo time stamp until script finishes
+( while true; do sudo -n true; sleep 60; done ) &
+sudo_keepalive_pid=$!
 
 
 # Ensure user can force shutdown and reboot without password
 for cmd in /sbin/shutdown /sbin/reboot; do
-    sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
     if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
         echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
     fi
@@ -99,7 +77,6 @@ auto_update_scripts() {
     local LOCAL_DIR="$HOME/.scripts"
 
     # Ensure local scripts directory exists
-    sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
     mkdir -p "$LOCAL_DIR"
 
     # Recursively fetch all files and folders from the GitHub API
@@ -137,7 +114,7 @@ auto_update_scripts() {
     }
 
     fetch_and_sync "$REMOTE_PATH" "$LOCAL_DIR"
-    echo -e "${green}You Good!${nc}"
+    echo -e "${green}All scripts checked and updated if needed!${nc}"
 }
 
 # Detect distribution
@@ -172,15 +149,12 @@ update_bashrc() {
 universal_update() {
     if command_exists pip; then
         echo -e "${yellow}Updating system pip...${nc}"
-        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
     elif command_exists pip3; then
         echo -e "${yellow}Updating system pip3...${nc}"
-        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
     fi
     if command_exists npm; then
-        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo npm update -g --silent --no-progress
     fi
     if command_exists cargo; then
@@ -217,51 +191,6 @@ universal_update() {
     fi
 }
 
-system_clean() {
-    echo -e "${blue}Cleaning up system...${nc}"
-    case "$DISTRO" in
-        arch)
-            # Remove orphaned packages and clean cache
-            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
-            if command_exists paru; then
-                paru -Qtdq | xargs -r paru -Rns --
-            elif command_exists yay; then
-                yay -Qtdq | xargs -r yay -Rns --
-            else
-                sudo pacman -Qtdq | xargs -r sudo pacman -Rns --
-            fi
-            sudo pacman -Sc --noconfirm
-            ;;
-        fedora)
-            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
-            sudo dnf autoremove -y
-            sudo dnf clean all
-            ;;
-        debian|ubuntu|pop|linuxmint|mint)
-            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
-            sudo apt autoremove -y
-            sudo apt clean
-            ;;
-        *)
-            echo -e "${yellow}No cleaning steps defined for $DISTRO.${nc}"
-            ;;
-    esac
-    # Clean Snaps
-    if command_exists snap; then
-        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
-        sudo snap set system refresh.retain=2
-        # Remove all disabled snaps
-        mapfile -t snap_args < <(snap list --all | awk '/disabled/{print $1, $2}' | while read -r snapname version; do printf "%q " "$snapname" --revision="$version"; done)
-        if [ "${#snap_args[@]}" -gt 0 ]; then
-            sudo snap remove --purge "${snap_args[@]}"
-        fi
-    fi
-    # Silently clean user cache
-    rm -rf ~/.cache/* 2>/dev/null
-    echo -e "${green}System cleaning complete!${nc}"
-}
-
-
 # Main logic
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Starting system update...${nc}\n"
@@ -275,20 +204,16 @@ if [[ "$DISTRO" == "arch" ]]; then
     if command_exists paru; then
         paru -Syu --noconfirm
         universal_update
-        system_clean
     elif command_exists yay; then
         yay -Syu --noconfirm
         universal_update
-        system_clean
     else
         sudo pacman -Syu --noconfirm
         universal_update
-        system_clean
     fi
 elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
     universal_update
-    system_clean
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
@@ -298,11 +223,10 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     sudo apt autoremove -y
     sudo apt update && sudo apt upgrade -y || true
     universal_update
-    system_clean
     if command_exists snap; then
         sudo snap refresh
     fi
 fi
 notify-send "System Update" "System update completed successfully!"
 echo -e "${green}System Updated Successfully!${nc}"
-# Kill the sudo keep-alive background process (handled by trap)
+kill $sudo_keepalive_pid

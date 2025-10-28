@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # GitHub.com/PiercingXX
 
 # Simple WiFi Manager using nmtui

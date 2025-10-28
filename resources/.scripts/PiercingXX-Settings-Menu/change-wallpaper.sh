@@ -1,4 +1,5 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
 # Hyprland wallpaper changer using hyprpaper and yazi
 
 CONF="$HOME/.config/hypr/hyprpaper.conf"

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # GitHub.com/PiercingXX
 
 # User Management Script

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # GitHub.com/PiercingXX
 
 # Function to check if a command exists
