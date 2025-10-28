@@ -79,7 +79,7 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
 alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
-alias ss='$HOME/.scripts/PiercingXX-Settings-Menu/terminal_software_manager.sh'
+alias ss='$HOME/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh'
 alias ff='fastfetch'
 alias c='clear'
 
