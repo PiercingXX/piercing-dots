@@ -4,6 +4,7 @@
 CONF="$HOME/.config/hypr/hyprpaper.conf"
 WALLPAPER_DIR="$HOME/Pictures/backgrounds"
 
+clear
 # Ensure wallpaper directory exists
 if [ ! -d "$WALLPAPER_DIR" ]; then
     mkdir -p "$WALLPAPER_DIR"

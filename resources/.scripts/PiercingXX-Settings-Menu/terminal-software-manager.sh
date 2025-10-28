@@ -40,6 +40,7 @@ distribution () {
     echo $dtype
 }
 
+clear
 # Function to search and install software
 install_software() {
     local dtype
@@ -138,8 +139,8 @@ uninstall_software() {
     done <<< "$selection"
 }
 
-# Main script execution
 while true; do
+    clear
     if [ -z "$1" ]; then
         if ! command -v gum &>/dev/null; then
             if command -v paru &>/dev/null; then
@@ -174,4 +175,3 @@ while true; do
     # Reset $1 so the menu shows again
     set --
 done
-# ...existing code...

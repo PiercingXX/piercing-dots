@@ -3,6 +3,7 @@
 
 set -e
 
+clear
 # Detect audio system
 audio_system=""
 if command -v wpctl &>/dev/null; then
@@ -23,11 +24,14 @@ if ! command -v gum &>/dev/null; then
 fi
 
 
+
+clear
 choice=$(printf "🔈 Output (Speakers/Headset)\n🎤 Microphone (Input)\n🛠️ Switch Card Profile" | gum choose --header="Select device type to manage:")
 
 case "$audio_system" in
     pipewire)
         if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            clear
             # ...original input device code...
             echo "🎤 Available audio input devices:"
             sources=()
@@ -68,6 +72,7 @@ case "$audio_system" in
                 echo "Invalid selection."
             fi
         elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            clear
             # ...original output device code...
             echo "🔈 Available audio output devices:"
             mapfile -t sinks < <(pactl list sinks | grep -E 'Name:|Description:|Sink #' | sed 's/^\s*//')
@@ -105,6 +110,7 @@ case "$audio_system" in
                 echo "Invalid selection."
             fi
         elif [[ "$choice" == "🛠️ Switch Card Profile" ]]; then
+            clear
             echo "Available audio cards:"
             mapfile -t cards < <(pactl list short cards)
             for i in "${!cards[@]}"; do
@@ -130,6 +136,7 @@ case "$audio_system" in
         ;;
     pulseaudio)
         if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            clear
             echo "🎤 Available audio input devices:"
             pactl list short sources | nl -w2 -s'. '
             read -p "Enter the number of the input device to set as default: " num
@@ -141,6 +148,7 @@ case "$audio_system" in
                 echo "Invalid selection."
             fi
         elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            clear
             echo "🔈 DEBUG: Raw output from 'pactl list sinks':"
             pactl list sinks
             echo "\n🔈 Available audio output devices:"
@@ -178,8 +186,10 @@ case "$audio_system" in
         ;;
     alsa)
         if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
+            clear
             echo "ALSA does not support switching default input easily via script. Use 'alsamixer' or edit asoundrc."
         elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+            clear
             echo "🔈 Available audio output devices (ALSA):"
             aplay -l | grep '^card' || echo "No output devices found."
             echo "Switching default output is not easily scriptable in ALSA. Use 'alsamixer' or edit asoundrc."

@@ -4,6 +4,7 @@
 # User Management Script
 
 while true; do
+    clear
     action=$(gum choose --header="User Management" "Add User" "Remove User" "Change Password" "Back")
     case "$action" in
         "Add User")

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # GitHub.com/PiercingXX
 
+clear
 # Detect distribution
 if [ -f /etc/os-release ]; then
     . /etc/os-release

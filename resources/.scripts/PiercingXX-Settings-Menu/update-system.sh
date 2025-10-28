@@ -50,6 +50,7 @@ check_internet() {
     return 1
 }
 
+clear
 # Require internet before continuing
 if ! check_internet; then
     echo "Internet connectivity is required to continue."
@@ -61,6 +62,8 @@ sudo -v
 # Keep-alive: update existing sudo time stamp until script finishes
 ( while true; do sudo -n true; sleep 60; done ) &
 sudo_keepalive_pid=$!
+# Ensure the keep-alive process is killed on script exit
+trap 'kill $sudo_keepalive_pid 2>/dev/null' EXIT
 
 
 # Ensure user can force shutdown and reboot without password

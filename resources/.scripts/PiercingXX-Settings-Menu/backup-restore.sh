@@ -30,6 +30,7 @@ fi
 
 
 while true; do
+    clear
     if ! command -v gum &>/dev/null; then
         if command -v paru &>/dev/null; then
             echo "gum not found. Installing gum with paru..."

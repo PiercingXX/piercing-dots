@@ -9,6 +9,7 @@ if ! command -v nmtui &>/dev/null; then
     exit 1
 fi
 
+clear
 # Launch nmtui for WiFi management
 sudo nmtui
 

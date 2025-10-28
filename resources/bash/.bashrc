@@ -119,9 +119,17 @@ alias bd='cd "$OLDPWD"'
 # Remove a directory and all files
 alias rmd='/bin/rm  --recursive --force --verbose '
 
+
+
+# Use eza for ls if available, otherwise use standard ls
+if command -v eza &>/dev/null; then
+    alias ls='eza -a -F -H --icons --color=always --group-directories-first --git' # add colors and file type extensions
+else
+    alias ls='ls --color=auto'
+fi
+
 # Alias's for multiple directory listing commands
 alias la='\ls -Alh'										# show hidden files
-alias ls='eza -a -F -H --icons --color=always --group-directories-first --git'	# add colors and file type extensions
 alias lx='\ls -lXBh'										# sort by extension
 alias lk='\ls -lSrh'										# sort by size
 alias lc='\ls -ltcrh'										# sort by change time
@@ -208,12 +216,15 @@ install_bashrc_support() {
         "fedora")
             if command -v dnf &> /dev/null; then
                 sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                curl -sS https://starship.rs/install.sh | sh
             else
                 sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                curl -sS https://starship.rs/install.sh | sh
             fi
             ;;
 		"debian")
 			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
+            wget https://github.com/gsamokovarov/jump/releases/download/v0.51.0/jump_0.51.0_amd64.deb && sudo dpkg -i jump_0.51.0_amd64.deb
 			;;
         "arch")
             if command -v paru &> /dev/null; then
@@ -229,7 +240,6 @@ install_bashrc_support() {
 			;;
 	esac
 }
-
 
 
 # Extracts any archive(s) (if unp isn't installed)
@@ -379,7 +389,7 @@ trim() {
 
 
 #######################################################
-# Source and initalize
+# Source and initialize
 #######################################################
 
 # Yazi set CWD on exit
