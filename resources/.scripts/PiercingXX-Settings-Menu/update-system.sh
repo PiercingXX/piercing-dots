@@ -68,6 +68,7 @@ trap 'kill $sudo_keepalive_pid 2>/dev/null' EXIT
 
 # Ensure user can force shutdown and reboot without password
 for cmd in /sbin/shutdown /sbin/reboot; do
+    sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
     if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
         echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
     fi
@@ -80,6 +81,7 @@ auto_update_scripts() {
     local LOCAL_DIR="$HOME/.scripts"
 
     # Ensure local scripts directory exists
+    sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
     mkdir -p "$LOCAL_DIR"
 
     # Recursively fetch all files and folders from the GitHub API
@@ -117,7 +119,7 @@ auto_update_scripts() {
     }
 
     fetch_and_sync "$REMOTE_PATH" "$LOCAL_DIR"
-    echo -e "${green}All scripts checked and updated if needed!${nc}"
+    echo -e "${green}You Good!${nc}"
 }
 
 # Detect distribution
@@ -152,12 +154,15 @@ update_bashrc() {
 universal_update() {
     if command_exists pip; then
         echo -e "${yellow}Updating system pip...${nc}"
+        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
     elif command_exists pip3; then
         echo -e "${yellow}Updating system pip3...${nc}"
+        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
     fi
     if command_exists npm; then
+        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo npm update -g --silent --no-progress
     fi
     if command_exists cargo; then
@@ -199,6 +204,7 @@ system_clean() {
     case "$DISTRO" in
         arch)
             # Remove orphaned packages and clean cache
+            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
             if command_exists paru; then
                 paru -Qtdq | xargs -r paru -Rns --
             elif command_exists yay; then
@@ -209,10 +215,12 @@ system_clean() {
             sudo pacman -Sc --noconfirm
             ;;
         fedora)
+            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
             sudo dnf autoremove -y
             sudo dnf clean all
             ;;
         debian|ubuntu|pop|linuxmint|mint)
+            sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
             sudo apt autoremove -y
             sudo apt clean
             ;;
@@ -222,6 +230,7 @@ system_clean() {
     esac
     # Clean Snaps
     if command_exists snap; then
+        sudo -n true 2>/dev/null || { echo "Sudo session expired. Please re-run the script."; exit 1; }
         sudo snap set system refresh.retain=2
         # Remove all disabled snaps
         mapfile -t snap_args < <(snap list --all | awk '/disabled/{print $1, $2}' | while read -r snapname version; do printf "%q " "$snapname" --revision="$version"; done)
@@ -278,5 +287,4 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
 fi
 notify-send "System Update" "System update completed successfully!"
 echo -e "${green}System Updated Successfully!${nc}"
-# Kill the sudo keep-alive background process
-kill $sudo_keepalive_pid
+# Kill the sudo keep-alive background process (handled by trap)
