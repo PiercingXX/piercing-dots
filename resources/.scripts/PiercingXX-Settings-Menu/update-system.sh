@@ -59,11 +59,29 @@ fi
 
 # Ask for sudo password up front and keep sudo alive
 sudo -v
-# Keep-alive: update existing sudo time stamp until script finishes
-( while true; do sudo -n true; sleep 60; done ) &
-sudo_keepalive_pid=$!
+# Function to start/refresh the sudo keep-alive process
+start_sudo_keepalive() {
+    # If a previous keep-alive is running, kill it
+    if [[ -n "$sudo_keepalive_pid" ]] && kill -0 "$sudo_keepalive_pid" 2>/dev/null; then
+        kill "$sudo_keepalive_pid" 2>/dev/null
+    fi
+    # Start a new keep-alive process with a shorter interval
+    ( while true; do sudo -n true; sleep 20; done ) &
+    sudo_keepalive_pid=$!
+}
+
+# Start the keep-alive process
+start_sudo_keepalive
 # Ensure the keep-alive process is killed on script exit
 trap 'kill $sudo_keepalive_pid 2>/dev/null' EXIT
+
+# Optionally, restart keep-alive if it dies (run in background)
+( while true; do
+    if ! kill -0 "$sudo_keepalive_pid" 2>/dev/null; then
+        start_sudo_keepalive
+    fi
+    sleep 5
+done ) &
 
 
 # Ensure user can force shutdown and reboot without password
