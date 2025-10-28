@@ -112,7 +112,6 @@ while true; do
             exit 0
             ;;
     esac
-    read -n 1 -s -r -p "Press any key to continue..."; echo
     # Loop back to menu
     clear
     continue

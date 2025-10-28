@@ -7,6 +7,10 @@ green='\033[0;32m'
 blue='\033[0;34m'
 nc='\033[0m'
 
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
 
 # Reliable-ish internet check
 check_internet() {
@@ -109,10 +113,6 @@ else
     exit 1
 fi
 
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
 
 # Update .bashrc from GitHub
 update_bashrc() {
@@ -260,7 +260,7 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
         sudo snap refresh
     fi
 fi
+notify-send "System Update" "System update completed successfully!"
 echo -e "${green}System Updated Successfully!${nc}"
 # Kill the sudo keep-alive background process
 kill $sudo_keepalive_pid
-read -n 1 -s -r -p "Press any key to continue..."; echo

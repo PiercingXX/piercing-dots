@@ -25,6 +25,8 @@ if ! command -v gum &> /dev/null; then
 	fi
 fi
 
+
+
 	options=(
 		"🚀 Update System"
 		"📦 Terminal Software Manager"
@@ -38,6 +40,7 @@ fi
 		"🚪 Quit"
 	)
 	if [[ "$DISTRO" == "arch" ]]; then
+		# Only add Arch-specific options
 		options=(
 			"🚀 Update System"
 			"📦 Terminal Software Manager"
@@ -54,38 +57,45 @@ fi
 	fi
 
 
+
 while true; do
-	choice=$(printf "%s\n" "${options[@]}" | gum choose --header="PiercingXX - Settings Menu")
+	# Build searchable menu with descriptions
+	menu_list=()
+	for opt in "${options[@]}"; do
+		menu_list+=("$opt")
+	done
+	selected=$(printf "%s\n" "${menu_list[@]}" | gum filter --header="PiercingXX - Settings Menu (type to search)" --placeholder="Search or select an option...")
+	choice="$selected"
 	case "$choice" in
 		"🚀 Update System")
-			bash ~/.scripts/update-system.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/update-system.sh
 			;;
 		"📦 Terminal Software Manager")
-			bash ~/.scripts/terminal-software-manager.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh
 			;;
 		"🌐 Update Mirrors")
-			bash ~/.scripts/update-mirrors.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/update-mirrors.sh
 			;;
 		"✨ Update PiercingXX Rice")
-			bash ~/.scripts/update-piercingXX.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/update-piercingXX.sh
 			;;
 		"🖼️ Change Wallpaper")
-			bash ~/.scripts/change-wallpaper.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/change-wallpaper.sh
 			;;
 		"📶 WiFi Manager")
-			bash ~/.scripts/wifi-manager.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/wifi-manager.sh
 			;;
 		"🔵 Bluetooth Manager")
-			bash ~/.scripts/bluetooth-manager.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/bluetooth-manager.sh
 			;;
 		"👤 User Management")
-			bash ~/.scripts/user-management.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/user-management.sh
 			;;
 		"🗄️ Backup & Restore")
-			bash ~/.scripts/backup-restore.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/backup-restore.sh
 			;;
 		"🎤 Audio Input Manager")
-			bash ~/.scripts/audio-input-manager.sh
+			bash ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh
 			;;
 		"🚪 Quit"|"")
 			clear
@@ -93,5 +103,4 @@ while true; do
 			;;
 	esac
 	echo
-	read -p "Press Enter to return to the menu..." _
 done
