@@ -1,3 +1,2 @@
 #!/bin/bash
-
-xdg-open "/home/$USER/.scripts/Control-Scripts/gnome-shortcuts.html"
+xdg-open "$HOME/.scripts/Control-Scripts/gnome-shortcuts.html"
