@@ -35,10 +35,12 @@
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 2em;
+      table-layout: fixed;
     }
     th, td {
       padding: 8px 10px;
       text-align: left;
+      vertical-align: top;
     }
     th {
       color: #e6e9ef;
@@ -57,6 +59,8 @@
       padding: 2px 6px;
       border-radius: 4px;
       font-size: 1em;
+      white-space: pre;
+      display: block;
     }
     .footer {
       text-align: center;
@@ -70,46 +74,80 @@
 </head>
 <body>
   <div class="container">
-    <h1>GNOME Custom Shortcuts</h1>
-    <p>Quick reference for custom GNOME keyboard shortcuts as set by <code>gnome-customizations.sh</code>.</p>
+    <h1>Custom Shortcuts</h1>
+    <p>Quick reference for custom keyboard shortcuts.</p>
 
+    <h2>Cheat Sheet</h2>
+    <table>
+  <tr><td><code>🐧 + /</code></td><td>Show keybinds (this file)</td></tr>
+    </table>
     <h2>Window Management</h2>
     <table>
-      <tr><th>Shortcut</th><th>Action</th></tr>
-      <tr><td><code>Super + Q</code></td><td>Close window</td></tr>
-      <tr><td><code>Super + Tab</code></td><td>Application view / Switch window</td></tr>
-      <tr><td><code>Alt + Tab</code></td><td>Switch applications</td></tr>
-      <tr><td><code>Shift + Alt + Tab</code></td><td>Switch applications (backward)</td></tr>
-      <tr><td><code>Super + F</code></td><td>Toggle fullscreen</td></tr>
-      <tr><td><code>Super + grave</code></td><td>Lock screen</td></tr>
-      <tr><td><code>Super + s</code></td><td>PiercingXX Settings</td></tr>
+      <tr><td>🐧</td><td>Q</td><td>Close window</td></tr>
+      <tr><td>🐧</td><td>Tab</td><td>Application view / Switch window</td></tr>
+      <tr><td>🐧</td><td>F</td><td>Toggle floating mode</td></tr>
+      <tr><td>🐧 + Shift</td><td>F</td><td>Toggle fullscreen</td></tr>
+      <tr><td>🐧</td><td>X</td><td>Toggle split mode</td></tr>
+      <tr><td>🐧</td><td>s</td><td>PiercingXX Settings</td></tr>
+      <tr><td>🐧 + Shift</td><td>S</td><td>Launch pavucontrol (volume mixer)</td></tr>
+      <tr><td>🐧 + Alt</td><td>S</td><td>Launch GNOME Settings</td></tr>
+      <tr><td>Alt</td><td>Tab</td><td>Switch applications</td></tr>
     </table>
-
+    <h2>Navigation</h2>
+    <table>
+      <tr><td>🐧</td><td>H/J/K/L</td><td>Move focus (vim keys)</td></tr>
+      <tr><td>🐧 + Shift</td><td>H/J/K/L</td><td>Move window (vim keys)</td></tr>
+      <tr><td>🐧 + Alt</td><td>H/J/K/L</td><td>Resize window (vim keys)</td></tr>
+      <tr><td>🐧</td><td>1-0</td><td>Switch workspace 1-10</td></tr>
+      <tr><td>🐧 + Shift</td><td>1-0</td><td>Move window to workspace 1-10</td></tr>
+      <tr><td>🐧 + Alt</td><td>1-0</td><td>Move window to workspace 1-10 (silent)</td></tr>
+    </table>
     <h2>Custom App Launchers</h2>
     <table>
-      <tr><th>Shortcut</th><th>App/Action</th></tr>
-      <tr><td><code>Super + c</code></td><td>Waterfox Browser</td></tr>
-      <tr><td><code>Super + W</code></td><td>Kitty Terminal</td></tr>
-      <tr><td><code>Super + z</code></td><td>Yazi File Manager</td></tr>
-      <tr><td><code>Super + V</code></td><td>Neovim</td></tr>
-      <tr><td><code>Ctrl + Alt + Delete</code></td><td>Mission Center</td></tr>
-      <tr><td><code>Super + b</code></td><td>Obsidian</td></tr>
-      <tr><td><code>Shift + Super + V</code></td><td>VS Code</td></tr>
-      <tr><td><code>Super + g</code></td><td>GIMP</td></tr>
-      <tr><td><code>Super + d</code></td><td>Discord</td></tr>
-      <tr><td><code>Super + a</code></td><td>Run Local AI (Ollama)</td></tr>
-      <tr><td><code>Ctrl + Alt + Shift + k</code></td><td>Shutdown</td></tr>
-      <tr><td><code>Shift + Super + n</code></td><td>Edit Daily Notes</td></tr>
-      <tr><td><code>Alt + Super + n</code></td><td>View Daily Notes</td></tr>
-      <tr><td><code>Super + n</code></td><td>Open Yazi in Daily Notes Directory</td></tr>
-      <tr><td><code>Super + m</code></td><td>Open Maintenance Script</td></tr>
-      <tr><td><code>Super + i</code></td><td>Open Inventory Directory</td></tr>
-      <tr><td><code>Super + s</code></td><td>Settings Menu</td></tr>
+      <tr><td>🐧</td><td>(none)</td><td>Open app launcher</td></tr>
+      <tr><td>🐧</td><td>c</td><td>Waterfox Browser</td></tr>
+      <tr><td>🐧</td><td>W</td><td>Kitty Terminal</td></tr>
+      <tr><td>🐧</td><td>z</td><td>Yazi File Manager</td></tr>
+      <tr><td>🐧 + Shift</td><td>Z</td><td>Open nautilus</td></tr>
+      <tr><td>🐧</td><td>V</td><td>Neovim</td></tr>
+      <tr><td>🐧 + Shift</td><td>V</td><td>VS Code</td></tr>
+      <tr><td>🐧</td><td>b</td><td>Obsidian</td></tr>
+      <tr><td>🐧</td><td>g</td><td>GIMP</td></tr>
+      <tr><td>🐧</td><td>d</td><td>Discord</td></tr>
+      <tr><td>🐧 + Shift</td><td>n</td><td>Edit Daily Notes</td></tr>
+      <tr><td>🐧 + Alt</td><td>n</td><td>View Daily Notes</td></tr>
+      <tr><td>🐧</td><td>n</td><td>Open Yazi in Daily Notes Directory</td></tr>
+      <tr><td>🐧</td><td>m</td><td>Open Maintenance Script</td></tr>
+      <tr><td>🐧</td><td>i</td><td>Open Inventory Directory</td></tr>
+      <tr><td>🐧</td><td>s</td><td>Settings Menu</td></tr>
     </table>
-
-    <div class="footer">
+    <h2>Local AI</h2>
+    <table>
+      <tr><td>🐧</td><td>a</td><td>Run Local AI (gemma3:1b-it-qat)</td></tr>
+      <tr><td>🐧 + Shift</td><td>A</td><td>Run Local AI (gpt-oss:20b)</td></tr>
+      <tr><td>🐧 + Alt</td><td>A</td><td>Run Local AI (gemma3:27b-it-qat)</td></tr>
+    </table>
+    <h2>Notes</h2>
+    <table>
+      <tr><td>🐧</td><td>N</td><td>Open Yazi in Daily Notes Directory</td></tr>
+      <tr><td>🐧 + Shift</td><td>N</td><td>Edit daily note</td></tr>
+      <tr><td>🐧 + Alt</td><td>N</td><td>View daily note only</td></tr>
+      <tr><td>🐧</td><td>I</td><td>Open inventory directory</td></tr>
+    </table>
+    <h2>Session Management</h2>
+    <table>
+      <tr><td>🐧</td><td>grave</td><td>Lock screen</td></tr>
+      <tr><td>🐧 + Shift</td><td>grave</td><td>Suspend system</td></tr>
+      <tr><td>Ctrl + Alt + Shift</td><td>k</td><td>Shutdown</td></tr>
+    </table>
+    <h2>Miscellaneous</h2>
+    <table>
+      <tr><td>Ctrl + Alt</td><td>Delete</td><td>Mission Center</td></tr>
+      <tr><td>🐧 + Shift</td><td>H</td><td>Clipboard history</td></tr>
+      <tr><td>🐧</td><td>R</td><td>Restart waybar</td></tr>
+    </table>
       Brought to you by <a href="https://github.com/PiercingXX">PiercingXX</a>
-    </div>
-  </div>
-</body>
-</html>
+    <div class="footer">
+
+
+
