@@ -31,13 +31,12 @@ gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking-global "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
-
-
+gsettings set org.gnome.shell.extensions.pop-shell activate-launcher "@as []"
 
 
 #########################
 ### Window Management ###
-
+#########################
 gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super><Shift>s']"
@@ -87,7 +86,7 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom8/ binding '<Super>d'
 # 9 Run Local AI
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ name 'AI'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ command 'kitty ollama run gemma3n:latest'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ command 'kitty ollama run gemma3:270m'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom9/ binding '<Super>a'
 # 10 Shutdown
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom10/ name 'Shutdown'
@@ -105,10 +104,10 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ name 'Daily Notes Open Yazi'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ command 'kitty -e bash -c "~/.scripts/Note-Scripts/open_daily_note_yazi.sh"'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ binding '<Super>n'
-# 14 Settings TUI Menu
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ name 'Settings TUI Menu'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ command 'kitty -e bash -c "~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh"'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ binding '<Super>s'
+# 14 Cheat Sheet
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ name 'Cheat Sheet'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ command 'kitty -e bash -c "~/.scripts/Control-Scripts/gnome-shortcuts.sh"'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom14/ binding '<Super>slash'
 # 15 Open Inventory Directory
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/ name 'Inventory Directory'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom15/ command 'kitty -e bash -c "~/.scripts/Note-Scripts/inventory.sh"'
