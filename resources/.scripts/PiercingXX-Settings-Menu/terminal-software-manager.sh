@@ -47,13 +47,29 @@ install_software() {
     dtype=$(distribution)
     case "$dtype" in
         "arch")
-            if command -v paru &> /dev/null; then
-                paru -Slq | fzf --multi --preview 'paru -Sii {1}' --preview-window=down:50% | xargs -ro paru -S --noconfirm
-            elif command -v yay &> /dev/null; then
-                yay -Slq | fzf --multi --preview 'yay -Sii {1}' --preview-window=down:50% | xargs -ro yay -S --noconfirm
-            else
-                pacman -Slq | fzf --multi --preview 'pacman -Si {1}' --preview-window=down:50% | xargs -ro sudo pacman -S --noconfirm
-            fi
+            # Combine native and Flatpak apps for selection
+            (
+                if command -v paru &> /dev/null; then
+                    paru -Slq
+                elif command -v yay &> /dev/null; then
+                    yay -Slq
+                else
+                    pacman -Slq
+                fi
+                if command -v flatpak &>/dev/null; then
+                    flatpak remote-ls --app flathub --columns=name
+                fi
+            ) | fzf --multi --preview="paru -Sii {} 2>/dev/null || yay -Sii {} 2>/dev/null || pacman -Si {} 2>/dev/null || flatpak remote-info flathub {} 2>/dev/null" --preview-window=down:50% | xargs -ro -I{} bash -c '
+                if command -v paru &>/dev/null && paru -Si "{}" &>/dev/null; then
+                    paru -S --noconfirm "{}"
+                elif command -v yay &>/dev/null && yay -Si "{}" &>/dev/null; then
+                    yay -S --noconfirm "{}"
+                elif pacman -Si "{}" &>/dev/null; then
+                    sudo pacman -S --noconfirm "{}"
+                elif command -v flatpak &>/dev/null && flatpak remote-info flathub "{}" &>/dev/null; then
+                    flatpak install -y flathub "{}"
+                fi
+            '
             ;;
         "debian")
             ( \
@@ -90,7 +106,7 @@ install_software() {
 uninstall_software() {
     local dtype selection
     dtype=$(distribution)
-    local native_list_cmd
+    local native_list_cmd flatpak_list_cmd
     case "$dtype" in
         arch)
             if command -v paru &>/dev/null; then
@@ -111,31 +127,44 @@ uninstall_software() {
             native_list_cmd='echo'
             ;;
     esac
-    pkgs=$(eval "$native_list_cmd")
+    # Flatpak list command (if available)
+    if command -v flatpak &>/dev/null; then
+        flatpak_list_cmd='flatpak list --app --columns=application'
+    else
+        flatpak_list_cmd='echo'
+    fi
+    pkgs=$( (eval "$native_list_cmd"; eval "$flatpak_list_cmd") )
     [ -z "$pkgs" ] && return 0
     selection=$(printf "%s\n" "$pkgs" | fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'echo {}' \
                             --preview-window=down:50% --border)
     [[ -z "$selection" ]] && return 0
     while IFS= read -r pkg; do
-        case "$dtype" in
-            arch)
-                sudo pacman -Rns --noconfirm "$pkg"
-                ;;
-            debian)
-                sudo apt-get purge -y "$pkg"
-                ;;
-            fedora)
-                if command -v dnf &>/dev/null; then
-                    sudo dnf remove -y "$pkg"
-                else
-                    sudo yum remove -y "$pkg"
-                fi
-                ;;
-            *)
-                echo "Unknown or unsupported distribution for uninstall: $pkg"
-                ;;
-        esac
+        # Try native uninstall first, then flatpak
+        if eval "$native_list_cmd" | grep -Fxq "$pkg"; then
+            case "$dtype" in
+                arch)
+                    sudo pacman -Rns --noconfirm "$pkg"
+                    ;;
+                debian)
+                    sudo apt-get purge -y "$pkg"
+                    ;;
+                fedora)
+                    if command -v dnf &>/dev/null; then
+                        sudo dnf remove -y "$pkg"
+                    else
+                        sudo yum remove -y "$pkg"
+                    fi
+                    ;;
+                *)
+                    echo "Unknown or unsupported distribution for uninstall: $pkg"
+                    ;;
+            esac
+        elif command -v flatpak &>/dev/null && flatpak list --app --columns=application | grep -Fxq "$pkg"; then
+            flatpak uninstall -y "$pkg"
+        else
+            echo "Unknown or unsupported package for uninstall: $pkg"
+        fi
     done <<< "$selection"
 }
 
