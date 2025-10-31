@@ -5,7 +5,9 @@
 yellow='\033[1;33m'
 green='\033[0;32m'
 blue='\033[0;34m'
+
 nc='\033[0m'
+
 
 # Function to check if a command exists
 command_exists() {
@@ -191,15 +193,34 @@ universal_update() {
     fi
 }
 
-# Main logic
-echo -e "${blue}PiercingXX System Update${nc}"
-echo -e "${green}Starting system update...${nc}\n"
+# Function to git pull all repos in /media/Working-Storage/GitHub
+git_pull_all_github_repos() {
+    if ! command_exists git; then
+        return
+    fi
+    local base_dir="/media/Working-Storage/GitHub"
+    if [ ! -d "$base_dir" ]; then
+        echo -e "${yellow}GitHub directory not found: $base_dir${nc}"
+        return
+    fi
+    echo -e "${blue}Updating all GitHub repositories in $base_dir...${nc}"
+    for repo in "$base_dir"/*; do
+        if [ -d "$repo/.git" ]; then
+            echo -e "${green}Updating $(basename "$repo")...${nc}"
+            (cd "$repo" && git pull --ff-only)
+        fi
+    done
+    echo -e "${green}All GitHub repositories updated!${nc}"
+}
+
+
 clear
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Checking for script updates...${nc}"
 auto_update_scripts "$@"
 echo -e "${green}Starting system update...${nc}\n"
 update_bashrc
+git_pull_all_github_repos
 if [[ "$DISTRO" == "arch" ]]; then
     if command_exists paru; then
         paru -Syu --noconfirm
