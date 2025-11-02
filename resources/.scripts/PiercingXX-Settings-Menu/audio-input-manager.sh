@@ -4,6 +4,7 @@
 set -e
 
 clear
+
 # Detect audio system
 audio_system=""
 if command -v wpctl &>/dev/null; then
@@ -15,6 +16,90 @@ elif command -v arecord &>/dev/null; then
 else
     echo "No supported audio system detected (PipeWire, PulseAudio, or ALSA)." >&2
     exit 1
+fi
+
+# Constants for excluding a single unwanted sink
+UNWANTED_SINK_NAME="alsa_output.pci-0000_7d_00.6.iec958-stereo"
+UNWANTED_SINK_DESC="Family 17h/19h/1ah HD Audio Controller Digital Stereo (IEC958)"
+
+# Helper: get human-friendly description for a sink name
+get_sink_desc() {
+    local name="$1"
+    pactl list sinks | awk -v target="$name" '
+        index($0, "Name: " target) {found=1}
+        found && /Description:/ {sub(/^.*Description: /, ""); print; exit}
+    ' | xargs
+}
+
+# --- Flag parser for --toggle-output ---
+if [[ "$1" == "--toggle-output" ]]; then
+    if [[ "$audio_system" == "pipewire" || "$audio_system" == "pulseaudio" ]]; then
+        # Build list of allowed sinks (skip only the exact unwanted sink by name/description)
+        sinks=()
+        sink_descs=()
+        while IFS= read -r line; do
+            sink_name=$(echo "$line" | awk '{print $2}')
+            desc=$(get_sink_desc "$sink_name")
+            if [[ "$sink_name" == "$UNWANTED_SINK_NAME" ]] || [[ "$desc" == "$UNWANTED_SINK_DESC" ]]; then
+                continue
+            fi
+            sinks+=("$sink_name")
+            sink_descs+=("$desc")
+        done < <(pactl list short sinks)
+
+        if [[ ${#sinks[@]} -eq 0 ]]; then
+            echo "No valid output sink found to switch to." >&2
+            exit 1
+        fi
+
+        default_sink=$(pactl info | grep 'Default Sink:' | awk -F': ' '{print $2}')
+        # Find current default index in allowed list (may be -1 if current is unwanted)
+        idx=-1
+        for i in "${!sinks[@]}"; do
+            if [[ "${sinks[$i]}" == "$default_sink" ]]; then
+                idx=$i
+                break
+            fi
+        done
+        # Choose next index (wrap), if current not found then start from 0
+        if [[ $idx -lt 0 ]]; then
+            next_idx=0
+        else
+            next_idx=$(( (idx + 1) % ${#sinks[@]} ))
+        fi
+
+        # Safety loop: ensure we never land on the unwanted sink
+        tried=0
+        while [[ $tried -lt ${#sinks[@]} ]]; do
+            next_sink="${sinks[$next_idx]}"
+            desc="${sink_descs[$next_idx]}"
+            if [[ "$next_sink" == "$UNWANTED_SINK_NAME" ]] || [[ "$desc" == "$UNWANTED_SINK_DESC" ]]; then
+                next_idx=$(( (next_idx + 1) % ${#sinks[@]} ))
+                tried=$((tried + 1))
+                continue
+            fi
+            pactl set-default-sink "$next_sink"
+            # Verify after switching by reading back default name
+            new_default=$(pactl info | grep 'Default Sink:' | awk -F': ' '{print $2}')
+            if [[ "$new_default" == "$UNWANTED_SINK_NAME" ]]; then
+                next_idx=$(( (next_idx + 1) % ${#sinks[@]} ))
+                tried=$((tried + 1))
+                continue
+            fi
+            [[ -z "$desc" ]] && desc="$next_sink"
+            if command -v notify-send &>/dev/null; then
+                notify-send "Audio Output Switched" "$desc"
+            else
+                echo "$desc"
+            fi
+            exit 0
+        done
+        echo "No valid output sink found to switch to." >&2
+        exit 1
+    else
+        echo "--toggle-output is only supported for PipeWire or PulseAudio." >&2
+        exit 1
+    fi
 fi
 
 # Check for gum
@@ -81,9 +166,13 @@ case "$audio_system" in
             count=0
             for ((i=0; i<${#sinks[@]}; i++)); do
                 if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
-                    count=$((count+1))
                     name="${sinks[$((i+1))]#Name: }"
                     desc="${sinks[$((i+2))]#Description: }"
+                    # Only skip if description matches unwanted Family 17h/19h/1ah device
+                    if [[ "$desc" == "Family 17h/19h/1ah HD Audio Controller Digital Stereo (IEC958)" ]]; then
+                        continue
+                    fi
+                    count=$((count+1))
                     current=""
                     if [[ "$name" == "$default_sink" ]]; then
                         current="[CURRENT] "
@@ -96,9 +185,14 @@ case "$audio_system" in
             selected_name=""
             for ((i=0; i<${#sinks[@]}; i++)); do
                 if [[ ${sinks[$i]} =~ ^Sink\ \# ]]; then
+                    name="${sinks[$((i+1))]#Name: }"
+                    desc="${sinks[$((i+2))]#Description: }"
+                    if [[ "$desc" == "Family 17h/19h/1ah HD Audio Controller Digital Stereo (IEC958)" ]]; then
+                        continue
+                    fi
                     count=$((count+1))
                     if [[ $count -eq $num ]]; then
-                        selected_name="${sinks[$((i+1))]#Name: }"
+                        selected_name="$name"
                         break
                     fi
                 fi
