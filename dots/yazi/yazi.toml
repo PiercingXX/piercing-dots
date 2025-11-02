@@ -58,11 +58,13 @@ play = [
 	{ run = 'mpv --force-window -- "$@"', orphan = true, desc = "mpv" },
 	{ run = 'vlc "$@"', orphan = true, desc = "VLC" },
 	{ run = 'totem "$@"', orphan = true, desc = "GNOME Videos" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
 ]
 
 # Image viewers
 image = [
 	{ run = 'imv "$@"', orphan = true, desc = "imv" },
+	{ run = 'gimp "$@"', orphan = true, desc = "GIMP" },
 	{ run = 'feh "$@"', orphan = true, desc = "feh" },
 	{ run = 'sxiv "$@"', orphan = true, desc = "sxiv" },
 	{ run = 'xdg-open "$@"', desc = "xdg-open" },
