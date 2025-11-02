@@ -6,13 +6,21 @@ DATE="$(date +%Y-%m-%d)"
 NOTE_FILE="$NOTE_DIR/$DATE.md"
 TIME="  $(date +%H:%M:%S)  "
 
+
+
+# Use --directory flag to open the notes directory
 mkdir -p "$NOTE_DIR"
+if [ "$1" == "--directory" ]; then
+    exec yazi "$NOTE_DIR"
+    exit 0
+fi
 if [ ! -f "$NOTE_FILE" ]; then
     echo "---" > "$NOTE_FILE"
     echo "# Daily Note $DATE" >> "$NOTE_FILE"
     echo "---" >> "$NOTE_FILE"
     echo "" >> "$NOTE_FILE"
 fi
+
 
 # Use --view flag to open in view-only mode
 if [[ "$1" != "--view" ]]; then
@@ -21,3 +29,5 @@ if [[ "$1" != "--view" ]]; then
 else
     nvim "$NOTE_FILE"
 fi
+
+
