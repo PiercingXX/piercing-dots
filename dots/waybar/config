@@ -19,10 +19,10 @@
         "clock"
     ],
     "modules-right": [
+        "tray",
         "mpd", 
         "pulseaudio",
         "bluetooth",
-        "tray",
         "battery",  
         "custom/exit"
     ]
