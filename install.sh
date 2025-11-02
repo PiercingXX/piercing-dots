@@ -46,8 +46,8 @@ builddir=$(pwd)
             chown "$username":"$username" /home/"$username"/.scripts
         fi    
     # Update scripts
-        rm -f /home/"$username"/.scripts/*
-        cp -f resources/.scripts/* /home/"$username"/.scripts/
+        rm -Rf /home/"$username"/.scripts/*
+        cp -rf resources/.scripts/* /home/"$username"/.scripts/
         chown -R "$username":"$username" /home/"$username"/.scripts
         chmod +x /home/"$username"/.scripts/*
     # .font directory
@@ -89,7 +89,7 @@ builddir=$(pwd)
         cp -Rf resources/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
         cp -Rf resources/profile-image/* /home/"$username"/Pictures/profile-image
-        chown -R "$username":"$username" /home/"$username"/Pictures/profile-images
+        chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
         cd "$builddir" || exit
     # Copy Refs to Download folder
         cp -Rf resources/refs/* /home/"$username"/Downloads

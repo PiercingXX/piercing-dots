@@ -23,12 +23,7 @@
         "pulseaudio",
         "bluetooth",
         "tray",
-        "temperature",
-        "disk",
-        "memory",
-        "cpu",
-        "battery", 
-        "backlight",        
+        "battery",  
         "custom/exit"
     ]
 }

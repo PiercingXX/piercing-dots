@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # GitHub.com/PiercingXX
 
 # Bluetooth Manager using bluetuith
@@ -15,6 +15,7 @@ if ! command -v bluetuith &>/dev/null; then
     exit 1
 fi
 
+clear
 # Launch bluetuith
 bluetuith
 

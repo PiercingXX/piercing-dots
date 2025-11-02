@@ -78,8 +78,8 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 
 
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
-alias xx='$HOME/.scripts/maintenance*.sh'
-alias ss='$HOME/.scripts/terminal_software_manager.sh'
+alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
+alias ss='$HOME/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh'
 alias ff='fastfetch'
 alias c='clear'
 
@@ -119,9 +119,17 @@ alias bd='cd "$OLDPWD"'
 # Remove a directory and all files
 alias rmd='/bin/rm  --recursive --force --verbose '
 
+
+
+# Use eza for ls if available, otherwise use standard ls
+if command -v eza &>/dev/null; then
+    alias ls='eza -a -F -H --icons --color=always --group-directories-first --git' # add colors and file type extensions
+else
+    alias ls='ls --color=auto'
+fi
+
 # Alias's for multiple directory listing commands
 alias la='\ls -Alh'										# show hidden files
-alias ls='eza -a -F -H --icons --color=always --group-directories-first --git'	# add colors and file type extensions
 alias lx='\ls -lXBh'										# sort by extension
 alias lk='\ls -lSrh'										# sort by size
 alias lc='\ls -ltcrh'										# sort by change time
@@ -208,18 +216,21 @@ install_bashrc_support() {
         "fedora")
             if command -v dnf &> /dev/null; then
                 sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                curl -sS https://starship.rs/install.sh | sh
             else
                 sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                curl -sS https://starship.rs/install.sh | sh
             fi
             ;;
 		"debian")
 			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
+            wget https://github.com/gsamokovarov/jump/releases/download/v0.51.0/jump_0.51.0_amd64.deb && sudo dpkg -i jump_0.51.0_amd64.deb
 			;;
         "arch")
             if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat --noconfirm
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
             else
                 echo "Install paru or yay."
             fi
@@ -229,7 +240,6 @@ install_bashrc_support() {
 			;;
 	esac
 }
-
 
 
 # Extracts any archive(s) (if unp isn't installed)
@@ -379,7 +389,7 @@ trim() {
 
 
 #######################################################
-# Source and initalize
+# Source and initialize
 #######################################################
 
 # Yazi set CWD on exit
@@ -395,11 +405,11 @@ function y() {
 if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
 # Zoxide
 if command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi
+# Jump
+if command -v jump &>/dev/null; then eval "$(jump shell)"; fi
 # FZF
 [[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
 [[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
-# Jump
-eval "$(jump shell)"
 
 # Fastfetch and keybind only in interactive shells
 if [[ $iatest -gt 0 ]]; then

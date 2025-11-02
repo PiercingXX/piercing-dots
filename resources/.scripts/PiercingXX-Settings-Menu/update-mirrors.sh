@@ -36,4 +36,4 @@ clear
 echo -e "${green}Updating Mirrors...${nc}"
 sudo reflector --verbose --sort rate -l 75 --save /etc/pacman.d/mirrorlist
 echo -e "${green}Mirrors Updated${nc}"
-read -n 1 -s -r -p "Press any key to continue..."; echo
+notify-send "Mirror Update" "Mirror update completed successfully!"
