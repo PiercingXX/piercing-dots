@@ -1,4 +1,18 @@
-require("config.lazy")
+---@diagnostic disable: undefined-global
+-- Leaders must be set before most mappings
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
+
+-- Core options and keymaps
+require("config.options")
+
+-- Use Neovim's built-in package manager
+require("config.pack")
+
+-- Global keymaps
+require("config.keymaps")
+
+-- Domain/filetype mappings
 require("mappings.rust")
 require("mappings.markdown")
 
