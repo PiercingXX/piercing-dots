@@ -47,27 +47,39 @@ install_software() {
     dtype=$(distribution)
     case "$dtype" in
         "arch")
-            # Combine native and Flatpak apps for selection
+            # Combine native and Flatpak apps for selection, with labels
             (
                 if command -v paru &> /dev/null; then
-                    paru -Slq
+                    paru -Slq | sed 's/^/[repo] /'
                 elif command -v yay &> /dev/null; then
-                    yay -Slq
+                    yay -Slq | sed 's/^/[repo] /'
                 else
-                    pacman -Slq
+                    pacman -Slq | sed 's/^/[repo] /'
                 fi
                 if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=name
+                    flatpak remote-ls --app flathub --columns=name | sed 's/^/[flatpak] /'
                 fi
-            ) | fzf --multi --preview="paru -Sii {} 2>/dev/null || yay -Sii {} 2>/dev/null || pacman -Si {} 2>/dev/null || flatpak remote-info flathub {} 2>/dev/null" --preview-window=down:50% | xargs -ro -I{} bash -c '
-                if command -v paru &>/dev/null && paru -Si "{}" &>/dev/null; then
-                    paru -S --noconfirm "{}"
-                elif command -v yay &>/dev/null && yay -Si "{}" &>/dev/null; then
-                    yay -S --noconfirm "{}"
-                elif pacman -Si "{}" &>/dev/null; then
-                    sudo pacman -S --noconfirm "{}"
-                elif command -v flatpak &>/dev/null && flatpak remote-info flathub "{}" &>/dev/null; then
-                    flatpak install -y flathub "{}"
+            ) | fzf --multi \
+                --preview='n=$(printf "%s" {} | cut -d" " -f2-); flatpak remote-info flathub "$n" 2>/dev/null || (command -v paru >/dev/null 2>&1 && (paru -Si --aur "$n" 2>/dev/null || paru -Si "$n" 2>/dev/null)) || pacman -Si "$n" 2>/dev/null' \
+                --preview-window=down:50% \
+            | xargs -ro -I{} bash -c '
+                sel="{}"
+                # Strip label prefix like "[repo] " or "[flatpak] "
+                name=$(printf "%s" "$sel" | cut -d" " -f2-)
+                # If this is a Flatpak app ID on flathub, install via flatpak
+                if [[ "$sel" == "[flatpak] "* ]]; then
+                    if command -v flatpak &>/dev/null; then
+                        flatpak install -y flathub "$name"
+                    else
+                        echo "flatpak not installed; skipping $name" >&2
+                    fi
+                # Otherwise prefer paru for both repo and AUR (handles both)
+                elif command -v paru &>/dev/null; then
+                    paru -S --noconfirm --skipreview "$name"
+                elif command -v yay &>/dev/null; then
+                    yay -S --noconfirm "$name"
+                else
+                    sudo pacman -S --noconfirm "$name"
                 fi
             '
             ;;
