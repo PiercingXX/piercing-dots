@@ -35,10 +35,10 @@ gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
 
 #########################
 ### Window Management ###
+#########################
 
 gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
-gsettings set org.gnome.settings-daemon.plugins.media-keys control-center "['<Super>s']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['<Super>grave']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys home "['<Shift><Super>z']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys calculator "['<Shift><Super>c']"
