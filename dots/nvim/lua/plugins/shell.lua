@@ -1,3 +1,5 @@
+-- Deprecated: Lazy.nvim-style plugin spec (shell)
+return {}
 ---@diagnostic disable: undefined-global
 return {
   -- Start bashls using the new Neovim LSP API for sh/bash files

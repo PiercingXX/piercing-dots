@@ -1,3 +1,5 @@
+-- Deprecated: Lazy.nvim-style plugin spec (yazi.nvim)
+return {}
 return {
   "mikavilpas/yazi.nvim",
   event = "VeryLazy",

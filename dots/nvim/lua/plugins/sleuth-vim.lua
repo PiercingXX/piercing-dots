@@ -1,3 +1,2 @@
-return {
-	"tpope/vim-sleuth",
-}
+-- Inert; managed via vim.pack
+return {}

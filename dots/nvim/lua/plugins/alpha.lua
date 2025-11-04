@@ -1,50 +1,6 @@
-return {
-  "goolord/alpha-nvim",
-  dependencies = {
-    "echasnovski/mini.icons",
-  },
-
-  config = function()
-    local alpha = require("alpha")
-    local dashboard = require("alpha.themes.dashboard")
-
-    dashboard.section.header.opts.hl = {
-      {
-        { "I2A0", 0,   3 },
-        { "I2A0", 3,   6 },
-        { "I2A0", 6,   9 },
-        { "I2A0", 9,   12 },
-        { "I2A0", 12,  15 },
-        { "I2A0", 15,  18 },
-        { "I2A0", 18,  21 },
-        { "I2A0", 21,  24 },
-        { "I2A0", 24,  27 },
-        { "I2A0", 27,  30 },
-        { "I2A0", 30,  33 },
-        { "I2A0", 33,  36 },
-        { "I2A0", 36,  39 },
-        { "I2A0", 39,  42 },
-        { "I2A0", 42,  45 },
-        { "I2A0", 45,  48 },
-        { "I2A0", 48,  51 },
-        { "I2A0", 51,  54 },
-        { "I2A0", 54,  57 },
-        { "I2A0", 57,  60 },
-        { "I2A0", 60,  63 },
-        { "I2A0", 63,  66 },
-        { "I2A0", 66,  69 },
-        { "I2A0", 69,  72 },
-        { "I2A0", 72,  75 },
-        { "I2A0", 75,  78 },
-        { "I2A0", 78,  81 },
-        { "I2A0", 81,  84 },
-        { "I2A0", 84,  87 },
-        { "I2A0", 87,  90 },
-        { "I2A0", 90,  93 },
-        { "I2A0", 93,  96 },
-        { "I2A0", 96,  99 },
-        { "I2A0", 99,  102 },
-        { "I2A0", 102, 105 },
+-- Deprecated: Lazy.nvim-style plugin spec (alpha-nvim)
+-- Managed via vim.pack in config/pack.lua and configured in setup/alpha.lua
+return true
         { "I2A0", 105, 108 },
         { "I2A0", 108, 111 },
       },

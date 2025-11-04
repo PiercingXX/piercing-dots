@@ -1,3 +1,5 @@
+-- Deprecated: Lazy.nvim-style plugin spec (nvim-treesitter)
+return {}
 return {
   {
     "nvim-treesitter/nvim-treesitter",
