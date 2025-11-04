@@ -26,9 +26,9 @@
 
 
 -- Basics
-    vim.keymap.set('n', '<leader>w', ':write<CR>', {desc="Write"})
-    vim.keymap.set('n', '<leader>q', ':quit<CR>', {desc="Quit"})
-    vim.keymap.set('n', '<leader>o', ':update<CR> :source $HOME/.config/nvim/init.lua <CR>', {desc="Shoutout"})
+    vim.keymap.set('n', '<leader>w', ':write<CR>', { desc = 'Write' })
+    vim.keymap.set('n', '<leader>q', ':quit<CR>', { desc = 'Quit' })
+    vim.keymap.set('n', '<leader>o', ':update<CR> :source $HOME/.config/nvim/init.lua <CR>', { desc = 'Shoutout' })
 
 
 
