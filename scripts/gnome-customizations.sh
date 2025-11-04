@@ -33,10 +33,9 @@ gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking-global "@as [
 gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
 
 
-#########################
-### Window Management ###
-#########################
-
+##########################
+### Custom Keybindings ###
+##########################
 gsettings set org.gnome.desktop.wm.keybindings close "['<Super>Q']"
 gsettings set org.gnome.shell.keybindings toggle-application-view "['<Super>Tab']"
 gsettings set org.gnome.settings-daemon.plugins.media-keys screensaver "['<Super>grave']"
@@ -115,7 +114,10 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ name 'Settings Menu'
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ command 'kitty bash -c '~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh''
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom16/ binding '<Super>s'
-# 17
+# 17 Cheat Sheet
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom17/ name 'Cheat Sheet'
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom17/ command 'kitty w3m '~/.scripts/Control-Scripts/keybinds.html''
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom17/ binding '<Super>slash'
 
 
 ######################
@@ -130,12 +132,12 @@ gsettings set org.gnome.desktop.peripherals.keyboard numlock-state 'true'
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface enable-hot-corners 'false'
 gsettings set org.gnome.desktop.background picture-options 'zoom'
+gsettings set org.gnome.shell.mutter edge-tiling 'false'
 dconf write /org/gnome/system/location/enabled 'false'
 dconf write /org/gnome/desktop/privacy/report-technical-problems 'false'
 dconf write /org/gnome/desktop/a11y/applications/screen-reader-enabled 'false'
 dconf write /org/gnome/desktop/interface/toolkit-accessibility 'false'
 dconf write /org/gnome/shell/ubuntu/startup-sound "''"
-gsettings set org.gnome.shell.mutter edge-tiling 'false'
 dconf write /org/gnome/desktop/wm/preferences/button-layout "'appmenu:close'"
 dconf write /org/gnome/system/location/enabled "'false'"
 dconf write /org/gnome/desktop/privacy/recent-files-max-age "1"
@@ -181,9 +183,9 @@ gsettings set org.gnome.desktop.peripherals.touchpad click-method 'fingers'
 gsettings set org.gnome.mutter focus-change-on-pointer-rest false
 gsettings set org.gnome.shell.extensions.pop-shell mouse-cursor-focus-location 'uint32 0'
 gsettings set org.gnome.shell.extensions.pop-shell mouse-cursor-follows-active-window true
+gsettings set org.gnome.desktop.wm.preferences auto-raise-delay '200'
 dconf write /org/gnome/desktop/wm/preferences/focus-mode "'mouse'"
 dconf write /org/gnome/desktop/wm/preferences/auto-raise "'false'"
-gsettings set org.gnome.desktop.wm.preferences auto-raise-delay '200'
 
 # Fonts
 gsettings set org.gnome.desktop.interface font-name 'FiraCode Nerd Font Medium 10'
@@ -207,7 +209,7 @@ gsettings set org.gnome.shell favorite-apps "['net.waterfox.waterfox.desktop', '
 ##################
 
 # Enable Extensions
-gsettings set org.gnome.shell disable-user-extensions 'false'
+for ext in $(gnome-extensions list); do gnome-extensions enable "$ext"; done
 
 # Pop Shell 
 gsettings set org.gnome.shell.extensions.pop-shell toggle-floating "['<Shift><Super>f']"
