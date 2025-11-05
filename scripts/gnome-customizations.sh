@@ -211,7 +211,7 @@ gsettings set org.gnome.shell favorite-apps "['net.waterfox.waterfox.desktop', '
 # Enable Extensions
 for ext in $(gnome-extensions list); do gnome-extensions enable "$ext"; done
 
-# Pop Shell 
+# Pop Shell
 gsettings set org.gnome.shell.extensions.pop-shell toggle-floating "['<Shift><Super>f']"
 dconf write /org/gnome/shell/extensions/pop-cosmic/show-workspaces-button 'false'
 dconf write /org/gnome/shell/extensions/pop-cosmic/show-applications-button 'false'

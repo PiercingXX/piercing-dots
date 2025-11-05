@@ -7,20 +7,35 @@
 keymap = [
 
 
-# Bookmark
+# Bookmark plugin
 	{ on = [ "b", "m" ],				run = "plugin bookmarks save",					desc = "Save current position as a bookmark" },
 	{ on = [ "'" ],						run = "plugin bookmarks jump",					desc = "Jump to a bookmark" },
 	{ on = [ "b", "d" ],				run = "plugin bookmarks delete",				desc = "Delete a bookmark" },
 	{ on = [ "b", "D" ],				run = "plugin bookmarks delete_all",			desc = "Delete all bookmarks" },
 
-# Relative Motion
-	{ on = "m",							run = "plugin relative-motions",				desc = "Trigger a new relative motion" },
+# Relative Motion plugin
+#	{ on = "m",							run = "plugin relative-motions",				desc = "Trigger a new relative motion" },
+	{ on = [ "1" ], 					run = "plugin relative-motions 1", 				desc = "Move in relative steps" },
+	{ on = [ "2" ], 					run = "plugin relative-motions 2", 				desc = "Move in relative steps" },
+	{ on = [ "3" ], 					run = "plugin relative-motions 3", 				desc = "Move in relative steps" },
+	{ on = [ "4" ], 					run = "plugin relative-motions 4", 				desc = "Move in relative steps" },
+	{ on = [ "5" ], 					run = "plugin relative-motions 5", 				desc = "Move in relative steps" },
+	{ on = [ "6" ], 					run = "plugin relative-motions 6", 				desc = "Move in relative steps" },
+	{ on = [ "7" ], 					run = "plugin relative-motions 7", 				desc = "Move in relative steps" },
+	{ on = [ "8" ], 					run = "plugin relative-motions 8", 				desc = "Move in relative steps" },
+	{ on = [ "9" ], 					run = "plugin relative-motions 9", 				desc = "Move in relative steps" },
 
-# Mount 
+# Mount plugin
 	{ on  = "M",						run = "plugin mount"},
 
-# wl-clipboard
+# wl-clipboard plugin
 	{ on = "<C-y>",						run = ["plugin wl-clipboard"],					desc = "Copy to System Clipboard" },
+
+# chmod plugin
+{ on = [ "c", "m" ], 					run = "plugin chmod", 							desc = "Chmod on selected files" },
+
+# Smart-enter plugin
+{ on = "l", 							run = "plugin smart-enter", 					desc = "Enter the child directory, or open the file" },
 
 # Diff View
 	{ on = "<C-d>",						run = "plugin diff",							desc = "Diff the selected with the hovered file" },

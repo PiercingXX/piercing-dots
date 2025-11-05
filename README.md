@@ -26,21 +26,53 @@ _A curated dotfiles collection + a one‑stop Linux maintenance script._
 
 ## 🌟 The Dots
 
-All dotfiles are in `dots`. Universal keybinds:
-```
-<Super>+<?> for full list
-```
+- Piercing‑Dots
+	- One repo to keep your machine updated and configured
+	- Hyprland and Gnome are fully built out. Awesome/BSPWM/i3/Sway are mostly there/depreciated
+	- Waybar, kitty, Neovim, Yazi, GIMP are all heavily customized into minimal yet fully functional power houses.
+	- Maintenance and software manager scripts so you stop copy‑pasting from blogs
+	- '<Super> /' will open your Cheat Sheet
+- Bash driven Settings Menu
+	- Dont leave the keyboard, '<Super> S' and your in my settings menu
+
 
 ---
 
-## 📄 maintenance.sh – Simplicity
+## 📄 Bash Driven Settings Menu – Simplicity
 
-The script will:
+The scripts will:
 
-- Self-update from GitHub.
-- Detect your distro and present a **whiptail menu**.
-- Offer options to update the system, mirrors, install the full “Rice”, or just GIMP presets.
-- Run universal updates (Neovim, pip, npm, cargo, fwupd, flatpak, Docker, Hyprland, etc).
+The update script will
+    - Update your entire system (Neovim, pip, npm, cargo, fwupd, flatpak, Docker, Hyprland, etc)
+    - Self-update its ofn scropts from the PiercingXX GitHub.
+    - Update your github repos 
+Terminal Software Manager
+    - Don't use gnome software or search the AUR of Flathub
+    - This will allow you to fuzzy find all available install options for whatever you're looking for.
+    - You can also uninstall anything on your system with this.
+Audio Input Manager
+    - Easily switch input and output audio
+    - Toggle through audio output with '<SUPER> O'
+Wifi manager
+    - Launches Network Manager TUI
+Bluetooth Manager
+    - Launches 
+Change Wallpaper
+    - Does just that on Hyprland and Gnome. 
+Backup & Restore
+    - Does what you think
+User Management
+    - Yup it does that
+Update Piercing Rice
+    - This will install one of 4 options
+        -Everything - All dots, scripts, customizations, everything.
+        -GIMP dot files only
+        -All dotfiles and scripts and gnome customizations without Hyprland dots (this will still replace the keymap file)
+        -Gnome Customizations only
+Update Mirrors
+    - This is only available for Arch, will find the fastest mirrors and update them.
+Clean System
+    - Deletes file remnants, temp folders, and trash.
 
 ---
 
@@ -99,4 +131,6 @@ See the LICENSE file for details.
 
 ## 📞 Support & Contact
 
-*Don't.*
+    Email: Don’t
+
+    Open an issue in the relevant repo instead. If it’s a rant, make it entertaining.

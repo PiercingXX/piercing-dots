@@ -43,5 +43,15 @@ use = "AnirudhG07/rich-preview"
 rev = "843c3fa"
 hash = "b4040931f0d2f9670ddb4923e55cd881"
 
+[[plugin.deps]]
+use = "yazi-rs/plugins:smart-enter"
+rev = "8f1d971"
+hash = "56fdabc96fc1f4d53c96eb884b02a5be"
+
+[[plugin.deps]]
+use = "yazi-rs/plugins:chmod"
+rev = "8f1d971"
+hash = "8ad3e90b079190b4905f24a44f4ca06b"
+
 [flavor]
 deps = []

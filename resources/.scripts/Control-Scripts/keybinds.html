@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GNOME Custom Shortcuts Cheat Sheet</title>
+  <title>PiercingXX Shortcuts Cheat Sheet</title>
   <link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -74,11 +74,12 @@
 </head>
 <body>
   <div class="container">
-    <h1>Custom Shortcuts</h1>
-    <p>Quick reference for custom keyboard shortcuts.</p>
-
-    <h2>Cheat Sheet</h2>
+  <h1 id="top">PiercingXX Shortcuts</h1>
+    <p>Quick reference for PiercingXX keyboard shortcuts.</p>
+  <p><a href="#yazi-shortcuts">Yazi Shortcuts</a> | <a href="#nvim-shortcuts">Neovim Shortcuts</a></p>
     <table>
+    <h2>Cheat Sheet
+    </h2>
   <tr><td><code>🐧 + /</code></td><td>Show keybinds (this file)</td></tr>
     </table>
     <h2>Window Management</h2>
@@ -147,8 +148,318 @@
       <tr><td>🐧 + Shift</td><td>H</td><td>Clipboard history</td></tr>
       <tr><td>🐧</td><td>R</td><td>Restart waybar</td></tr>
     </table>
-      Brought to you by <a href="https://github.com/PiercingXX">PiercingXX</a>
+
+    <h1 id="yazi-shortcuts">Yazi Shortcuts</h1>
+    <p>Quick reference for Yazi file manager keyboard shortcuts. <a href="#top">Back to top</a></p>
+    <h3>Navigation</h3>
+    <p>Relative Line Numbers work with 'J' and 'K'</p>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>k / Up</td><td>Move cursor up</td></tr>
+      <tr><td>j / Down</td><td>Move cursor down</td></tr>
+      <tr><td>l / Right</td><td>Enter hovered directory</td></tr>
+      <tr><td>h / Left</td><td>Go to parent directory</td></tr>
+      <tr><td>K</td><td>Seek up 5 units in preview</td></tr>
+      <tr><td>J</td><td>Seek down 5 units in preview</td></tr>
+      <tr><td>gg</td><td>Move cursor to top</td></tr>
+      <tr><td>G</td><td>Move cursor to bottom</td></tr>
+      <tr><td>z</td><td>Jump to directory (zoxide)</td></tr>
+      <tr><td>Z</td><td>Jump/reveal with fzf</td></tr>
+    </table>
+    <h3>File Operations</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>o</td><td>Open selected files</td></tr>
+      <tr><td>O</td><td>Open selected files interactively</td></tr>
+      <tr><td>Enter</td><td>Open selected files</td></tr>
+      <tr><td>Shift + Enter</td><td>Open interactively (some terminals)</td></tr>
+      <tr><td>Tab</td><td>Show file info</td></tr>
+      <tr><td>y</td><td>Yank (copy) selected files</td></tr>
+      <tr><td>x</td><td>Yank (cut) selected files</td></tr>
+      <tr><td>p</td><td>Paste yanked files</td></tr>
+      <tr><td>P</td><td>Paste (overwrite if exists)</td></tr>
+      <tr><td>Y / X</td><td>Cancel yank status</td></tr>
+      <tr><td>d</td><td>Trash selected files</td></tr>
+      <tr><td>D</td><td>Permanently delete files</td></tr>
+      <tr><td>a</td><td>Create file (end with / for directory)</td></tr>
+      <tr><td>r</td><td>Rename selected file(s)</td></tr>
+      <tr><td>.</td><td>Toggle hidden files</td></tr>
+      <tr><td>;</td><td>Run shell command</td></tr>
+      <tr><td>:</td><td>Run shell command (block)</td></tr>
+      <tr><td>-</td><td>Symlink absolute path of yanked files</td></tr>
+      <tr><td>_</td><td>Symlink relative path of yanked files</td></tr>
+      <tr><td>Ctrl + -</td><td>Hardlink yanked files</td></tr>
+    </table>
+    <h3>Selection</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Space</td><td>Toggle selection of hovered file</td></tr>
+      <tr><td>v</td><td>Enter visual (selection) mode</td></tr>
+      <tr><td>V</td><td>Unset visual mode</td></tr>
+      <tr><td>Ctrl + a</td><td>Select all files</td></tr>
+      <tr><td>Ctrl + r</td><td>Inverse selection</td></tr>
+      <tr><td>Esc</td><td>Cancel selection</td></tr>
+    </table>
+    <h3>Copy Paths</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>cc</td><td>Copy file path</td></tr>
+      <tr><td>cd</td><td>Copy directory path</td></tr>
+      <tr><td>cf</td><td>Copy filename</td></tr>
+      <tr><td>cn</td><td>Copy filename (no extension)</td></tr>
+    </table>
+    <h3>Filter &amp; Find</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>f</td><td>Filter files</td></tr>
+      <tr><td>/</td><td>Find next file</td></tr>
+      <tr><td>?</td><td>Find previous file</td></tr>
+      <tr><td>n</td><td>Next found</td></tr>
+      <tr><td>N</td><td>Previous found</td></tr>
+    </table>
+    <h3>Search</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>s</td><td>Search files by name (fd)</td></tr>
+      <tr><td>S</td><td>Search files by content (ripgrep)</td></tr>
+      <tr><td>Ctrl + s</td><td>Cancel search</td></tr>
+    </table>
+    <h3>Sorting</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>,m / ,M</td><td>Sort by modified time (normal/reverse)</td></tr>
+      <tr><td>,b / ,B</td><td>Sort by birth time (normal/reverse)</td></tr>
+      <tr><td>,e / ,E</td><td>Sort by extension (normal/reverse)</td></tr>
+      <tr><td>,a / ,A</td><td>Sort alphabetically (normal/reverse)</td></tr>
+      <tr><td>,n / ,N</td><td>Sort naturally (normal/reverse)</td></tr>
+      <tr><td>,s / ,S</td><td>Sort by size (normal/reverse)</td></tr>
+      <tr><td>,r</td><td>Sort randomly</td></tr>
+    </table>
+    <h3>Multi-Tab</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>t</td><td>New tab (CWD)</td></tr>
+      <tr><td>0-9</td><td>Switch to n-th tab</td></tr>
+      <tr><td>[</td><td>Previous tab</td></tr>
+      <tr><td>]</td><td>Next tab</td></tr>
+      <tr><td>{</td><td>Swap with previous tab</td></tr>
+      <tr><td>}</td><td>Swap with next tab</td></tr>
+      <tr><td>Ctrl + c</td><td>Close current tab</td></tr>
+    </table>
+    <h3>Bookmarks</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>b m / ' (quote)</td><td>Save bookmark / jump to bookmark</td></tr>
+      <tr><td>b d / b D</td><td>Delete bookmark / delete all bookmarks</td></tr>
+    </table>
+    <h3>Trash</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>T b</td><td>Open Trash menu</td></tr>
+      <tr><td>T e / T D</td><td>Empty Trash / empty by days deleted</td></tr>
+      <tr><td>T d / T r</td><td>Delete from Trash / restore from Trash</td></tr>
+    </table>
+    <h3>Configuration</h3>
+    <table>
+      <tr><th>File</th><th>Description</th></tr>
+      <tr><td>yazi.toml</td><td>General configuration</td></tr>
+      <tr><td>keymap.toml</td><td>Keybindings configuration</td></tr>
+      <tr><td>theme.toml</td><td>Color scheme configuration</td></tr>
+    </table>
+
+
+    <h1 id="nvim-shortcuts">Neovim Shortcuts</h1>
+    <p>Quick reference for default Neovim keyboard shortcuts. <a href="#top">Back to top</a></p>
+    <h3>Normal Mode: Cursor Movement</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>h / j / k / l</td><td>Left / Down / Up / Right</td></tr>
+      <tr><td>w / W</td><td>Next word / WORD</td></tr>
+      <tr><td>b / B</td><td>Back word / WORD</td></tr>
+      <tr><td>e / E</td><td>End of word / WORD</td></tr>
+      <tr><td>ge / gE</td><td>End of previous word / WORD</td></tr>
+      <tr><td>0 / $</td><td>Start / end of line</td></tr>
+      <tr><td>^ / _</td><td>First non-blank in line</td></tr>
+      <tr><td>gg / G</td><td>First / last line</td></tr>
+      <tr><td>H / M / L</td><td>Top / Middle / Bottom of screen</td></tr>
+      <tr><td>%</td><td>Go to matching bracket/paren</td></tr>
+      <tr><td>Ctrl+u / Ctrl+d</td><td>Up/down half page</td></tr>
+      <tr><td>Ctrl+b / Ctrl+f</td><td>Up/down full page</td></tr>
+      <tr><td>zz / zt / zb</td><td>Center / top / bottom of screen</td></tr>
+      <tr><td>gj / gk</td><td>Down / up display (soft-wrapped) line</td></tr>
+    </table>
+    <h3>Insert Mode</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>i / I</td><td>Insert before cursor / at line start</td></tr>
+      <tr><td>a / A</td><td>Append after cursor / at line end</td></tr>
+      <tr><td>o / O</td><td>Open new line below / above</td></tr>
+      <tr><td>Esc / Ctrl+c</td><td>Exit insert mode</td></tr>
+    </table>
+    <h3>Editing</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>r</td><td>Replace character</td></tr>
+      <tr><td>J</td><td>Join lines</td></tr>
+      <tr><td>u</td><td>Undo</td></tr>
+      <tr><td>Ctrl+r</td><td>Redo</td></tr>
+      <tr><td>.</td><td>Repeat last change</td></tr>
+      <tr><td>cc / C</td><td>Change line</td></tr>
+      <tr><td>cw / c$ / ce</td><td>Change word / to end / to end of word</td></tr>
+      <tr><td>dd / D</td><td>Delete line / to end of line</td></tr>
+      <tr><td>yy / Y</td><td>Yank (copy) line</td></tr>
+      <tr><td>p / P</td><td>Paste after / before</td></tr>
+      <tr><td>xp</td><td>Transpose characters</td></tr>
+      <tr><td>Ctrl+a / Ctrl+x</td><td>Increment / decrement number</td></tr>
+    </table>
+    <h3>Visual Mode</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>v / V / Ctrl+v</td><td>Visual / linewise / block mode</td></tr>
+      <tr><td>y / d</td><td>Yank / delete selection</td></tr>
+      <tr><td>&gt; / &lt;</td><td>Indent / de-indent selection</td></tr>
+      <tr><td>Esc / Ctrl+c</td><td>Exit visual mode</td></tr>
+    </table>
+    <h3>Custom Keybinds</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th><th>Context</th></tr>
+      <tr><td>&lt;leader&gt;qq</td><td>Quit Neovim</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;ss</td><td>Save file</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;tt</td><td>Open terminal</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;cc</td><td>Compile/run code (project-specific)</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;rn</td><td>Rename symbol (LSP)</td><td>Custom/LSP</td></tr>
+      <tr><td>&lt;leader&gt;d</td><td>Show diagnostics</td><td>Custom/LSP</td></tr>
+      <tr><td>&lt;leader&gt;h</td><td>Show hover doc</td><td>Custom/LSP</td></tr>
+      <tr><td>&lt;leader&gt;v</td><td>Paste from system clipboard</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;y</td><td>Yank to system clipboard</td><td>Custom</td></tr>
+      <tr><td>&lt;leader&gt;z</td><td>Open Yazi in CWD</td><td>Custom</td></tr>
+            <!-- Markdown Preview -->
+      <tr><td>&lt;leader&gt;mp</td><td>Markdown preview</td><td>Markdown Preview</td></tr>
+      <tr><td>&lt;leader&gt;td</td><td>Todo Floating Window</td><td>Custom</td></tr>
+    </table>
+
+
+
+
+
+
+
+
+
+    <h3>Registers &amp; Marks</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>"xy / "xp</td><td>Yank to / paste from register x</td></tr>
+      <tr><td>:registers</td><td>Show registers</td></tr>
+      <tr><td>:marks</td><td>Show marks</td></tr>
+      <tr><td>ma / `a</td><td>Set / jump to mark a</td></tr>
+      <tr><td>Ctrl+o / Ctrl+i</td><td>Jump backward / forward in jump list</td></tr>
+    </table>
+    <h3>Macros</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>qa</td><td>Start recording macro to register a</td></tr>
+      <tr><td>q</td><td>Stop recording macro</td></tr>
+      <tr><td>@a / @@</td><td>Run macro in register a / rerun last macro</td></tr>
+    </table>
+    <!-- Commenting is not a default Neovim feature; requires plugin like 'tpope/vim-commentary' -->
+    <!-- Cut, Copy & Paste are covered in Editing and Visual Mode above -->
+    <h3>Indenting</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>&gt;&gt; / &lt;&lt;</td><td>Indent / de-indent line</td></tr>
+      <tr><td>=</td><td>Re-indent selection or line</td></tr>
+    </table>
+    <h3>Exiting</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>:w</td><td>Write (save) file</td></tr>
+      <tr><td>:q</td><td>Quit</td></tr>
+      <tr><td>:wq / :x</td><td>Write and quit</td></tr>
+      <tr><td>:q!</td><td>Force quit (discard changes)</td></tr>
+      <tr><td>:w !sudo tee %</td><td>Write file as sudo</td></tr>
+    </table>
+    <h3>Search &amp; Replace</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>/pattern</td><td>Search forward for pattern</td></tr>
+      <tr><td>?pattern</td><td>Search backward for pattern</td></tr>
+      <tr><td>n / N</td><td>Next / previous search result</td></tr>
+      <tr><td>:%s/old/new/g</td><td>Replace all in file</td></tr>
+      <tr><td>:noh</td><td>Remove search highlight</td></tr>
+    </table>
+    <h3>Quickfix</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>:copen / :cclose</td><td>Open / close quickfix window</td></tr>
+      <tr><td>:cnext / :cprev</td><td>Next / previous quickfix item</td></tr>
+      <tr><td>:cfirst / :clast</td><td>First / last quickfix item</td></tr>
+    </table>
+    <h3>Buffers, Windows &amp; Tabs</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>:e file</td><td>Edit file</td></tr>
+      <tr><td>:ls</td><td>List buffers</td></tr>
+      <tr><td>:bN / :bn / :bp</td><td>Next / previous buffer</td></tr>
+      <tr><td>:bd</td><td>Delete buffer</td></tr>
+      <tr><td>:sp / :vsp</td><td>Horizontal / vertical split</td></tr>
+      <tr><td>Ctrl+ws / Ctrl+wv</td><td>Split window horizontally / vertically</td></tr>
+      <tr><td>Ctrl+ww</td><td>Switch windows</td></tr>
+      <tr><td>Ctrl+wq</td><td>Quit window</td></tr>
+      <tr><td>Ctrl+w+</td><td>Increase window height</td></tr>
+      <tr><td>Ctrl+w-</td><td>Decrease window height</td></tr>
+      <tr><td>Ctrl+w&gt;</td><td>Increase window width</td></tr>
+      <tr><td>Ctrl+w&lt;</td><td>Decrease window width</td></tr>
+      <tr><td>:tabnew</td><td>New tab</td></tr>
+      <tr><td>gt / gT</td><td>Next / previous tab</td></tr>
+      <tr><td>:tabclose</td><td>Close tab</td></tr>
+    </table>
+    <h3>Diff &amp; Folding</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>zf</td><td>Create fold</td></tr>
+      <tr><td>zd</td><td>Delete fold</td></tr>
+      <tr><td>za</td><td>Toggle fold</td></tr>
+      <tr><td>zo / zc</td><td>Open / close fold</td></tr>
+      <tr><td>zr / zm</td><td>Reduce / minimize folds</td></tr>
+      <tr><td>zi</td><td>Toggle folding functionality</td></tr>
+      <tr><td>:diffthis / :diffoff</td><td>Start / stop diff mode</td></tr>
+      <tr><td>:diffupdate</td><td>Update diff</td></tr>
+    </table>
+    <h3>Telescope</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th><th>Context/Plugin</th></tr>
+      <tr><td>&lt;leader&gt;ff</td><td>Find files</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fg</td><td>Live grep</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fb</td><td>Buffers</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fh</td><td>Help tags</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fo</td><td>Old files</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fr</td><td>Recent files</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fd</td><td>Dotfiles</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fm</td><td>Marks</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fk</td><td>Keymaps</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fc</td><td>Commands</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;fs</td><td>Grep string under cursor</td><td>Telescope</td></tr>
+      <tr><td>&lt;leader&gt;ft</td><td>File browser</td><td>Telescope</td></tr>
+    </table>
+    <h3>LSP</h3>
+    <table>
+      <!-- LSP -->
+      <tr><td>gd</td><td>Go to definition</td><td>LSP</td></tr>
+      <tr><td>gD</td><td>Go to declaration</td><td>LSP</td></tr>
+      <tr><td>gi</td><td>Go to implementation</td><td>LSP</td></tr>
+      <tr><td>gr</td><td>Go to references</td><td>LSP</td></tr>
+      <tr><td>K</td><td>Hover documentation</td><td>LSP</td></tr>
+      <tr><td>&lt;leader&gt;rn</td><td>Rename symbol</td><td>LSP</td></tr>
+      <tr><td>&lt;leader&gt;ca</td><td>Code action</td><td>LSP</td></tr>
+      <tr><td>[d / ]d</td><td>Previous/next diagnostic</td><td>LSP</td></tr>
+      <tr><td>&lt;leader&gt;f</td><td>Format buffer</td><td>LSP</td></tr>
+    </table>
     <div class="footer">
+      Brought to you by <a href="https://github.com/PiercingXX">PiercingXX</a>
+    </div>
+  </div>
+</body>
 
 
 
