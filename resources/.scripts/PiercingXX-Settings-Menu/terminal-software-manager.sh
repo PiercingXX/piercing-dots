@@ -57,7 +57,7 @@ install_software() {
                     pacman -Slq | sed 's/^/[repo] /'
                 fi
                 if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=name | sed 's/^/[flatpak] /'
+                    flatpak remote-ls --app flathub --columns=application | sed 's/^/[flatpak] /'
                 fi
             ) | fzf --multi \
                 --preview='n=$(printf "%s" {} | cut -d" " -f2-); flatpak remote-info flathub "$n" 2>/dev/null || (command -v paru >/dev/null 2>&1 && (paru -Si --aur "$n" 2>/dev/null || paru -Si "$n" 2>/dev/null)) || pacman -Si "$n" 2>/dev/null' \
@@ -87,7 +87,7 @@ install_software() {
             ( \
                 apt-cache pkgnames; \
                 if command -v flatpak &>/dev/null; then \
-                    flatpak remote-ls --app flathub --columns=name; \
+                    flatpak remote-ls --app flathub --columns=application; \
                 fi \
             ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if apt-cache show \"\$1\" &>/dev/null; then
@@ -101,7 +101,7 @@ install_software() {
             ( \
                 rpm -qa --qf "%{NAME}\n"; \
                 if command -v flatpak &>/dev/null; then \
-                    flatpak remote-ls --app flathub --columns=name; \
+                    flatpak remote-ls --app flathub --columns=application; \
                 fi \
             ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if dnf info \"\$1\" &>/dev/null; then
