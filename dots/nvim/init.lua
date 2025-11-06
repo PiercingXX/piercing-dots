@@ -9,6 +9,9 @@ require("config.options")
 -- Use Neovim's built-in package manager
 require("config.pack")
 
+-- Enable system clipboard
+vim.opt.clipboard = "unnamedplus"
+
 -- Global keymaps
 require("config.keymaps")
 

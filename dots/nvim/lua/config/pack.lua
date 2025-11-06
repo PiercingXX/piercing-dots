@@ -54,6 +54,7 @@ local specs = {
   -- Editing helpers
   { src = gh("Wansmer/treesj") },
   { src = gh("windwp/nvim-autopairs") },
+  { src = gh("mg979/vim-visual-multi") },
 
   -- Lint/format
   { src = gh("nvimtools/none-ls.nvim") },
@@ -111,3 +112,4 @@ safe_require("setup.shell")
 safe_require("setup.todo")
 safe_require("setup.blink_cmp")
 safe_require("setup.alpha")
+safe_require("setup.multicursor")

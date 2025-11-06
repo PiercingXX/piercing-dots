@@ -117,6 +117,10 @@
       "rev": "bc6dfc1",
       "src": "https://github.com/vimpostor/vim-tpipeline"
     },
+    "vim-visual-multi": {
+      "rev": "a6975e7",
+      "src": "https://github.com/mg979/vim-visual-multi"
+    },
     "which-key.nvim": {
       "rev": "3aab214",
       "src": "https://github.com/folke/which-key.nvim"
