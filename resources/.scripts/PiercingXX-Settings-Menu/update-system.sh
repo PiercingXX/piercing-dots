@@ -185,7 +185,23 @@ universal_update() {
         done
     fi
     if command_exists yazi; then
+        # Upgrade yazi core packages
         ya pkg upgrade
+        # Check and sync yazi plugins from package.toml
+        YAZI_CONFIG="$HOME/.config/yazi/package.toml"
+        if [ -f "$YAZI_CONFIG" ]; then
+            # Get list of plugins from package.toml
+            mapfile -t desired_plugins < <(grep '^use = ' "$YAZI_CONFIG" | sed -E "s/use = \"(.*)\"/\1/" | sort)
+            # Get currently installed plugins
+            mapfile -t installed_plugins < <(ya pkg list | awk '{print $1}' | sort)
+            # Add missing plugins
+            for plugin in "${desired_plugins[@]}"; do
+                if ! printf '%s\n' "${installed_plugins[@]}" | grep -qx "$plugin"; then
+                    echo -e "${yellow}Adding missing yazi plugin: $plugin${nc}"
+                    ya pkg add "$plugin"
+                fi
+            done
+        fi
     fi
     if pgrep -x "Hyprland" > /dev/null; then
         hyprpm update
