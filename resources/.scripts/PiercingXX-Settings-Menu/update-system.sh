@@ -149,17 +149,20 @@ update_bashrc() {
 
 # Universal update logic
 universal_update() {
-    if command_exists pip; then
-        echo -e "${yellow}Updating system pip...${nc}"
-        sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
-    elif command_exists pip3; then
-        echo -e "${yellow}Updating system pip3...${nc}"
-        sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
+# Update Neovim plugins
+    nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+# Update fwupd
+    if command_exists fwupd; then
+        echo -e "${yellow}Updating fwupd...${nc}"
+        fwupd refresh && fwupd update
     fi
+# Update npm
     if command_exists npm; then
         sudo npm update -g --silent --no-progress
     fi
+# Update cargo
     if command_exists cargo; then
+        echo -e "${yellow}Updating cargo...${nc}"
         if cargo install-update --version >/dev/null 2>&1; then
             cargo install-update -a
         else
@@ -167,15 +170,15 @@ universal_update() {
             cargo install-update -a
         fi
     fi
-    if command_exists fwupd; then
-        fwupd refresh && fwupd update
-    fi
+# Update flatpak
     if command_exists flatpak; then
+        echo -e "${yellow}Updating flatpak...${nc}"
         flatpak update -y
         flatpak uninstall --unused -y
     fi
-    nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+# Update Docker images
     if command_exists docker; then
+        echo -e "${yellow}Updating Docker images...${nc}"
         docker system prune -af --volumes
         mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
         echo -e "${yellow}Updating ${#images[@]} Docker image(s)...${nc}"
@@ -184,7 +187,9 @@ universal_update() {
             docker pull "$img" 2>/dev/null
         done
     fi
+# Update yazi && its plugins
     if command_exists yazi; then
+        echo -e "${yellow}Updating yazi...${nc}"
         # Upgrade yazi core packages
         ya pkg upgrade
         # Check and sync yazi plugins from package.toml
@@ -203,7 +208,17 @@ universal_update() {
             done
         fi
     fi
+# Update pip
+    if command_exists pip; then
+        echo -e "${yellow}Updating system pip...${nc}"
+        sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
+    elif command_exists pip3; then
+        echo -e "${yellow}Updating system pip3...${nc}"
+        sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
+    fi
+# Update Hyprland if running
     if pgrep -x "Hyprland" > /dev/null; then
+        echo -e "${yellow}Updating Hyprland packages...${nc}"
         hyprpm update
         hyprpm reload
     fi
