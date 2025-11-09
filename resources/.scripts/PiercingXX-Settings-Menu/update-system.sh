@@ -154,7 +154,7 @@ universal_update() {
 # Update fwupd
     if command_exists fwupd; then
         echo -e "${yellow}Updating fwupd...${nc}"
-        fwupd refresh && fwupd update
+        fwupd refresh && fwupdmgr get-updates && fwupd update
     fi
 # Update npm
     if command_exists npm; then
