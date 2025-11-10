@@ -231,7 +231,10 @@ git_pull_all_github_repos() {
     fi
     local base_dir="/media/Working-Storage/GitHub"
     if [ ! -d "$base_dir" ]; then
-        echo -e "${yellow}GitHub directory not found: $base_dir${nc}"
+        # Only show warning if running interactively
+        if [ -t 1 ]; then
+            echo -e "${yellow}GitHub directory not found: $base_dir${nc}"
+        fi
         return
     fi
     echo -e "${blue}Updating all GitHub repositories in $base_dir...${nc}"
