@@ -76,6 +76,11 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 # GENERAL ALIAS'
 #######################################################
 
+# SSH alias's
+alias xmain='ssh $USER@main-rig-archlinux'
+alias xai='ssh $USER@ai-debian-server'
+alias xlap='ssh $USER@thinkpad-laptop-archlinux'
+alias xtab='ssh $USER@8in-tiger-archlinux'
 
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
 alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
