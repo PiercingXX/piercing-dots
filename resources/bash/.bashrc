@@ -79,8 +79,16 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 # SSH alias's
 alias xmain='ssh $USER@main-rig-archlinux'
 alias xai='ssh $USER@ai-debian-server'
-alias xlap='ssh $USER@thinkpad-laptop-archlinux'
-alias xtab='ssh $USER@8in-tiger-archlinux'
+alias xla1='ssh $USER@thinkpad-laptop-archlinux'
+alias xsc='ssh $USER@cam-archlinux'
+alias xta1='ssh $USER@8in-tiger-archlinux'
+alias xta2='ssh $USER@8in-tab-archlinux'
+alias xha208='ssh root@homeassistant-208'
+alias xhane='ssh root@homeassistant-ne'
+alias xhaba='ssh root@homeassistant-ba'
+alias xhala='ssh root@homeassistant-la'
+alias xhapl='ssh root@homeassistant-pl'
+
 
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
 alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
