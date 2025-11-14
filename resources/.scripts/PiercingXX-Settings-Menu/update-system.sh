@@ -58,6 +58,24 @@ if ! check_internet; then
     exit 1
 fi
 
+# Ensure jq is available (auto-install on Debian/Ubuntu/Mint and Fedora)
+ensure_jq() {
+    if command_exists jq; then
+        return 0
+    fi
+    echo -e "${yellow}jq is required for script auto-update. Attempting to install...${nc}"
+    if [[ "$DISTRO" == "fedora" ]]; then
+        sudo dnf -y install jq && return 0
+    elif [[ "$DISTRO" == "arch" ]]; then
+        # Try install without refreshing DB first, then with -Sy as fallback
+        sudo pacman -S --needed --noconfirm jq && return 0 || sudo pacman -Sy --needed --noconfirm jq && return 0
+    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
+        sudo apt update && sudo apt -y install jq && return 0
+    fi
+    echo -e "${yellow}Could not auto-install jq on this distro; continuing without auto-update of ~/.scripts.${nc}"
+    return 1
+}
+
 # Ask for sudo password up front and keep sudo alive
 sudo -v
 # Keep-alive: update existing sudo time stamp until script finishes
@@ -66,7 +84,7 @@ sudo_keepalive_pid=$!
 
 
 # Ensure user can force shutdown and reboot without password
-for cmd in /sbin/shutdown /sbin/reboot; do
+for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
     if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
         echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
     fi
@@ -251,24 +269,29 @@ git_pull_all_github_repos() {
 clear
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Checking for script updates...${nc}"
-auto_update_scripts "$@"
+if ensure_jq; then
+    auto_update_scripts "$@"
+else
+    echo -e "${yellow}Skipping script auto-update because jq is not available.${nc}"
+fi
 echo -e "${green}Starting system update...${nc}\n"
 update_bashrc
 git_pull_all_github_repos
 if [[ "$DISTRO" == "arch" ]]; then
     # --- Arch-specific helpers to handle common pacman conflicts (e.g., node-gyp) ---
-    arch_detect_and_fix_node_gyp_conflicts() {
-        local base="/usr/lib/node_modules/node-gyp/node_modules"
-        if [ ! -d "$base" ]; then
+    arch_backup_unowned_under() {
+        # Usage: arch_backup_unowned_under <base_dir> <tag>
+        local base="$1" tag="$2"
+        if [ -z "$base" ] || [ ! -d "$base" ]; then
             return 1
         fi
         local ts backup_root moved_count=0
         ts=$(date +%Y%m%d-%H%M%S)
-        backup_root="/var/tmp/pacman-conflicts-node-gyp-$ts"
-        echo -e "${yellow}[node-gyp] Conflict detected. Scanning for unowned files...${nc}"
+        backup_root="/var/tmp/pacman-conflicts-${tag:-node-modules}-$ts"
+        echo -e "${yellow}[${tag}] Scanning for unowned files under $base...${nc}"
         mapfile -t all_files < <(find "$base" -type f 2>/dev/null)
         if [ ${#all_files[@]} -eq 0 ]; then
-            echo -e "${yellow}[node-gyp] No files found under $base; skipping.${nc}"
+            echo -e "${yellow}[${tag}] No files found; skipping.${nc}"
             return 1
         fi
         local -a unowned_files=()
@@ -278,10 +301,10 @@ if [[ "$DISTRO" == "arch" ]]; then
             fi
         done
         if [ ${#unowned_files[@]} -eq 0 ]; then
-            echo -e "${yellow}[node-gyp] All files owned by packages; nothing to clean.${nc}"
+            echo -e "${yellow}[${tag}] All files owned by packages; nothing to clean.${nc}"
             return 1
         fi
-        echo -e "${yellow}[node-gyp] Backing up ${#unowned_files[@]} unowned file(s) to ${backup_root}...${nc}"
+        echo -e "${yellow}[${tag}] Backing up ${#unowned_files[@]} unowned file(s) to ${backup_root}...${nc}"
         sudo mkdir -p "$backup_root"
         for f in "${unowned_files[@]}"; do
             local dest="$backup_root$f"
@@ -289,8 +312,43 @@ if [[ "$DISTRO" == "arch" ]]; then
             sudo mv "$f" "$dest" && moved_count=$((moved_count+1))
         done
         sudo find "$base" -type d -empty -delete || true
-        echo -e "${green}[node-gyp] Cleaned ${moved_count} file(s). Backup at ${backup_root}${nc}"
+        echo -e "${green}[${tag}] Cleaned ${moved_count} file(s). Backup at ${backup_root}${nc}"
         return 0
+    }
+
+    arch_detect_and_fix_node_gyp_conflicts() {
+        # Backwards-compatible wrapper for node-gyp specific case
+        local base="/usr/lib/node_modules/node-gyp/node_modules"
+        [ -d "$base" ] || return 1
+        arch_backup_unowned_under "$base" "node-gyp"
+    }
+
+    arch_handle_node_modules_conflicts_from_log() {
+        # Usage: arch_handle_node_modules_conflicts_from_log <logfile>
+        local log="$1"
+        [ -f "$log" ] || return 1
+        # Extract unique roots like /usr/lib/node_modules/<pkg>
+        mapfile -t roots < <(grep -E "^.+: /usr/lib/node_modules/[^/]+/" "$log" | \
+            sed -E 's|^[^:]+: (/usr/lib/node_modules/[^/]+).*|\1|' | sort -u)
+        if [ ${#roots[@]} -eq 0 ]; then
+            return 1
+        fi
+        local cleaned_any=1
+        for root in "${roots[@]}"; do
+            local pkg
+            pkg=$(basename "$root")
+            # Prefer cleaning the node_modules subtree if present; else the root itself
+            if [ -d "$root/node_modules" ]; then
+                if arch_backup_unowned_under "$root/node_modules" "$pkg"; then
+                    cleaned_any=0
+                fi
+            else
+                if arch_backup_unowned_under "$root" "$pkg"; then
+                    cleaned_any=0
+                fi
+            fi
+        done
+        return $cleaned_any
     }
 
     arch_run_upgrade_with_retry() {
@@ -307,20 +365,31 @@ if [[ "$DISTRO" == "arch" ]]; then
         echo -e "${blue}[upgrade] Starting system upgrade via $tool...${nc}"
         if ! ( "${cmd[@]}" 2>&1 | tee "$log" ); then
             tmp_status=$?
-            if grep -q "failed to commit transaction (conflicting files)" "$log" && grep -q "^node-gyp:" "$log"; then
-                echo -e "${yellow}[upgrade] Detected node-gyp conflicting files during $tool upgrade.${nc}"
-                if arch_detect_and_fix_node_gyp_conflicts; then
-                    echo -e "${yellow}[upgrade] Retrying after node-gyp cleanup...${nc}"
+            if grep -q "failed to commit transaction (conflicting files)" "$log" && grep -q "/usr/lib/node_modules/" "$log"; then
+                echo -e "${yellow}[upgrade] Detected node_modules conflicting files during $tool upgrade.${nc}"
+                if arch_handle_node_modules_conflicts_from_log "$log"; then
+                    echo -e "${yellow}[upgrade] Retrying after node_modules cleanup...${nc}"
                     if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
                         rm -f "$log"
                         return 0
                     fi
                 fi
-                echo -e "${yellow}[upgrade] Cleanup insufficient; retrying with targeted --overwrite for node-gyp subtree...${nc}"
+                echo -e "${yellow}[upgrade] Cleanup insufficient; retrying with targeted --overwrite for affected node_modules paths...${nc}"
+                # Build targeted overwrite args for each root
+                mapfile -t roots < <(grep -E "^.+: /usr/lib/node_modules/[^/]+/" "$log" | \
+                    sed -E 's|^[^:]+: (/usr/lib/node_modules/[^/]+).*|\1|' | sort -u)
+                local -a overwrite_args=()
+                for root in "${roots[@]}"; do
+                    if [ -d "$root/node_modules" ]; then
+                        overwrite_args+=(--overwrite "$root/node_modules/*")
+                    else
+                        overwrite_args+=(--overwrite "$root/*")
+                    fi
+                done
                 if [ "$tool" = "paru" ] || [ "$tool" = "yay" ]; then
-                    cmd=("$tool" -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
+                    cmd=("$tool" -Syu --noconfirm "${overwrite_args[@]}")
                 else
-                    cmd=(sudo pacman -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
+                    cmd=(sudo pacman -Syu --noconfirm "${overwrite_args[@]}")
                 fi
                 if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
                     echo -e "${green}[upgrade] Successful after targeted overwrite.${nc}"
@@ -373,6 +442,43 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     if command_exists snap; then
         sudo snap refresh
     fi
+fi
+ 
+# Post-update: verify Node tooling and optionally clean old backups
+verify_node_tooling() {
+    local ok=0
+    if command_exists node; then
+        echo -e "${green}node: $(node -v)${nc}" || true
+    else
+        echo -e "${yellow}node not found in PATH${nc}"; ok=1
+    fi
+    if command_exists npm; then
+        echo -e "${green}npm: $(npm -v)${nc}" || true
+        echo -e "Global npm root: $(npm root -g 2>/dev/null)" || true
+    else
+        echo -e "${yellow}npm not found in PATH${nc}"; ok=1
+    fi
+    if command_exists node-gyp; then
+        echo -e "${green}node-gyp: $(node-gyp --version 2>/dev/null)${nc}" || true
+    else
+        echo -e "${yellow}node-gyp not found in PATH${nc}"; ok=1
+    fi
+    return $ok
+}
+
+cleanup_old_conflict_backups() {
+    # Skip if user opts out
+    if [ -n "$PX_UPDATE_KEEP_CONFLICT_BACKUPS" ]; then
+        echo -e "${yellow}Skipping cleanup of conflict backups (PX_UPDATE_KEEP_CONFLICT_BACKUPS set).${nc}"
+        return 0
+    fi
+    # Remove conflict backups older than 14 days; cover both old and generalized patterns
+    echo -e "${yellow}Pruning conflict backups in /var/tmp older than 14 days...${nc}"
+    sudo find /var/tmp -maxdepth 1 -type d \( -name 'pacman-conflicts-node-gyp-*' -o -name 'pacman-conflicts-*' \) -mtime +14 -print -exec rm -rf {} + || true
+}
+
+if verify_node_tooling; then
+    cleanup_old_conflict_backups
 fi
 notify-send "System Update" "System update completed successfully!"
 echo -e "${green}System Updated Successfully!${nc}"
