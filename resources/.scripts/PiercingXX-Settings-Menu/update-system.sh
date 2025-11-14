@@ -256,14 +256,100 @@ echo -e "${green}Starting system update...${nc}\n"
 update_bashrc
 git_pull_all_github_repos
 if [[ "$DISTRO" == "arch" ]]; then
+    # --- Arch-specific helpers to handle common pacman conflicts (e.g., node-gyp) ---
+    arch_detect_and_fix_node_gyp_conflicts() {
+        # Back up and remove unowned files under node-gyp that cause pacman conflicts
+        local base="/usr/lib/node_modules/node-gyp/node_modules"
+        if [ ! -d "$base" ]; then
+            return 1
+        fi
+        local ts backup_root moved_count=0
+        ts=$(date +%Y%m%d-%H%M%S)
+        backup_root="/var/tmp/pacman-conflicts-node-gyp-$ts"
+        echo -e "${yellow}Detected node-gyp file conflicts. Scanning for unowned files to back up...${nc}"
+
+        # Find unowned files under node-gyp's node_modules
+        mapfile -t unowned_files < <(sudo bash -c '
+            shopt -s nullglob
+            while IFS= read -r -d "" f; do
+                if ! pacman -Qo "$f" >/dev/null 2>&1; then
+                    printf "%s\0" "$f"
+                fi
+            done < <(find '"$base"' -type f -print0)
+        ')
+
+        if [ ${#unowned_files[@]} -eq 0 ]; then
+            echo -e "${yellow}No unowned node-gyp files found; skipping cleanup.${nc}"
+            return 1
+        fi
+
+        echo -e "${yellow}Backing up ${#unowned_files[@]} unowned file(s) to ${backup_root} and removing them...${nc}"
+        sudo mkdir -p "$backup_root"
+        for f in "${unowned_files[@]}"; do
+            if [ -f "$f" ]; then
+                local dest
+                dest="$backup_root$f"
+                sudo mkdir -p "$(dirname "$dest")"
+                sudo mv "$f" "$dest" && moved_count=$((moved_count+1))
+            fi
+        done
+        # Clean up empty dirs left behind
+        sudo find "$base" -type d -empty -delete || true
+        echo -e "${green}Moved ${moved_count} file(s). Backup saved at: ${backup_root}${nc}"
+        return 0
+    }
+
+    arch_run_upgrade_with_retry() {
+        local tool="$1"; shift || true
+        local cmd log tmp_status
+        if [ "$tool" = "paru" ]; then
+            cmd=(paru -Syu --noconfirm "$@")
+        elif [ "$tool" = "yay" ]; then
+            cmd=(yay -Syu --noconfirm "$@")
+        else
+            cmd=(sudo pacman -Syu --noconfirm "$@")
+        fi
+        log=$(mktemp)
+        # First attempt
+        if ! ( "${cmd[@]}" 2>&1 | tee "$log" ); then
+            tmp_status=$?
+            if grep -q "failed to commit transaction (conflicting files)" "$log" && grep -q "^node-gyp:" "$log"; then
+                # Try targeted cleanup of unowned files
+                if arch_detect_and_fix_node_gyp_conflicts; then
+                    echo -e "${yellow}Retrying upgrade after node-gyp cleanup...${nc}"
+                    if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
+                        rm -f "$log"
+                        return 0
+                    fi
+                fi
+                # Last resort: targeted overwrite for node-gyp subtree
+                echo -e "${yellow}Retrying with targeted --overwrite for node-gyp...${nc}"
+                if [ "$tool" = "paru" ] || [ "$tool" = "yay" ]; then
+                    cmd=("$tool" -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
+                else
+                    cmd=(sudo pacman -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
+                fi
+                if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
+                    rm -f "$log"
+                    return 0
+                fi
+            fi
+            rm -f "$log"
+            return "$tmp_status"
+        fi
+        rm -f "$log"
+        return 0
+    }
+
+    # Prefer paru, then yay, then pacman
     if command_exists paru; then
-        paru -Syu --noconfirm
+        arch_run_upgrade_with_retry paru || true
         universal_update
     elif command_exists yay; then
-        yay -Syu --noconfirm
+        arch_run_upgrade_with_retry yay || true
         universal_update
     else
-        sudo pacman -Syu --noconfirm
+        arch_run_upgrade_with_retry pacman || true
         universal_update
     fi
 elif [[ "$DISTRO" == "fedora" ]]; then

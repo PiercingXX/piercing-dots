@@ -50,6 +50,7 @@ local specs = {
   -- Motions & navigation
   { src = gh("folke/flash.nvim") },
   { src = gh("folke/which-key.nvim") },
+  { src = gh("tris203/precognition.nvim") }, -- motion hints & practice
 
   -- Editing helpers
   { src = gh("Wansmer/treesj") },
@@ -65,6 +66,7 @@ local specs = {
   { src = gh("mikavilpas/yazi.nvim") },
   { src = gh("vimichael/floatingtodo.nvim") },
   { src = gh("folke/zen-mode.nvim") },
+  { src = gh("ThePrimeagen/vim-be-good") }, -- motion training game
 }
 
 -- Ensure plugins are installed and loaded
@@ -101,6 +103,7 @@ safe_require("setup.telescope")
 safe_require("setup.fzf")
 safe_require("setup.which_key")
 safe_require("setup.flash")
+safe_require("setup.precognition")
 safe_require("setup.fidget")
 safe_require("setup.csv")
 safe_require("setup.fmt_utils")
