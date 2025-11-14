@@ -258,7 +258,6 @@ git_pull_all_github_repos
 if [[ "$DISTRO" == "arch" ]]; then
     # --- Arch-specific helpers to handle common pacman conflicts (e.g., node-gyp) ---
     arch_detect_and_fix_node_gyp_conflicts() {
-        # Back up and remove unowned files under node-gyp that cause pacman conflicts
         local base="/usr/lib/node_modules/node-gyp/node_modules"
         if [ ! -d "$base" ]; then
             return 1
@@ -266,36 +265,31 @@ if [[ "$DISTRO" == "arch" ]]; then
         local ts backup_root moved_count=0
         ts=$(date +%Y%m%d-%H%M%S)
         backup_root="/var/tmp/pacman-conflicts-node-gyp-$ts"
-        echo -e "${yellow}Detected node-gyp file conflicts. Scanning for unowned files to back up...${nc}"
-
-        # Find unowned files under node-gyp's node_modules
-        mapfile -t unowned_files < <(sudo bash -c '
-            shopt -s nullglob
-            while IFS= read -r -d "" f; do
-                if ! pacman -Qo "$f" >/dev/null 2>&1; then
-                    printf "%s\0" "$f"
-                fi
-            done < <(find '"$base"' -type f -print0)
-        ')
-
-        if [ ${#unowned_files[@]} -eq 0 ]; then
-            echo -e "${yellow}No unowned node-gyp files found; skipping cleanup.${nc}"
+        echo -e "${yellow}[node-gyp] Conflict detected. Scanning for unowned files...${nc}"
+        mapfile -t all_files < <(find "$base" -type f 2>/dev/null)
+        if [ ${#all_files[@]} -eq 0 ]; then
+            echo -e "${yellow}[node-gyp] No files found under $base; skipping.${nc}"
             return 1
         fi
-
-        echo -e "${yellow}Backing up ${#unowned_files[@]} unowned file(s) to ${backup_root} and removing them...${nc}"
-        sudo mkdir -p "$backup_root"
-        for f in "${unowned_files[@]}"; do
-            if [ -f "$f" ]; then
-                local dest
-                dest="$backup_root$f"
-                sudo mkdir -p "$(dirname "$dest")"
-                sudo mv "$f" "$dest" && moved_count=$((moved_count+1))
+        local -a unowned_files=()
+        for f in "${all_files[@]}"; do
+            if ! pacman -Qo "$f" >/dev/null 2>&1; then
+                unowned_files+=("$f")
             fi
         done
-        # Clean up empty dirs left behind
+        if [ ${#unowned_files[@]} -eq 0 ]; then
+            echo -e "${yellow}[node-gyp] All files owned by packages; nothing to clean.${nc}"
+            return 1
+        fi
+        echo -e "${yellow}[node-gyp] Backing up ${#unowned_files[@]} unowned file(s) to ${backup_root}...${nc}"
+        sudo mkdir -p "$backup_root"
+        for f in "${unowned_files[@]}"; do
+            local dest="$backup_root$f"
+            sudo mkdir -p "$(dirname "$dest")"
+            sudo mv "$f" "$dest" && moved_count=$((moved_count+1))
+        done
         sudo find "$base" -type d -empty -delete || true
-        echo -e "${green}Moved ${moved_count} file(s). Backup saved at: ${backup_root}${nc}"
+        echo -e "${green}[node-gyp] Cleaned ${moved_count} file(s). Backup at ${backup_root}${nc}"
         return 0
     }
 
@@ -310,29 +304,30 @@ if [[ "$DISTRO" == "arch" ]]; then
             cmd=(sudo pacman -Syu --noconfirm "$@")
         fi
         log=$(mktemp)
-        # First attempt
+        echo -e "${blue}[upgrade] Starting system upgrade via $tool...${nc}"
         if ! ( "${cmd[@]}" 2>&1 | tee "$log" ); then
             tmp_status=$?
             if grep -q "failed to commit transaction (conflicting files)" "$log" && grep -q "^node-gyp:" "$log"; then
-                # Try targeted cleanup of unowned files
+                echo -e "${yellow}[upgrade] Detected node-gyp conflicting files during $tool upgrade.${nc}"
                 if arch_detect_and_fix_node_gyp_conflicts; then
-                    echo -e "${yellow}Retrying upgrade after node-gyp cleanup...${nc}"
+                    echo -e "${yellow}[upgrade] Retrying after node-gyp cleanup...${nc}"
                     if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
                         rm -f "$log"
                         return 0
                     fi
                 fi
-                # Last resort: targeted overwrite for node-gyp subtree
-                echo -e "${yellow}Retrying with targeted --overwrite for node-gyp...${nc}"
+                echo -e "${yellow}[upgrade] Cleanup insufficient; retrying with targeted --overwrite for node-gyp subtree...${nc}"
                 if [ "$tool" = "paru" ] || [ "$tool" = "yay" ]; then
                     cmd=("$tool" -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
                 else
                     cmd=(sudo pacman -Syu --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*')
                 fi
                 if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
+                    echo -e "${green}[upgrade] Successful after targeted overwrite.${nc}"
                     rm -f "$log"
                     return 0
                 fi
+                echo -e "${yellow}[upgrade] Targeted overwrite failed; manual intervention required.${nc}"
             fi
             rm -f "$log"
             return "$tmp_status"
@@ -340,6 +335,17 @@ if [[ "$DISTRO" == "arch" ]]; then
         rm -f "$log"
         return 0
     }
+
+    # Proactive cleanup before attempting upgrade if node-gyp version will change
+    if pacman -Qi node-gyp >/dev/null 2>&1 && pacman -Si node-gyp >/dev/null 2>&1; then
+        current_ver=$(pacman -Qi node-gyp | awk '/Version/{print $3}')
+        repo_ver=$(pacman -Si node-gyp | awk '/Version/{print $3}')
+        if [ "$current_ver" != "$repo_ver" ]; then
+            if arch_detect_and_fix_node_gyp_conflicts; then
+                echo -e "${green}[node-gyp] Proactive cleanup done (version change ${current_ver} -> ${repo_ver}).${nc}"
+            fi
+        fi
+    fi
 
     # Prefer paru, then yay, then pacman
     if command_exists paru; then
