@@ -329,7 +329,7 @@ if [[ "$DISTRO" == "arch" ]]; then
         [ -f "$log" ] || return 1
         # Extract unique roots like /usr/lib/node_modules/<pkg>
         mapfile -t roots < <(grep -E "^.+: /usr/lib/node_modules/[^/]+/" "$log" | \
-            sed -E 's|^[^:]+: (/usr/lib/node_modules/[^/]+).*|\1|' | sort -u)
+            sed -E 's|^[^:]+: (/usr/lib/node_modules/[^/]+).*|\\1|' | sort -u)
         if [ ${#roots[@]} -eq 0 ]; then
             return 1
         fi
@@ -351,6 +351,19 @@ if [[ "$DISTRO" == "arch" ]]; then
         return $cleaned_any
     }
 
+    arch_handle_python_pip_conflicts_from_log() {
+        # Usage: arch_handle_python_pip_conflicts_from_log <logfile>
+        local log="$1"
+        [ -f "$log" ] || return 1
+        # We only care about python-pip-owned paths under site-packages
+        local base="/usr/lib/python3.13/site-packages"
+        [ -d "$base" ] || return 1
+        if ! grep -q "^python-pip: $base" "$log"; then
+            return 1
+        fi
+        arch_backup_unowned_under "$base/pip" "python-pip" || arch_backup_unowned_under "$base" "python-pip"
+    }
+
     arch_run_upgrade_with_retry() {
         local tool="$1"; shift || true
         local cmd log tmp_status
@@ -365,38 +378,27 @@ if [[ "$DISTRO" == "arch" ]]; then
         echo -e "${blue}[upgrade] Starting system upgrade via $tool...${nc}"
         if ! ( "${cmd[@]}" 2>&1 | tee "$log" ); then
             tmp_status=$?
-            if grep -q "failed to commit transaction (conflicting files)" "$log" && grep -q "/usr/lib/node_modules/" "$log"; then
-                echo -e "${yellow}[upgrade] Detected node_modules conflicting files during $tool upgrade.${nc}"
-                if arch_handle_node_modules_conflicts_from_log "$log"; then
-                    echo -e "${yellow}[upgrade] Retrying after node_modules cleanup...${nc}"
+            if grep -q "failed to commit transaction (conflicting files)" "$log"; then
+                local handled=1
+                if grep -q "/usr/lib/node_modules/" "$log"; then
+                    echo -e "${yellow}[upgrade] Detected node_modules conflicting files during $tool upgrade.${nc}"
+                    if arch_handle_node_modules_conflicts_from_log "$log"; then
+                        handled=0
+                    fi
+                fi
+                if grep -q "^python-pip:" "$log"; then
+                    echo -e "${yellow}[upgrade] Detected python-pip conflicting files during $tool upgrade.${nc}"
+                    if arch_handle_python_pip_conflicts_from_log "$log"; then
+                        handled=0
+                    fi
+                fi
+                if [ $handled -eq 0 ]; then
+                    echo -e "${yellow}[upgrade] Retrying after conflict cleanup...${nc}"
                     if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
                         rm -f "$log"
                         return 0
                     fi
                 fi
-                echo -e "${yellow}[upgrade] Cleanup insufficient; retrying with targeted --overwrite for affected node_modules paths...${nc}"
-                # Build targeted overwrite args for each root
-                mapfile -t roots < <(grep -E "^.+: /usr/lib/node_modules/[^/]+/" "$log" | \
-                    sed -E 's|^[^:]+: (/usr/lib/node_modules/[^/]+).*|\1|' | sort -u)
-                local -a overwrite_args=()
-                for root in "${roots[@]}"; do
-                    if [ -d "$root/node_modules" ]; then
-                        overwrite_args+=(--overwrite "$root/node_modules/*")
-                    else
-                        overwrite_args+=(--overwrite "$root/*")
-                    fi
-                done
-                if [ "$tool" = "paru" ] || [ "$tool" = "yay" ]; then
-                    cmd=("$tool" -Syu --noconfirm "${overwrite_args[@]}")
-                else
-                    cmd=(sudo pacman -Syu --noconfirm "${overwrite_args[@]}")
-                fi
-                if ( "${cmd[@]}" 2>&1 | tee "$log" ); then
-                    echo -e "${green}[upgrade] Successful after targeted overwrite.${nc}"
-                    rm -f "$log"
-                    return 0
-                fi
-                echo -e "${yellow}[upgrade] Targeted overwrite failed; manual intervention required.${nc}"
             fi
             rm -f "$log"
             return "$tmp_status"
