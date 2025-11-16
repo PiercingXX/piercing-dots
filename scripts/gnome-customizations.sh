@@ -133,6 +133,7 @@ gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 gsettings set org.gnome.desktop.interface enable-hot-corners 'false'
 gsettings set org.gnome.desktop.background picture-options 'zoom'
 gsettings set org.gnome.shell.mutter edge-tiling 'false'
+gsettings set org.gnome.settings-daemon.peripherals.touchscreen orientation-lock false
 dconf write /org/gnome/system/location/enabled 'false'
 dconf write /org/gnome/desktop/privacy/report-technical-problems 'false'
 dconf write /org/gnome/desktop/a11y/applications/screen-reader-enabled 'false'
