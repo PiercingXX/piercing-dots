@@ -3,25 +3,10 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- Core options and keymaps
-require("config.options")
-
--- Use Neovim's built-in package manager
-require("config.pack")
-
--- Enable system clipboard
-vim.opt.clipboard = "unnamedplus"
-
--- Global keymaps
-require("config.keymaps")
-
--- Domain/filetype mappings
-require("mappings.rust")
-require("mappings.markdown")
+local is_nightly = vim.version().prerelease == true
 
 local utils = {}
 
--- fixes parenthesis issue with directories and telescope
 function utils.fix_telescope_parens_win()
 	if vim.fn.has("win32") then
 		local ori_fnameescape = vim.fn.fnameescape
@@ -43,5 +28,27 @@ end
 function utils.center_in(outer, inner)
 	return (outer - inner) / 2
 end
+
+-- Stable (non-nightly) uses lazy.nvim based config
+if not is_nightly then
+	require("lazy_setup")
+	return utils
+end
+
+-- Core options and keymaps
+require("config.options")
+
+-- Use Neovim's built-in package manager
+require("config.pack")
+
+-- Enable system clipboard
+vim.opt.clipboard = "unnamedplus"
+
+-- Global keymaps
+require("config.keymaps")
+
+-- Domain/filetype mappings
+require("mappings.rust")
+require("mappings.markdown")
 
 return utils
