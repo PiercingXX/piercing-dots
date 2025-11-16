@@ -31,7 +31,28 @@ gsettings set org.gnome.shell.extensions.space-bar.shortcuts open-menu "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-stacking-global "@as []"
 gsettings set org.gnome.shell.extensions.pop-shell toggle-tiling "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-1 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-2 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-3 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-4 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-5 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-6 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-7 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-8 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-9 "@as []"
+gsettings set org.gnome.shell.keybindings switch-to-application-10 "@as []"
 
+# Move to workspace keybindings
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-1 "<Super>1"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-2 "<Super>2"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-3 "<Super>3"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-4 "<Super>4"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-5 "<Super>5"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-6 "<Super>6"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-7 "<Super>7"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-8 "<Super>8"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-9 "<Super>9"
+gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-10 "<Super>0"
 
 ##########################
 ### Custom Keybindings ###
@@ -92,15 +113,15 @@ gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/or
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom10/ binding '<Control><Alt><Shift>k'
 # 11 Open Daily Notes
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/ name 'Edit Daily Notes'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh''
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh --view''
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom11/ binding '<Shift><Super>n'
 # 12 Open Daily Notes
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/ name 'View Daily Notes'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh --view''
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh --todo''
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom12/ binding '<Alt><Super>n'
 # 13 Open Yazi in Daily Notes Directory
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ name 'Open Yazi in Daily Notes Directory'
-gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh --directory''
+gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ command 'kitty bash -c '~/.scripts/Note-Scripts/open_daily_note.sh --split''
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom13/ binding '<Super>n'
 # 14 Audio Output Switcher
 gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom17/ name 'Audio Output Switcher'
