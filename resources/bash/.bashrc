@@ -83,6 +83,7 @@ alias xla1='ssh $USER@thinkpad-laptop-archlinux'
 alias xsc='ssh $USER@cam-archlinux'
 alias xta1='ssh $USER@8in-tiger-debian'
 alias xta2='ssh $USER@8in-tab-archlinux'
+alias xfb='ssh femboi@100.70.54.106'
 alias xha208='ssh root@homeassistant-208'
 alias xhane='ssh root@homeassistant-ne'
 alias xhaba='ssh root@homeassistant-ba'
@@ -138,7 +139,7 @@ alias rmd='/bin/rm  --recursive --force --verbose '
 if command -v eza &>/dev/null; then
     alias ls='eza -a -F -H --icons --color=always --group-directories-first --git' # add colors and file type extensions
 else
-    alias ls='ls --color=auto'
+    alias ls='ls -a -F --color=auto'
 fi
 
 # Alias's for multiple directory listing commands
