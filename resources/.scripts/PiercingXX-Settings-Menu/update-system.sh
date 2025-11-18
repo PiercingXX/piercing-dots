@@ -9,6 +9,16 @@ blue='\033[0;34m'
 nc='\033[0m'
 
 
+# Add a safe clear that works even if TERM is unknown
+safe_clear() {
+    if command -v tput >/dev/null 2>&1 && [ -n "${TERM:-}" ] && [ "$TERM" != "dumb" ] && tput clear >/dev/null 2>&1; then
+        clear
+    else
+        printf '\033c'
+    fi
+}
+
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -165,14 +175,39 @@ update_bashrc() {
     return 0
 }
 
+# Ensure Charm APT repo key (fixes NO_PUBKEY 03BBF595D4DFD35C on Debian/Ubuntu)
+ensure_charm_repo_key() {
+    if ! command_exists apt; then return 0; fi
+    if ! grep -Rqs "repo.charm.sh/apt" /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null; then
+        return 0
+    fi
+    sudo install -d -m 0755 /usr/share/keyrings >/dev/null 2>&1 || true
+    if [ ! -f /usr/share/keyrings/charm.gpg ]; then
+        echo -e "${yellow}Installing Charm APT repository key...${nc}"
+        if curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/charm.gpg; then
+            :
+        else
+            echo -e "${yellow}Failed to fetch Charm APT key.${nc}"
+        fi
+    fi
+    if ! [ -f /etc/apt/sources.list.d/charm.list ] || ! grep -qs "signed-by=/usr/share/keyrings/charm.gpg" /etc/apt/sources.list.d/charm.list 2>/dev/null; then
+        echo -e "${yellow}Configuring Charm APT source...${nc}"
+        echo "deb [signed-by=/usr/share/keyrings/charm.gpg] https://repo.charm.sh/apt/ stable main" | sudo tee /etc/apt/sources.list.d/charm.list >/dev/null
+    fi
+}
+
 # Universal update logic
 universal_update() {
 # Update Neovim plugins
-    nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+    if command_exists nvim; then
+        nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+    fi
 # Update fwupd
-    if command_exists fwupd; then
-        echo -e "${yellow}Updating fwupd...${nc}"
-        fwupd refresh && fwupdmgr get-updates && fwupd update
+    if command_exists fwupdmgr; then
+        echo -e "${yellow}Updating firmware (fwupdmgr)...${nc}"
+        sudo fwupdmgr refresh || true
+        sudo fwupdmgr get-updates || true
+        sudo fwupdmgr update -y || true
     fi
 # Update npm
     if command_exists npm; then
@@ -188,11 +223,14 @@ universal_update() {
             cargo install-update -a
         fi
     fi
-# Update flatpak
+# Update flatpak (user and system)
     if command_exists flatpak; then
-        echo -e "${yellow}Updating flatpak...${nc}"
-        flatpak update -y
-        flatpak uninstall --unused -y
+        echo -e "${yellow}Updating flatpak (user)...${nc}"
+        flatpak update --user -y || true
+        flatpak uninstall --unused --user -y || true
+        echo -e "${yellow}Updating flatpak (system)...${nc}"
+        sudo flatpak update -y || true
+        sudo flatpak uninstall --unused -y || true
     fi
 # Update Docker images
     if command_exists docker; then
@@ -208,22 +246,19 @@ universal_update() {
 # Update yazi && its plugins
     if command_exists yazi; then
         echo -e "${yellow}Updating yazi...${nc}"
-        # Upgrade yazi core packages
-        ya pkg upgrade
-        # Check and sync yazi plugins from package.toml
-        YAZI_CONFIG="$HOME/.config/yazi/package.toml"
-        if [ -f "$YAZI_CONFIG" ]; then
-            # Get list of plugins from package.toml
-            mapfile -t desired_plugins < <(grep '^use = ' "$YAZI_CONFIG" | sed -E "s/use = \"(.*)\"/\1/" | sort)
-            # Get currently installed plugins
-            mapfile -t installed_plugins < <(ya pkg list | awk '{print $1}' | sort)
-            # Add missing plugins
-            for plugin in "${desired_plugins[@]}"; do
-                if ! printf '%s\n' "${installed_plugins[@]}" | grep -qx "$plugin"; then
-                    echo -e "${yellow}Adding missing yazi plugin: $plugin${nc}"
-                    ya pkg add "$plugin"
-                fi
-            done
+        if command_exists ya; then
+            ya pkg upgrade || true
+            YAZI_CONFIG="$HOME/.config/yazi/package.toml"
+            if [ -f "$YAZI_CONFIG" ]; then
+                mapfile -t desired_plugins < <(grep '^use = ' "$YAZI_CONFIG" | sed -E "s/use = \"(.*)\"/\1/" | sort)
+                mapfile -t installed_plugins < <(ya pkg list | awk '{print $1}' | sort)
+                for plugin in "${desired_plugins[@]}"; do
+                    if ! printf '%s\n' "${installed_plugins[@]}" | grep -qx "$plugin"; then
+                        echo -e "${yellow}Adding missing yazi plugin: $plugin${nc}"
+                        ya pkg add "$plugin" || true
+                    fi
+                done
+            fi
         fi
     fi
 # Update pip
@@ -247,11 +282,20 @@ git_pull_all_github_repos() {
     if ! command_exists git; then
         return
     fi
-    local base_dir="/media/Working-Storage/GitHub"
+    # Allow override, then fall back to common locations
+    local base_dir="${PX_GITHUB_DIR:-/media/Working-Storage/GitHub}"
+    if [ ! -d "$base_dir" ]; then
+        for alt in "$HOME/GitHub" "$HOME/Projects" "$HOME/Workspace" "$HOME/src"; do
+            if [ -d "$alt" ]; then
+                base_dir="$alt"
+                break
+            fi
+        done
+    fi
     if [ ! -d "$base_dir" ]; then
         # Only show warning if running interactively
         if [ -t 1 ]; then
-            echo -e "${yellow}GitHub directory not found: $base_dir${nc}"
+            echo -e "${yellow}GitHub directory not found. Set PX_GITHUB_DIR to override.${nc}"
         fi
         return
     fi
@@ -266,7 +310,7 @@ git_pull_all_github_repos() {
 }
 
 
-clear
+safe_clear
 echo -e "${blue}PiercingXX System Update${nc}"
 echo -e "${green}Checking for script updates...${nc}"
 if ensure_jq; then
@@ -433,6 +477,7 @@ elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
     universal_update
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
+    ensure_charm_repo_key
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
     sudo apt install -f
@@ -482,6 +527,8 @@ cleanup_old_conflict_backups() {
 if verify_node_tooling; then
     cleanup_old_conflict_backups
 fi
-notify-send "System Update" "System update completed successfully!"
+if command_exists notify-send; then
+    notify-send "System Update" "System update completed successfully!"
+fi
 echo -e "${green}System Updated Successfully!${nc}"
 kill $sudo_keepalive_pid
