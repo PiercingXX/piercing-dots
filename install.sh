@@ -85,6 +85,13 @@ builddir=$(pwd)
     # Copy FZF to /usr
         sudo cp -rf resources/fzf /usr/share/fzf
         sudo chmod -R +x /usr/share/fzf/
+    # check if flatpak neovim is installed and copy nvim config there
+        if ! flatpak list | grep -q io.neovim.nvim; then
+            echo "Flatpak Neovim not found, skipping Neovim config copy."
+            else
+            mkdir -p ~/.var/app/io.neovim.nvim/config/nvim
+            rsync -a ~/.config/nvim/ ~/.var/app/io.neovim.nvim/config/nvim/
+        fi
     # Copy Backgrounds
         cp -Rf resources/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
