@@ -1,5 +1,12 @@
 ---@diagnostic disable: undefined-global
 pcall(function()
+  local has_convert = (vim.fn.executable('convert') == 1)
+  local process_cmd = has_convert and 'convert - -quality 75 avif:-' or nil
+  if not has_convert then
+    vim.schedule(function()
+      vim.notify('img-clip: ImageMagick `convert` not found; raw images will be saved without conversion', vim.log.levels.WARN)
+    end)
+  end
   require('img-clip').setup({
     default = {
       use_absolute_path = false,
@@ -10,7 +17,7 @@ pcall(function()
       prompt_for_file_name = false,
       file_name = '%y%m%d-%H%M%S',
       extension = 'avif',
-      process_cmd = 'convert - -quality 75 avif:-',
+      process_cmd = process_cmd,
     },
     filetypes = {
       markdown = {

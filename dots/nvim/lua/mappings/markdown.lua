@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 local function startswith(str, pref)
   return str:sub(1, #pref) == pref
 end
@@ -10,30 +11,25 @@ local function toggle_todo()
   local line = vim.api.nvim_get_current_line()
   local trimmed_line = triml(line)
   local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-
-  vim.cmd("noa")
-
+  local replacement
   if startswith(trimmed_line, "- [x") then
-    local replacement = string.gsub(line, "%[x%]", "[ ]")
-    print(replacement)
-    vim.api.nvim_buf_set_lines(0, row - 1, row, true, { replacement })
+    replacement = string.gsub(line, "%[x%]", "[ ]")
   elseif startswith(trimmed_line, "- [ ]") then
-    local replacement = string.gsub(line, "%[ %]", "[x]")
-    print(replacement)
-    vim.api.nvim_buf_set_lines(0, row - 1, row, true, { replacement })
+    replacement = string.gsub(line, "%[ %]", "[x]")
   end
-
-  vim.api.nvim_win_set_cursor(0, { row, col })
-
-  vim.cmd("redraw")
+  if replacement then
+    vim.api.nvim_buf_set_lines(0, row - 1, row, true, { replacement })
+    vim.api.nvim_win_set_cursor(0, { row, col })
+    vim.cmd("redraw")
+  end
 end
 
 vim.api.nvim_create_augroup("MarkdownKeymaps", { clear = true })
 
 vim.api.nvim_create_autocmd("FileType", {
   group = "MarkdownKeymaps",
-  pattern = "Markdown",
-  callback = function()
-    vim.keymap.set("n", "<leader>a", toggle_todo, { silent = true })
+  pattern = "markdown",
+  callback = function(ev)
+    vim.keymap.set("n", "<leader>a", toggle_todo, { silent = true, buffer = ev.buf, desc = "Toggle markdown task" })
   end,
 })

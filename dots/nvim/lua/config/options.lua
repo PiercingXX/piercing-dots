@@ -1,4 +1,8 @@
 -- PiercingXX
+---@diagnostic disable: undefined-global
+
+-- Leader and clipboard intentionally set in `init.lua` before mappings.
+-- Clipboard also enforced there; avoid duplicate assignments.
 
 --Swap
 vim.opt.swapfile = false
@@ -96,16 +100,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	desc = "Highlight yank",
 })
 
--- Autosave all files when leaving buffer or window
-vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
-    pattern = "*",
-    callback = function()
-        -- Only write normal file buffers
-        if vim.bo.modified and vim.bo.buftype == "" then
-            vim.cmd("write")
-        end
-    end,
-})
 
 -- Autosave all .md files on text change
 vim.api.nvim_create_augroup("MarkdownAutosave", { clear = true })

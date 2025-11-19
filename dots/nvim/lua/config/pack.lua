@@ -10,7 +10,6 @@ local specs = {
   -- UI and aesthetics
   { src = gh("helbing/aura.nvim") },
   { src = gh("goolord/alpha-nvim") },
-  { src = gh("echasnovski/mini.icons") },
 
   -- Completion & snippets
   { src = gh("saghen/blink.cmp"), version = "1.*" },
@@ -59,6 +58,8 @@ local specs = {
 
   -- Lint/format
   { src = gh("nvimtools/none-ls.nvim") },
+  -- LSP config
+  { src = gh("neovim/nvim-lspconfig") },
 
   -- Misc
   { src = gh("tpope/vim-sleuth") },

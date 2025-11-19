@@ -1,12 +1,21 @@
 ---@diagnostic disable: undefined-global
--- Start bashls using the new Neovim LSP API for sh/bash files
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'sh', 'bash' },
-  callback = function()
-    if vim.lsp.get_active_clients({ name = 'bashls' })[1] then return end
-    vim.lsp.start({ name = 'bashls' })
-  end,
-})
+-- Configure bash/sh LSP using new vim.lsp.config API (nvim-lspconfig >=0.11)
+pcall(function()
+  if vim.lsp.config then
+    local cfg = vim.lsp.config('bashls', {})
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = { 'sh', 'bash' },
+      callback = function(ev)
+        if vim.lsp.get_active_clients({ bufnr = ev.buf, name = 'bashls' })[1] then return end
+        vim.lsp.start(cfg)
+      end,
+    })
+  else
+    -- Fallback to legacy lspconfig if still present
+    local ok, lspconfig = pcall(require, 'lspconfig')
+    if ok and lspconfig.bashls then lspconfig.bashls.setup({}) end
+  end
+end)
 
 -- null-ls successor for formatting & linting
 pcall(function()
