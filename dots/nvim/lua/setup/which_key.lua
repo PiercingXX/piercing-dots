@@ -8,12 +8,23 @@ wk.setup({
 
 -- Group labels for common leader prefixes
 pcall(function()
-  wk.register({
-    ['<leader>m'] = { name = '+motion' },
-    ['<leader>f'] = { name = '+find' },
-    ['<leader>t'] = { name = '+tools' },
-    ['<leader>d'] = { name = '+diagnostics' },
-  })
+  local groups_new = {
+    { '<leader>d', group = 'diagnostics' },
+    { '<leader>f', group = 'find' },
+    { '<leader>m', group = 'motion' },
+    { '<leader>t', group = 'tools' },
+  }
+  if wk.add then
+    wk.add(groups_new)
+  else
+    -- Fallback to old style if running an older which-key version
+    wk.register({
+      ['<leader>d'] = { name = '+diagnostics' },
+      ['<leader>f'] = { name = '+find' },
+      ['<leader>m'] = { name = '+motion' },
+      ['<leader>t'] = { name = '+tools' },
+    })
+  end
 end)
 
 vim.keymap.set('n', '<leader>?', function()

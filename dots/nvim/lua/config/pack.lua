@@ -18,6 +18,7 @@ local specs = {
   -- Statusline & small utilities
   { src = gh("echasnovski/mini.statusline") },
   { src = gh("echasnovski/mini.surround") },
+  { src = gh("echasnovski/mini.icons") },
   { src = gh("j-hui/fidget.nvim") },
 
   -- Treesitter and related
@@ -92,6 +93,7 @@ end
 
 -- Icons and devicons early
 safe_require("setup.webdevicons")
+safe_require("setup.mini_icons")
 
 -- Try to apply the Aura colorscheme if available
 pcall(function()
