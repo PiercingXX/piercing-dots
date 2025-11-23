@@ -18,7 +18,6 @@ safe_clear() {
     fi
 }
 
-
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -300,8 +299,11 @@ git_pull_all_github_repos() {
 
 
 echo -e "${green}Starting system update...${nc}\n"
+    ensure_jq
     update_bashrc
+    auto_update_scripts
     git_pull_all_github_repos
+
 if [[ "$DISTRO" == "arch" ]]; then
     # Prefer paru, then yay, then pacman
     if command_exists paru; then
@@ -314,18 +316,10 @@ if [[ "$DISTRO" == "arch" ]]; then
         sudo pacman -Syu --noconfirm
         universal_update
     fi
-
-
 elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
-    update_bashrc
-    git_pull_all_github_repos
     universal_update
-
-
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" ]]; then
-    update_bashrc
-    git_pull_all_github_repos
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
     sudo apt install -f
@@ -337,7 +331,6 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     if command_exists snap; then
         sudo snap refresh
     fi
-
 fi
 
 if command_exists notify-send; then
