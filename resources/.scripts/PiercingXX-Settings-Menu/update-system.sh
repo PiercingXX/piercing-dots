@@ -148,9 +148,17 @@ auto_update_scripts() {
 }
 
 # Detect distribution
+
+# Detect distribution, including PureOS (Librem 5)
 if [ -f /etc/os-release ]; then
     . /etc/os-release
     DISTRO=$ID
+    # Special handling for Librem 5 PureOS
+    if [[ "$DISTRO" == "pureos" ]]; then
+        IS_LIBREM5=1
+    else
+        IS_LIBREM5=0
+    fi
 else
     echo "Cannot detect distribution!"
     exit 1
@@ -260,6 +268,11 @@ universal_update() {
                 done
             fi
         fi
+    fi
+# Update Homebrew (brew)
+    if command_exists brew; then
+        echo -e "${yellow}Updating Homebrew (brew)...${nc}"
+        brew update && brew upgrade
     fi
 # Update pip
     if command_exists pip; then
@@ -477,6 +490,7 @@ elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
     universal_update
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
+
     ensure_charm_repo_key
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
@@ -486,6 +500,20 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     sudo apt autoremove -y
     sudo apt update && sudo apt upgrade -y || true
     universal_update
+    if command_exists snap; then
+        sudo snap refresh
+    fi
+elif [[ "$DISTRO" == "pureos" || $IS_LIBREM5 -eq 1 ]]; then
+    echo -e "${blue}Detected Librem 5 (PureOS) - running system update...${nc}"
+    sudo apt update && sudo apt upgrade -y || true
+    sudo apt full-upgrade -y
+    sudo apt install -f
+    sudo dpkg --configure -a
+    sudo apt --fix-broken install -y
+    sudo apt autoremove -y
+    sudo apt update && sudo apt upgrade -y || true
+    universal_update
+    # Add any Librem 5 specific update steps here
     if command_exists snap; then
         sudo snap refresh
     fi

@@ -14,7 +14,7 @@ distribution () {
             fedora|rhel|centos|bazzite)
                 dtype="fedora"
                 ;;
-            ubuntu|debian|pop|mint)
+            ubuntu|debian|pop|mint|pureos)
                 dtype="debian"
                 ;;
             arch|manjaro|cachyos)
@@ -26,7 +26,7 @@ distribution () {
                         *fedora*|*rhel*|*centos*|*bazzite*)
                             dtype="fedora"
                             ;;
-                        *ubuntu*|*debian*|*pop*|*mint*)
+                        *ubuntu*|*debian*|*pop*|*mint*|*pureos*)
                             dtype="debian"
                             ;;
                         *arch*|*manjaro*|*cachyos*)
@@ -88,12 +88,18 @@ install_software() {
                 apt-cache pkgnames; \
                 if command -v flatpak &>/dev/null; then \
                     flatpak remote-ls --app flathub --columns=application; \
+                fi; \
+                if command -v brew &>/dev/null; then \
+                    brew formulae | sed 's/^/[brew] /'; \
                 fi \
-            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c "
+            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {} || ( [[ {} == '[brew] '* ]] && brew info \"\$(echo {} | cut -d' ' -f2-)\" )" --preview-window=down:50% | xargs -ro -I{} bash -c "
                 if apt-cache show \"\$1\" &>/dev/null; then
                     sudo apt-get install -y \"\$1\"
                 elif flatpak remote-info flathub \"\$1\" &>/dev/null; then
                     flatpak install -y flathub \"\$1\"
+                elif [[ \"\$1\" == '[brew] '* ]]; then
+                    name=\$(echo \"\$1\" | cut -d' ' -f2-)
+                    brew install \"\$name\"
                 fi
             " --
             ;;
@@ -145,7 +151,13 @@ uninstall_software() {
     else
         flatpak_list_cmd='echo'
     fi
-    pkgs=$( (eval "$native_list_cmd"; eval "$flatpak_list_cmd") )
+    # Brew list command (if available)
+    if command -v brew &>/dev/null; then
+        brew_list_cmd='brew list --formulae'
+    else
+        brew_list_cmd='echo'
+    fi
+    pkgs=$( (eval "$native_list_cmd"; eval "$flatpak_list_cmd"; eval "$brew_list_cmd") )
     [ -z "$pkgs" ] && return 0
     selection=$(printf "%s\n" "$pkgs" | fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'echo {}' \
@@ -174,6 +186,8 @@ uninstall_software() {
             esac
         elif command -v flatpak &>/dev/null && flatpak list --app --columns=application | grep -Fxq "$pkg"; then
             flatpak uninstall -y "$pkg"
+        elif command -v brew &>/dev/null && brew list --formulae | grep -Fxq "$pkg"; then
+            brew uninstall "$pkg"
         else
             echo "Unknown or unsupported package for uninstall: $pkg"
         fi
