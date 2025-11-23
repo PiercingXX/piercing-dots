@@ -178,7 +178,6 @@ update_bashrc() {
 }
 
 
-
 # Universal update logic
 universal_update() {
 # Update Neovim plugins
