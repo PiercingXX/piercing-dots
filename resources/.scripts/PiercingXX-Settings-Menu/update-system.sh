@@ -89,7 +89,7 @@ ensure_jq() {
     elif [[ "$DISTRO" == "arch" ]]; then
         # Try install without refreshing DB first, then with -Sy as fallback
         sudo pacman -S --needed --noconfirm jq && return 0 || sudo pacman -Sy --needed --noconfirm jq && return 0
-    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" ]]; then
+    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" ]]; then
         sudo apt update && sudo apt -y install jq && return 0
     fi
     echo -e "${yellow}Could not auto-install jq on this distro; continuing without auto-update of ~/.scripts.${nc}"
@@ -191,6 +191,7 @@ universal_update() {
         sudo fwupdmgr get-updates || true
         sudo fwupdmgr update -y || true
     fi
+    echo -e "${yellow}Be Patient...${nc}"
 # Update npm
     if command_exists npm; then
         sudo npm update -g --silent --no-progress

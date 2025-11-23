@@ -341,7 +341,7 @@ distribution () {
             sles|opensuse*)
                 dtype="suse"
                 ;;
-            ubuntu|debian|pop|mint)
+            ubuntu|debian|pop|mint|pureos)
                 dtype="debian"
                 ;;
             gentoo)

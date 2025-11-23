@@ -58,11 +58,8 @@ install_software() {
                 if command -v flatpak &>/dev/null; then
                     flatpak remote-ls --app flathub --columns=application | sed 's/^/[flatpak] /'
                 fi
-                if command -v brew &>/dev/null; then
-                    brew formulae | sed 's/^/[brew] /'
-                fi
             ) | fzf --multi \
-                --preview='sel={}; n=$(printf "%s" "$sel" | cut -d" " -f2-); if [[ "$sel" == "[flatpak] "* ]]; then flatpak remote-info flathub "$n" 2>/dev/null; elif [[ "$sel" == "[brew] "* ]] && command -v brew &>/dev/null; then brew info "$n" 2>/dev/null; else flatpak remote-info flathub "$n" 2>/dev/null || (command -v paru >/dev/null 2>&1 && (paru -Si --aur "$n" 2>/dev/null || paru -Si "$n" 2>/dev/null)) || pacman -Si "$n" 2>/dev/null; fi' \
+                --preview='sel={}; n=$(printf "%s" "$sel" | cut -d" " -f2-); if [[ "$sel" == "[flatpak] "* ]]; then flatpak remote-info flathub "$n" 2>/dev/null; else flatpak remote-info flathub "$n" 2>/dev/null || (command -v paru >/dev/null 2>&1 && (paru -Si --aur "$n" 2>/dev/null || paru -Si "$n" 2>/dev/null)) || pacman -Si "$n" 2>/dev/null; fi' \
                 --preview-window=down:50% \
             | xargs -ro -I{} bash -c '
                 sel="{}"
@@ -73,12 +70,6 @@ install_software() {
                     else
                         echo "flatpak not installed; skipping $name" >&2
                     fi
-                elif [[ "$sel" == "[brew] "* ]]; then
-                    if command -v brew &>/dev/null; then
-                        brew install "$name"
-                    else
-                        echo "brew not installed; run Brew Setup first" >&2
-                    fi
                 elif command -v paru &>/dev/null; then
                     paru -S --noconfirm --skipreview "$name"
                 elif command -v yay &>/dev/null; then
@@ -86,27 +77,19 @@ install_software() {
                 else
                     sudo pacman -S --noconfirm "$name"
                 fi
-            ;;
+            ';;
         "debian")
             (
                 apt-cache pkgnames
                 if command -v flatpak &>/dev/null; then
                     flatpak remote-ls --app flathub --columns=application
                 fi
-                if command -v brew &>/dev/null; then
-                    brew formulae | sed 's/^/[brew] /'
-                fi
-            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {} || ( [[ {} == '[brew] '* ]] && command -v brew &>/dev/null && brew info \"\$(echo {} | cut -d' ' -f2-)\" )" --preview-window=down:50% | xargs -ro -I{} bash -c '
+            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c '
                 sel="{}";
                 if apt-cache show "$sel" &>/dev/null; then
                     sudo apt-get install -y "$sel"
                 elif flatpak remote-info flathub "$sel" &>/dev/null; then
                     flatpak install -y flathub "$sel"
-                elif [[ "$sel" == "[brew] "* ]]; then
-                    name=$(echo "$sel" | cut -d" " -f2-)
-                    if command -v brew &>/dev/null; then
-                        brew install "$name"
-                    fi
                 fi'
             ;;
         "fedora")
@@ -115,20 +98,12 @@ install_software() {
                 if command -v flatpak &>/dev/null; then
                     flatpak remote-ls --app flathub --columns=application
                 fi
-                if command -v brew &>/dev/null; then
-                    brew formulae | sed 's/^/[brew] /'
-                fi
-            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {} || ( [[ {} == '[brew] '* ]] && command -v brew &>/dev/null && brew info \"\$(echo {} | cut -d' ' -f2-)\" )" --preview-window=down:50% | xargs -ro -I{} bash -c '
+            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c '
                 sel="{}";
                 if dnf info "$sel" &>/dev/null; then
                     sudo dnf install -y "$sel"
                 elif flatpak remote-info flathub "$sel" &>/dev/null; then
                     flatpak install -y flathub "$sel"
-                elif [[ "$sel" == "[brew] "* ]]; then
-                    name=$(echo "$sel" | cut -d" " -f2-)
-                    if command -v brew &>/dev/null; then
-                        brew install "$name"
-                    fi
                 fi'
             ;;
     esac
@@ -165,13 +140,7 @@ uninstall_software() {
     else
         flatpak_list_cmd='echo'
     fi
-    # Brew list command (if available)
-    if command -v brew &>/dev/null; then
-        brew_list_cmd='brew list --formulae'
-    else
-        brew_list_cmd='echo'
-    fi
-    pkgs=$( (eval "$native_list_cmd"; eval "$flatpak_list_cmd"; eval "$brew_list_cmd") )
+    pkgs=$( (eval "$native_list_cmd"; eval "$flatpak_list_cmd") )
     [ -z "$pkgs" ] && return 0
     selection=$(printf "%s\n" "$pkgs" | fzf --multi --prompt="Uninstall (enter to select): " \
                             --preview 'echo {}' \
@@ -200,8 +169,6 @@ uninstall_software() {
             esac
         elif command -v flatpak &>/dev/null && flatpak list --app --columns=application | grep -Fxq "$pkg"; then
             flatpak uninstall -y "$pkg"
-        elif command -v brew &>/dev/null && brew list --formulae | grep -Fxq "$pkg"; then
-            brew uninstall "$pkg"
         else
             echo "Unknown or unsupported package for uninstall: $pkg"
         fi
