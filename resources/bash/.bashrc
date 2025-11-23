@@ -425,7 +425,7 @@ if command -v jump &>/dev/null; then eval "$(jump shell)"; fi
 [[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
 [[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
 # Homebrew
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+if command -v brew &>/dev/null; then eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; fi
 
 # Fastfetch and keybind only in interactive shells
 if [[ $iatest -gt 0 ]]; then
