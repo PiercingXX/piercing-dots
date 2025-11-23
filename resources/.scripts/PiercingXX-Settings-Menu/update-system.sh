@@ -99,7 +99,7 @@ ensure_jq() {
 # Ask for sudo password up front and keep sudo alive
 sudo -v
 # Keep-alive: update existing sudo time stamp until script finishes
-( while true; do sudo -n true; sleep 60; done ) &
+( while true; do sudo -n true; sleep 300; done ) &
 sudo_keepalive_pid=$!
 trap 'kill "$sudo_keepalive_pid" 2>/dev/null' EXIT
 
