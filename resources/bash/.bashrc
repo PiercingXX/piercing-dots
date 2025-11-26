@@ -84,6 +84,7 @@ alias xsc='ssh $USER@cam-archlinux'
 alias xta1='ssh $USER@8in-tiger-debian'
 alias xta2='ssh $USER@8in-tab-archlinux'
 alias xph1='ssh purism@librem-5'
+alias xph2='ssh droidian@droidian-pixel3a'
 alias xfb='ssh femboi@femboi-rig'
 alias xha208='ssh root@homeassistant-208'
 alias xhane='ssh root@homeassistant-ne'
@@ -238,9 +239,15 @@ install_bashrc_support() {
             fi
             ;;
 		"debian")
-			sudo apt install multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza -y
-            wget https://github.com/gsamokovarov/jump/releases/download/v0.51.0/jump_0.51.0_amd64.deb && sudo dpkg -i jump_0.51.0_amd64.deb
-			;;
+            for pkg in multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza jump; do
+            if sudo apt install "$pkg" -y; then
+                echo "$pkg installed via apt"
+            else
+                echo "$pkg not available in apt, installing via brew"
+                brew install "$pkg"
+            fi
+            done
+            ;;
         "arch")
             if command -v paru &> /dev/null; then
                 paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
@@ -342,7 +349,7 @@ distribution () {
             sles|opensuse*)
                 dtype="suse"
                 ;;
-            ubuntu|debian|pop|mint|pureos)
+            debian|pop|mint|ubuntu|droidian|mobian|ubuntutouch|pureos|raspbian)
                 dtype="debian"
                 ;;
             gentoo)

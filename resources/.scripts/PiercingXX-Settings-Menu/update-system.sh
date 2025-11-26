@@ -89,7 +89,7 @@ ensure_jq() {
     elif [[ "$DISTRO" == "arch" ]]; then
         # Try install without refreshing DB first, then with -Sy as fallback
         sudo pacman -S --needed --noconfirm jq && return 0 || sudo pacman -Sy --needed --noconfirm jq && return 0
-    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" ]]; then
+    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" || "$DISTRO" == "droidian" || "$DISTRO" == "mobian" || "$DISTRO" == "ubuntutouch" || "$DISTRO" == "raspbian" ]]; then
         sudo apt update && sudo apt -y install jq && return 0
     fi
     echo -e "${yellow}Could not auto-install jq on this distro; continuing without auto-update of ~/.scripts.${nc}"
@@ -319,7 +319,7 @@ if [[ "$DISTRO" == "arch" ]]; then
 elif [[ "$DISTRO" == "fedora" ]]; then
     sudo dnf update -y
     universal_update
-elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" ]]; then
+elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" || "$DISTRO" == "droidian" || "$DISTRO" == "mobian" || "$DISTRO" == "ubuntutouch" || "$DISTRO" == "raspbian" ]]; then
     sudo apt update && sudo apt upgrade -y || true
     sudo apt full-upgrade -y
     sudo apt install -f
