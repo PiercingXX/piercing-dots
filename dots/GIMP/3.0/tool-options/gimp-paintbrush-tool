@@ -4,12 +4,12 @@
     (color "Y'A u8" 2 "\61\377" 0))
 (background
     (color "HSVA float" 16 "\0\0\0\0\0\0\0\0\0\0\200\77\0\0\200\77" 0))
-(brush "2. Hardness 075")
+(brush "2. Hardness 050")
 (dynamics "Pressure Opacity")
 (pattern "Pine")
 (gradient "FG to BG (HSV Clockwise Hue)")
 (palette "Default")
-(brush-size 200)
-(brush-hardness 0.75)
+(brush-size 51)
+(brush-hardness 0.5)
 
 # end of gimp-paintbrush-tool options

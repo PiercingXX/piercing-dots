@@ -12,8 +12,8 @@
 (session-info "toplevel"
     (factory-entry "gimp-single-image-window")
     (position 0 0)
-    (size 3816 1502)
-    (monitor 1)
+    (size 1898 1500)
+    (monitor 0)
     (open-on-exit)
     (aux-info
         (left-docks-width "64")
@@ -35,7 +35,7 @@
                 (aux-info
                     (show-button-bar "true"))))
         (book
-            (position 148)
+            (position 249)
             (current-page 1)
             (dockable "gimp-channel-list"
                 (tab-style name)
@@ -53,7 +53,7 @@
                 (aux-info
                     (show-button-bar "true"))))
         (book
-            (position 453)
+            (position 749)
             (current-page 0)
             (dockable "gimp-tool-options"
                 (locked)
@@ -65,7 +65,7 @@
                 (aux-info
                     (show-button-bar "true"))))
         (book
-            (position 702)
+            (position 1147)
             (current-page 0)
             (dockable "gimp-layer-list"
                 (locked)
@@ -76,8 +76,8 @@
 (session-info "toplevel"
     (factory-entry "gimp-preferences-dialog")
     (position 0 0)
-    (size 1137 753)
-    (monitor 1))
+    (size 1898 709)
+    (monitor 0))
 (session-info "toplevel"
     (factory-entry "gimp-image-new-dialog")
     (position 0 0)
@@ -90,8 +90,8 @@
 (session-info "toplevel"
     (factory-entry "gimp-file-export-dialog")
     (position 0 0)
-    (size 961 710)
-    (monitor 1))
+    (size 1479 949)
+    (monitor 0))
 (session-info "toplevel"
     (factory-entry "gimp-toolbox-color-dialog")
     (position 0 0)
@@ -99,7 +99,8 @@
 (session-info "toplevel"
     (factory-entry "gimp-file-open-dialog")
     (position 0 0)
-    (size 1898 1486))
+    (size 1898 1486)
+    (monitor 0))
 (session-info "toplevel"
     (factory-entry "gimp-image-new-dialog")
     (position 538 463))
@@ -127,8 +128,8 @@
 (session-info "toplevel"
     (factory-entry "gimp-file-save-dialog")
     (position 0 0)
-    (size 961 710)
-    (monitor 1))
+    (size 1898 1486)
+    (monitor 0))
 (session-info "toplevel"
     (factory-entry "gimp-levels-tool-dialog")
     (position 0 0)

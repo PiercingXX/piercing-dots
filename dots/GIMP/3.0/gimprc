@@ -2,7 +2,7 @@
 # 
 # This is your personal gimprc file.  Any variable defined in this file takes
 # precedence over the value defined in the system-wide gimprc:
-# /etc/gimp/3.0/gimprc
+# /app/etc/gimp/3.0/gimprc
 # Most values can be set within GIMP by changing some options in the
 # Preferences dialog.
 
@@ -13,7 +13,8 @@
 (use-opencl yes)
 (language "en_US")
 (prev-language "en_US")
-(config-version "3.0.0-RC3")
+(config-version "3.0.6")
+(plug-in-path "${gimp_dir}/plug-ins:${gimp_plug_in_dir}/plug-ins:${gimp_installation_dir}/extensions/plug-ins:/home/dr3k/.config/GIMP/3.0/plug-ins")
 (default-image
     (width 4200)
     (height 4200)
@@ -40,8 +41,8 @@
 (check-update-timestamp 1702553647)
 (transparency-type light-checks)
 (image-status-format "%f-%p.%i (%t) %wx%h")
-(monitor-xresolution 138)
-(monitor-yresolution 141)
+(monitor-xresolution 111)
+(monitor-yresolution 110)
 (navigation-preview-size extra-large)
 (default-view
     (show-menubar yes)

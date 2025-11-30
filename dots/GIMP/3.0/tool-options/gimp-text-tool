@@ -3,7 +3,7 @@
 (foreground
     (color "Y'A u8" 2 "\61\377" 0))
 (palette "Default")
-(font "Adagio_Sans SemiBold_italic")
+(font "Monospace")
 (justify center)
 (outline-foreground
     (color "R'G'B'A double" 32 "\0\0\0\0\0\0\350\77\0\0\0\0\0\0\350\77\0\0\0\0\0\0\350\77\0\0\0\0\0\0\360\77" 0))
