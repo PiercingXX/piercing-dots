@@ -230,8 +230,18 @@ universal_update() {
     if command_exists yazi; then
         echo -e "${yellow}Updating yazi...${nc}"
         if command_exists ya; then
-            ya pkg upgrade || true
-            YAZI_CONFIG="$HOME/.config/yazi/package.toml"
+            YAZI_CONFIG_DIR="$HOME/.config/yazi"
+            YAZI_CONFIG="$YAZI_CONFIG_DIR/package.toml"
+            # Fix common package.toml issues before upgrade
+            if [ -f "$YAZI_CONFIG" ]; then
+                sed -i -e 's/system-clipboard\.yazi/system-clipboard-yazi/g' "$YAZI_CONFIG" || true
+            fi
+            # Skip upgrade if legacy header exists to avoid parse abort
+            if [ -f "$YAZI_CONFIG" ] && grep -q '^\[\[plugin\.deps\]\]' "$YAZI_CONFIG"; then
+                echo -e "${yellow}Yazi package.toml has legacy [[plugin.deps]]; skipping 'ya pkg upgrade'.${nc}"
+            else
+                ya pkg upgrade || true
+            fi
             if [ -f "$YAZI_CONFIG" ]; then
                 mapfile -t desired_plugins < <(grep '^use = ' "$YAZI_CONFIG" | sed -E "s/use = \"(.*)\"/\1/" | sort)
                 mapfile -t installed_plugins < <(ya pkg list | awk '{print $1}' | sort)
@@ -307,13 +317,25 @@ echo -e "${green}Starting system update...${nc}\n"
 if [[ "$DISTRO" == "arch" ]]; then
     # Prefer paru, then yay, then pacman
     if command_exists paru; then
-        paru -Syu --noconfirm
+        paru -Syu --noconfirm || {
+            echo -e "${yellow}paru upgrade failed; attempting npm overwrite fix...${nc}"
+            paru -S --noconfirm --overwrite '/usr/lib/node_modules/npm/node_modules/*' npm || true
+            paru -Syu --noconfirm || true
+        }
         universal_update
     elif command_exists yay; then
-        yay -Syu --noconfirm
+        yay -Syu --noconfirm || {
+            echo -e "${yellow}yay upgrade failed; attempting npm overwrite fix...${nc}"
+            yay -S --noconfirm --overwrite '/usr/lib/node_modules/npm/node_modules/*' npm || true
+            yay -Syu --noconfirm || true
+        }
         universal_update
     else
-        sudo pacman -Syu --noconfirm
+        sudo pacman -Syu --noconfirm || {
+            echo -e "${yellow}pacman upgrade failed; attempting npm overwrite fix...${nc}"
+            sudo pacman -S --noconfirm --overwrite '/usr/lib/node_modules/npm/node_modules/*' npm || true
+            sudo pacman -Syu --noconfirm || true
+        }
         universal_update
     fi
 elif [[ "$DISTRO" == "fedora" ]]; then
