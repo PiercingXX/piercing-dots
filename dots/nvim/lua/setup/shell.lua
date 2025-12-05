@@ -1,29 +1,19 @@
 ---@diagnostic disable: undefined-global
--- Robust bash/sh LSP setup that works across Neovim versions
+-- Configure bash/sh LSP using new vim.lsp.config API (nvim-lspconfig >=0.11)
 pcall(function()
-  -- Try Neovim's new LSP config API if present AND returns a valid config
-  local cfg
-  if type(vim.lsp.config) == 'function' then
-    local ok_cfg, res = pcall(vim.lsp.config, 'bashls', {})
-    if ok_cfg and res then cfg = res end
-  end
-
-  if cfg then
-    -- Start on relevant filetypes only if not already attached
+  if vim.lsp.config then
+    local cfg = vim.lsp.config('bashls', {})
     vim.api.nvim_create_autocmd('FileType', {
-      pattern = { 'sh', 'bash', 'zsh' },
+      pattern = { 'sh', 'bash' },
       callback = function(ev)
-        local clients = vim.lsp.get_clients({ bufnr = ev.buf, name = 'bashls' })
-        if clients and #clients > 0 then return end
+        if vim.lsp.get_active_clients({ bufnr = ev.buf, name = 'bashls' })[1] then return end
         vim.lsp.start(cfg)
       end,
     })
   else
-    -- Fallback to lspconfig on older Neovim or when native cfg is unavailable
-    local ok_lspc, lspconfig = pcall(require, 'lspconfig')
-    if ok_lspc and lspconfig.bashls then
-      lspconfig.bashls.setup({})
-    end
+    -- Fallback to legacy lspconfig if still present
+    local ok, lspconfig = pcall(require, 'lspconfig')
+    if ok and lspconfig.bashls then lspconfig.bashls.setup({}) end
   end
 end)
 

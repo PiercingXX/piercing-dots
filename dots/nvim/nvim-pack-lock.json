@@ -9,6 +9,7 @@
       "src": "https://github.com/helbing/aura.nvim"
     },
     "blink.cmp": {
+      "rev": "2408f14f740f89d603cad33fe8cbd92ab068cc92",
       "src": "https://github.com/saghen/blink.cmp",
       "version": "'1.*'"
     },
@@ -44,6 +45,10 @@
       "rev": "5d5954b",
       "src": "https://github.com/ellisonleao/glow.nvim"
     },
+    "headlines.nvim": {
+      "rev": "bf17c96a836ea27c0a7a2650ba385a7783ed322e",
+      "src": "https://github.com/lukas-reineke/headlines.nvim"
+    },
     "img-clip.nvim": {
       "rev": "e7e29f0",
       "src": "https://github.com/HakonHarnes/img-clip.nvim"
@@ -60,9 +65,17 @@
       "rev": "da5a221",
       "src": "https://github.com/echasnovski/mini.surround"
     },
+    "multicursors.nvim": {
+      "rev": "72225ea9e4443c3f4b9df91d0193e07c4ee8d382",
+      "src": "https://github.com/smoka7/multicursors.nvim"
+    },
     "none-ls.nvim": {
       "rev": "a96172f",
       "src": "https://github.com/nvimtools/none-ls.nvim"
+    },
+    "nvim-FeMaco.lua": {
+      "rev": "96bbf843595dbe865838b3f2484b73557f34700c",
+      "src": "https://github.com/AckslD/nvim-FeMaco.lua"
     },
     "nvim-autopairs": {
       "rev": "7a2c97c",
@@ -87,6 +100,10 @@
     "nvim-web-devicons": {
       "rev": "8dcb311",
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
+    },
+    "obsidian.nvim": {
+      "rev": "14e0427bef6c55da0d63f9a313fd9941be3a2479",
+      "src": "https://github.com/epwalsh/obsidian.nvim"
     },
     "plenary.nvim": {
       "rev": "b9fd522",
@@ -113,9 +130,17 @@
       "src": "https://github.com/nvim-telescope/telescope.nvim",
       "version": "'0.1.8'"
     },
+    "todo-comments.nvim": {
+      "rev": "411503d3bedeff88484de572f2509c248e499b38",
+      "src": "https://github.com/folke/todo-comments.nvim"
+    },
     "treesj": {
       "rev": "4770492",
       "src": "https://github.com/Wansmer/treesj"
+    },
+    "twilight.nvim": {
+      "rev": "664e752f4a219801265cc3fc18782b457b58c1e1",
+      "src": "https://github.com/folke/twilight.nvim"
     },
     "vim-be-good": {
       "rev": "0ae3de1",

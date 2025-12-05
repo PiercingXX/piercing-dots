@@ -254,11 +254,6 @@ universal_update() {
             fi
         fi
     fi
-# Update Homebrew (brew)
-    if command_exists brew; then
-        echo -e "${yellow}Updating Homebrew (brew)...${nc}"
-        brew update && brew upgrade
-    fi
 # Update pip
     if command_exists pip; then
         echo -e "${yellow}Updating system pip...${nc}"
@@ -266,6 +261,11 @@ universal_update() {
     elif command_exists pip3; then
         echo -e "${yellow}Updating system pip3...${nc}"
         sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
+    fi
+# Update Homebrew (brew)
+    if command_exists brew; then
+        echo -e "${yellow}Updating Homebrew (brew)...${nc}"
+        brew update && brew upgrade
     fi
 # Update Hyprland if running
     if pgrep -x "Hyprland" > /dev/null; then
