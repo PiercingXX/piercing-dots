@@ -40,34 +40,36 @@ builddir=$(pwd)
 
 
 #Create necessary directories and copy configuration files
-    # Create .scripts directory if it doesn't exist and place all scripts there
-        if [ ! -d /home/"$username"/.scripts ]; then
-            mkdir -p /home/"$username"/.scripts
-            chown "$username":"$username" /home/"$username"/.scripts
-        fi    
+    # Replace .bashrc
+        cp -f resources/bash/.bashrc /home/"$username"/.bashrc
+        source /home/"$username"/.bashrc
+        echo "Replaced .bashrc."
     # Update scripts
         rm -Rf /home/"$username"/.scripts/*
+        sudo mkdir -p /home/"$username"/.scripts
+        sudo chown "$username":"$username" /home/"$username"/.scripts
         cp -rf resources/.scripts/* /home/"$username"/.scripts/
-        chown -R "$username":"$username" /home/"$username"/.scripts
-        chmod +x /home/"$username"/.scripts/*
+        sudo chown -R "$username":"$username" /home/"$username"/.scripts
+        chmod -R +x /home/"$username"/.scripts/*
+        echo "Updated .scripts directory."
     # .font directory
         if [ ! -d "$HOME/.fonts" ]; then
-            mkdir -p "$HOME/.fonts"
-            chown -R "$username":"$username" "$HOME"/.fonts
+            sudo mkdir -p "$HOME/.fonts"
+            sudo chown -R "$username":"$username" "$HOME"/.fonts
         fi
     # .icons directory
         if [ ! -d "$HOME/.icons" ]; then
-            mkdir -p /home/"$username"/.icons
-            chown -R "$username":"$username" /home/"$username"/.icons
+            sudo mkdir -p /home/"$username"/.icons
+            sudo chown -R "$username":"$username" /home/"$username"/.icons
         fi
     # Background and Profile Image Directories
         if [ ! -d "$HOME/$username/Pictures/backgrounds" ]; then
-            mkdir -p /home/"$username"/Pictures/backgrounds
-            chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
+            sudo mkdir -p /home/"$username"/Pictures/backgrounds
+            sudo chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
         fi
         if [ ! -d "$HOME/$username/Pictures/profile-image" ]; then
-            mkdir -p /home/"$username"/Pictures/profile-image
-            chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
+            sudo mkdir -p /home/"$username"/Pictures/profile-image
+            sudo chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
         fi
     # fstab external drive mounting directory
         if [ ! -d "/media/Working-Storage" ]; then
@@ -78,43 +80,43 @@ builddir=$(pwd)
             sudo mkdir -p /media/Archived-Storage
             sudo chown "$username":"$username" /media/Archived-Storage
         fi
+        echo "Created necessary directories."
     # Clone Piercing Dots Repo
         cp -Rf dots/* /home/"$username"/.config/
         chown "$username":"$username" -R /home/"$username"/.config/*
         cd "$builddir" || exit
+        echo "Copied Piercing Dots Config Files."
     # Copy FZF to /usr
         sudo cp -rf resources/fzf /usr/share/fzf
         sudo chmod -R +x /usr/share/fzf/
-    # check if flatpak neovim is installed and copy nvim config there
-        if ! flatpak list | grep -q io.neovim.nvim; then
-            echo "Flatpak Neovim not found, skipping Neovim config copy."
-            else
-            mkdir -p ~/.var/app/io.neovim.nvim/config/nvim
-            rsync -a ~/.config/nvim/ ~/.var/app/io.neovim.nvim/config/nvim/
-        fi
+        echo "Copied FZF to /usr/share/fzf" 
     # Copy Backgrounds
         cp -Rf resources/backgrounds/* /home/"$username"/Pictures/backgrounds
         chown -R "$username":"$username" /home/"$username"/Pictures/backgrounds
         cp -Rf resources/profile-image/* /home/"$username"/Pictures/profile-image
         chown -R "$username":"$username" /home/"$username"/Pictures/profile-image
         cd "$builddir" || exit
+        echo "Copied Backgrounds and Profile Images."
     # Copy Refs to Download folder
         cp -Rf resources/refs/* /home/"$username"/Downloads
+        echo "Copied reference files to Downloads."
     # Apply Piercing Gnome Customizations
         cd scripts || exit
         chmod u+x gnome-customizations.sh
         ./gnome-customizations.sh
         wait
         cd "$builddir" || exit
-    # Replace .bashrc
-        cp -f resources/bash/.bashrc /home/"$username"/.bashrc
-        source /home/"$username"/.bashrc
-    # Set Boot Beep
-        echo -e "${YELLOW}Setting Boot Beep...${NC}"
-            cd scripts || exit
-            chmod u+x set_boot_beep.sh
-            ./set_boot_beep.sh
-            cd "$builddir" || exit
-        echo -e "${GREEN}Boot Beep Set successfully!${NC}"
+        echo "Applied Piercing Gnome Customizations."
+    # Set Boot Beep (skip when no bootloader detected)
+        if { [ -d /sys/firmware/efi/efivars ] && [ -d /boot/loader ]; } || grep -qi grub /proc/cmdline || [ -f /etc/default/grub ]; then
+            echo -e "${YELLOW}Setting Boot Beep...${NC}"
+                cd scripts || exit
+                chmod u+x set_boot_beep.sh
+                ./set_boot_beep.sh
+                cd "$builddir" || exit
+            echo -e "${GREEN}Boot Beep Set successfully!${NC}"
+        else
+            echo -e "${YELLOW}Bootloader not detected; skipping Boot Beep.${NC}"
+        fi
     # Set PRETTY_NAME in /etc/os-release
         pretty_name

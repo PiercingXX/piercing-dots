@@ -55,8 +55,8 @@ elif grep -qi grub /proc/cmdline || [ -f /etc/default/grub ]; then
   fi
   enable_beep_systemd
 else
-  echo "Bootloader not detected. Applying beep to rc.local."
-  enable_beep_rc_local
+  echo "Bootloader not detected. Skipping boot beep configuration."
+  exit 0
 fi
 
 echo "Done."

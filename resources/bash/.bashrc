@@ -231,15 +231,15 @@ install_bashrc_support() {
 	case $dtype in
         "fedora")
             if command -v dnf &> /dev/null; then
-                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza chafa w3m jump -y
                 curl -sS https://starship.rs/install.sh | sh
             else
-                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza -y
+                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza chafa w3m jump -y
                 curl -sS https://starship.rs/install.sh | sh
             fi
             ;;
 		"debian")
-            for pkg in multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza jump; do
+            for pkg in multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza chafa w3m jump; do
             if sudo apt install "$pkg" -y; then
                 echo "$pkg installed via apt"
             else
@@ -250,9 +250,9 @@ install_bashrc_support() {
             ;;
         "arch")
             if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
+                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat chafa w3m jump-bin --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat jump-bin --noconfirm
+                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat chafa w3m jump-bin --noconfirm
             else
                 echo "Install paru or yay."
             fi
