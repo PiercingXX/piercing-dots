@@ -41,7 +41,7 @@ distribution () {
 }
 
 clear
-# Function to search and install software (clean, with conditional brew)
+# Function to search and install software
 install_software() {
     local dtype
     dtype=$(distribution)

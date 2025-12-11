@@ -76,28 +76,24 @@ export LESS_TERMCAP_us=$'\E[01;32m'
 # GENERAL ALIAS'
 #######################################################
 
-# SSH alias's
-alias xmain='ssh $USER@main-rig-archlinux'
-alias xai='ssh $USER@ai-debian-server'
-alias xla1='ssh $USER@thinkpad-laptop-archlinux'
-alias xsc='ssh $USER@cam-archlinux'
-alias xta1='ssh $USER@8in-tiger-debian'
-alias xta2='ssh $USER@8in-tab-archlinux'
-alias xph1='ssh purism@librem-5'
-alias xph2='ssh droidian@droidian-pixel3a'
-alias xfb='ssh femboi@femboi-rig'
-alias xha208='ssh root@homeassistant-208'
-alias xhane='ssh root@homeassistant-ne'
-alias xhaba='ssh root@homeassistant-ba'
-alias xhala='ssh root@homeassistant-la'
-alias xhapl='ssh root@homeassistant-pl'
-
-
 # PiercingXX maintenance script can be found at git clone https://github.com/piercingxx/piercing-dots
 alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
 alias ss='$HOME/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh'
 alias ff='fastfetch'
 alias c='clear'
+
+# SSH alias's
+alias xmain='ssh $USER@main-rig-archlinux'
+alias xai='ssh $USER@server-debian-ai'
+alias xla1='ssh $USER@laptop-thinkpad-archlinux'
+alias xta1='ssh $USER@tablet-8in-tiger-debian'
+alias xha1='ssh root@homeassistant-1'
+alias xha2='ssh root@homeassistant-2'
+alias xha3='ssh root@homeassistant-3'
+alias xha4='ssh root@homeassistant-4'
+alias xha5='ssh root@homeassistant-5'
+alias xpi1='ssh $USER@pi-1'
+alias xpi2='ssh $USER@pi-2'
 
 # Alias's for reboots and shutdowns
 alias reboot='sudo reboot'

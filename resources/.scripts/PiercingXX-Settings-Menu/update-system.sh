@@ -267,6 +267,11 @@ universal_update() {
         echo -e "${yellow}Updating Homebrew (brew)...${nc}"
         brew update && brew upgrade
     fi
+# Update ClamAV virus definitions
+    if command_exists freshclam; then
+        echo -e "${yellow}Updating ClamAV virus definitions...${nc}"
+        sudo freshclam || true
+    fi
 # Update Hyprland if running
     if pgrep -x "Hyprland" > /dev/null; then
         echo -e "${yellow}Updating Hyprland packages...${nc}"
