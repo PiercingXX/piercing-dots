@@ -58,3 +58,27 @@ fi
 # Silently clean user cache
 rm -rf ~/.cache/* 2>/dev/null
 echo -e "${green}System cleaning complete!${nc}"
+
+# Clean all temp files and empty trash for all users (no prompt)
+
+# Remove system temp files
+rm -rf /tmp/* /var/tmp/*
+
+# Remove user cache and temp files
+for userdir in /home/*; do
+    if [ -d "$userdir" ]; then
+        rm -rf "$userdir"/.cache/*
+        rm -rf "$userdir"/Downloads/*
+        # Empty trash (freedesktop spec)
+        rm -rf "$userdir"/.local/share/Trash/files/*
+        rm -rf "$userdir"/.local/share/Trash/info/*
+    fi
+done
+
+# Also clean root's cache and trash if present
+rm -rf /root/.cache/*
+rm -rf /root/.local/share/Trash/files/*
+rm -rf /root/.local/share/Trash/info/*
+
+echo "System temp files and trash have been cleaned."
+echo -e "${green}System cleaning complete!${nc}"

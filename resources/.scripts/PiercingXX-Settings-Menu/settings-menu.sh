@@ -38,6 +38,7 @@ fi
 		"🗄️ Backup & Restore"
 		"👤 User Management"
 		"✨ Update PiercingXX Rice"
+		"🛡️ Virus Scan"
 		"🧹 Clean System"
 		"🚪 Quit"
 	)
@@ -54,6 +55,7 @@ fi
 			"👤 User Management"
 			"✨ Update PiercingXX Rice"
 			"🌐 Update Mirrors"
+			"🛡️ Virus Scan"
 			"🧹 Clean System"
 			"🚪 Quit"
 		)
@@ -99,6 +101,9 @@ while true; do
 			;;
 		"🎤 Audio Input Manager")
 			bash ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh
+			;;
+		"🛡️ Virus Scan")
+			bash ~/.scripts/PiercingXX-Settings-Menu/virus-scan.sh
 			;;
 		"🧹 Clean System")
 			bash ~/.scripts/PiercingXX-Settings-Menu/clean-system.sh
