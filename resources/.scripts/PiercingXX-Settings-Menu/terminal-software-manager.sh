@@ -49,17 +49,17 @@ install_software() {
         "arch")
             (
                 if command -v paru &>/dev/null; then
-                    paru -Slq | sed 's/^/[repo] /'
+                    paru -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
                 elif command -v yay &>/dev/null; then
-                    yay -Slq | sed 's/^/[repo] /'
+                    yay -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
                 else
-                    pacman -Slq | sed 's/^/[repo] /'
+                    pacman -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
                 fi
                 if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=application | sed 's/^/[flatpak] /'
+                    flatpak remote-ls --app flathub --columns=application 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[flatpak] /'
                 fi
             ) | fzf --multi \
-                --preview='sel={}; n=$(printf "%s" "$sel" | cut -d" " -f2-); if [[ "$sel" == "[flatpak] "* ]]; then flatpak remote-info flathub "$n" 2>/dev/null; else flatpak remote-info flathub "$n" 2>/dev/null || (command -v paru >/dev/null 2>&1 && (paru -Si --aur "$n" 2>/dev/null || paru -Si "$n" 2>/dev/null)) || pacman -Si "$n" 2>/dev/null; fi' \
+                --preview='name=$(echo {} | cut -d" " -f2-); if echo {} | grep -q "^\[flatpak\]"; then flatpak remote-info flathub "$name" 2>/dev/null || echo ""; elif command -v paru >/dev/null 2>&1; then paru -Si "$name" 2>/dev/null || echo ""; else pacman -Si "$name" 2>/dev/null || echo ""; fi' \
                 --preview-window=down:50% \
             | xargs -ro -I{} bash -c '
                 sel="{}"
@@ -80,11 +80,11 @@ install_software() {
             ';;
         "debian")
             (
-                apt-cache pkgnames
+                apt-cache pkgnames 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]'
                 if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=application
+                    flatpak remote-ls --app flathub --columns=application 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]'
                 fi
-            ) | fzf --multi --preview="apt-cache show {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c '
+            ) | fzf --multi --preview="apt-cache show {} 2>/dev/null || flatpak remote-info flathub {} 2>/dev/null || echo \"\"" --preview-window=down:50% | xargs -ro -I{} bash -c '
                 sel="{}";
                 if apt-cache show "$sel" &>/dev/null; then
                     sudo apt-get install -y "$sel"
@@ -94,11 +94,11 @@ install_software() {
             ;;
         "fedora")
             (
-                rpm -qa --qf "%{NAME}\n"
+                rpm -qa --qf "%{NAME}\n" 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]'
                 if command -v flatpak &>/dev/null; then
-                    flatpak remote-ls --app flathub --columns=application
+                    flatpak remote-ls --app flathub --columns=application 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]'
                 fi
-            ) | fzf --multi --preview="dnf info {} || flatpak remote-info flathub {}" --preview-window=down:50% | xargs -ro -I{} bash -c '
+            ) | fzf --multi --preview="dnf info {} 2>/dev/null || flatpak remote-info flathub {} 2>/dev/null || echo \"\"" --preview-window=down:50% | xargs -ro -I{} bash -c '
                 sel="{}";
                 if dnf info "$sel" &>/dev/null; then
                     sudo dnf install -y "$sel"
