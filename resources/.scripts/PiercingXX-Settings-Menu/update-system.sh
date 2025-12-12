@@ -178,6 +178,103 @@ update_bashrc() {
 }
 
 
+# Keep Synology Drive client updated on Debian/Ubuntu by pulling the current installer
+update_synology_drive() {
+    if ! command_exists dpkg || ! command_exists apt; then
+        return
+    fi
+    local version="4.0.1-17885"
+    local build="${version##*-}"
+    local base_url="https://global.download.synology.com/download/Utility/SynologyDriveClient/${version}/Ubuntu/Installer"
+    local pkg="synology-drive-client-${build}.x86_64.deb"
+    local installed
+    installed=$(dpkg-query -W -f='${Version}' synology-drive-client 2>/dev/null || true)
+    if [ "$installed" = "$version" ]; then
+        return
+    fi
+    local tmp_pkg
+    tmp_pkg=$(mktemp)
+    if curl -fsSL "${base_url}/${pkg}" -o "$tmp_pkg"; then
+        sudo dpkg -i "$tmp_pkg" || sudo apt --fix-broken install -y
+    else
+        echo -e "${yellow}Synology Drive download failed; keeping existing version.${nc}"
+    fi
+    rm -f "$tmp_pkg"
+}
+
+
+# Rebuild Hyprland stack on Debian/Ubuntu directly from upstream repos
+update_hyprland_builds() {
+    if ! command_exists hyprland; then
+        return
+    fi
+    case "$DISTRO" in
+        debian|ubuntu) ;;
+        *) return ;;
+    esac
+    if ! command_exists git || ! command_exists cmake; then
+        echo -e "${yellow}Git/CMake missing; skipping Hyprland rebuild.${nc}"
+        return
+    fi
+
+    local workdir
+    workdir=$(mktemp -d) || return
+    trap 'rm -rf "$workdir"' RETURN
+
+    # Version pins
+    local hyprutils_version="v0.11.0"
+    local hyprlang_version="v0.6.7"
+    local hyprland_protocols_version="v0.7.0"
+    local hyprwayland_scanner_version="v0.4.5"
+    local hyprlock_version="v0.5.1"
+    local hypridle_version="v0.3.1"
+    local hyprpaper_version="v0.7.6"
+    local hyprland_version="v0.43.0"
+
+    local jobs
+    jobs=$(nproc 2>/dev/null || getconf _NPROCESSORS_CONF || echo 2)
+
+    build_cmake() {
+        local name=$1 repo=$2 ref=$3
+        echo -e "${yellow}Updating ${name} (${ref})...${nc}"
+        rm -rf "${workdir:?}/${name}" 2>/dev/null || true
+        if git clone --depth 1 --recursive -b "$ref" "$repo" "$workdir/${name}"; then
+            ( cd "$workdir/${name}" && \
+              cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE=Release -S . -B build && \
+              cmake --build build --config Release -j"$jobs" && \
+              sudo cmake --install build >/dev/null 2>&1 ) || {
+                echo -e "${yellow}${name} build failed; leaving existing install.${nc}"
+            }
+        else
+            echo -e "${yellow}${name} download failed; skipping.${nc}"
+        fi
+    }
+
+    build_protocols() {
+        echo -e "${yellow}Updating hyprland-protocols (${hyprland_protocols_version})...${nc}"
+        rm -rf "$workdir/hyprland-protocols" 2>/dev/null || true
+        if git clone --depth 1 --recursive -b "$hyprland_protocols_version" https://github.com/hyprwm/hyprland-protocols.git "$workdir/hyprland-protocols"; then
+            sudo mkdir -p /usr/share/wayland-protocols
+            sudo cp -r "$workdir/hyprland-protocols"/protocols/* /usr/share/wayland-protocols/ 2>/dev/null || true
+        else
+            echo -e "${yellow}hyprland-protocols download failed; skipping.${nc}"
+        fi
+    }
+
+    build_cmake "hyprutils" https://github.com/hyprwm/hyprutils.git "$hyprutils_version"
+    build_cmake "hyprlang" https://github.com/hyprwm/hyprlang.git "$hyprlang_version"
+    build_protocols
+    build_cmake "hyprwayland-scanner" https://github.com/hyprwm/hyprwayland-scanner.git "$hyprwayland_scanner_version"
+    build_cmake "hyprlock" https://github.com/hyprwm/hyprlock.git "$hyprlock_version"
+    build_cmake "hypridle" https://github.com/hyprwm/hypridle.git "$hypridle_version"
+    build_cmake "hyprgraphics" https://github.com/hyprwm/hyprgraphics.git "main"
+    build_cmake "hyprpaper" https://github.com/hyprwm/hyprpaper.git "$hyprpaper_version"
+    build_cmake "aquamarine" https://github.com/hyprwm/aquamarine.git "main"
+    build_cmake "hyprcursor" https://github.com/hyprwm/hyprcursor.git "main"
+    build_cmake "Hyprland" https://github.com/hyprwm/Hyprland.git "$hyprland_version"
+}
+
+
 # Universal update logic
 universal_update() {
 # Update Neovim plugins
@@ -191,6 +288,8 @@ universal_update() {
         sudo fwupdmgr get-updates || true
         sudo fwupdmgr update -y || true
     fi
+# Update Synology Drive (Debian/Ubuntu installs)
+    update_synology_drive
     echo -e "${yellow}Be Patient...${nc}"
 # Update npm
     if command_exists npm; then
@@ -355,6 +454,7 @@ elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || 
     sudo apt autoremove -y
     sudo apt update && sudo apt upgrade -y || true
     universal_update
+    update_hyprland_builds
     if command_exists snap; then
         sudo snap refresh
     fi
