@@ -245,10 +245,11 @@ install_bashrc_support() {
             done
             ;;
         "arch")
+            sudo pacman -S fastfetch tree zoxide bash-completion starship eza bat fzf trash-cli chafa w3m --noconfirm
             if command -v paru &> /dev/null; then
-                paru -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat chafa w3m jump-bin --noconfirm
+                paru -S multitail jump-bin --noconfirm
             elif command -v yay &> /dev/null; then
-                yay -S multitail tree zoxide trash-cli fzf bash-completion fastfetch starship eza bat chafa w3m jump-bin --noconfirm
+                yay -S multitail jump-bin --noconfirm
             else
                 echo "Install paru or yay."
             fi
