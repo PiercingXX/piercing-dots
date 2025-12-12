@@ -228,7 +228,10 @@ update_hyprland_builds() {
     local hyprwayland_scanner_version="v0.4.5"
     local hyprlock_version="v0.5.1"
     local hypridle_version="v0.3.1"
+    local hyprgraphics_version="v0.2.0"
     local hyprpaper_version="v0.7.6"
+    local aquamarine_version="v0.4.0"
+    local hyprcursor_version="v0.1.8"
     local hyprland_version="v0.43.0"
 
     local jobs
@@ -267,10 +270,10 @@ update_hyprland_builds() {
     build_cmake "hyprwayland-scanner" https://github.com/hyprwm/hyprwayland-scanner.git "$hyprwayland_scanner_version"
     build_cmake "hyprlock" https://github.com/hyprwm/hyprlock.git "$hyprlock_version"
     build_cmake "hypridle" https://github.com/hyprwm/hypridle.git "$hypridle_version"
-    build_cmake "hyprgraphics" https://github.com/hyprwm/hyprgraphics.git "main"
+    build_cmake "hyprgraphics" https://github.com/hyprwm/hyprgraphics.git "$hyprgraphics_version"
     build_cmake "hyprpaper" https://github.com/hyprwm/hyprpaper.git "$hyprpaper_version"
-    build_cmake "aquamarine" https://github.com/hyprwm/aquamarine.git "main"
-    build_cmake "hyprcursor" https://github.com/hyprwm/hyprcursor.git "main"
+    build_cmake "aquamarine" https://github.com/hyprwm/aquamarine.git "$aquamarine_version"
+    build_cmake "hyprcursor" https://github.com/hyprwm/hyprcursor.git "$hyprcursor_version"
     build_cmake "Hyprland" https://github.com/hyprwm/Hyprland.git "$hyprland_version"
 }
 
