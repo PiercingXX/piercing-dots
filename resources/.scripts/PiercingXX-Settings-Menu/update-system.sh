@@ -372,7 +372,12 @@ universal_update() {
 # Update ClamAV virus definitions
     if command_exists freshclam; then
         echo -e "${yellow}Updating ClamAV virus definitions...${nc}"
-        sudo freshclam || true
+        # Check if freshclam service is running to avoid lock conflicts
+        if systemctl is-active --quiet clamav-freshclam 2>/dev/null; then
+            echo -e "${yellow}ClamAV freshclam service is running; skipping manual update.${nc}"
+        else
+            sudo freshclam || true
+        fi
     fi
 # Update Hyprland if running
     if pgrep -x "Hyprland" > /dev/null; then
@@ -422,8 +427,29 @@ echo -e "${green}Starting system update...${nc}\n"
     git_pull_all_github_repos
 
 if [[ "$DISTRO" == "arch" ]]; then
+    # Check and rebuild paru if it has library dependency issues
+    rebuild_paru_if_broken() {
+        if command_exists paru; then
+            if ! paru --version >/dev/null 2>&1; then
+                echo -e "${yellow}paru appears broken (library mismatch); rebuilding from AUR...${nc}"
+                local tmpdir
+                tmpdir=$(mktemp -d)
+                if git clone https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
+                    (cd "$tmpdir/paru" && makepkg -si --noconfirm) || {
+                        echo -e "${yellow}paru rebuild failed; continuing with pacman only.${nc}"
+                    }
+                else
+                    echo -e "${yellow}Failed to clone paru from AUR; continuing with pacman only.${nc}"
+                fi
+                rm -rf "$tmpdir"
+            fi
+        fi
+    }
+    
+    rebuild_paru_if_broken
+    
     # Prefer paru, then yay, then pacman
-    if command_exists paru; then
+    if command_exists paru && paru --version >/dev/null 2>&1; then
         paru -Syu --noconfirm || {
             echo -e "${yellow}paru upgrade failed; attempting npm overwrite fix...${nc}"
             paru -S --noconfirm --overwrite '/usr/lib/node_modules/npm/node_modules/*' npm || true
