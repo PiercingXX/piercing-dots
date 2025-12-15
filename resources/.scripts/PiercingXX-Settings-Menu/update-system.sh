@@ -429,25 +429,50 @@ echo -e "${green}Starting system update...${nc}\n"
 if [[ "$DISTRO" == "arch" ]]; then
     # Check and rebuild paru if it has library dependency issues
     rebuild_paru_if_broken() {
-        if command_exists paru; then
-            if ! paru --version >/dev/null 2>&1; then
-                echo -e "${yellow}paru appears broken (library mismatch); rebuilding from AUR...${nc}"
-                local tmpdir
-                tmpdir=$(mktemp -d)
-                if git clone https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
-                    (cd "$tmpdir/paru" && makepkg -si --noconfirm) || {
-                        echo -e "${yellow}paru rebuild failed; continuing with pacman only.${nc}"
-                    }
-                else
-                    echo -e "${yellow}Failed to clone paru from AUR; continuing with pacman only.${nc}"
-                fi
-                rm -rf "$tmpdir"
+        local cooldown_file="/var/tmp/paru-rebuild-skip"
+        local cooldown_secs=86400
+
+        # Skip if paru already works
+        if command_exists paru && paru --version >/dev/null 2>&1; then
+            return
+        fi
+
+        # Respect cooldown after a failed rebuild to avoid repeated breakage during upstream churn
+        if [ -f "$cooldown_file" ]; then
+            local now last
+            now=$(date +%s)
+            last=$(stat -c %Y "$cooldown_file" 2>/dev/null || echo 0)
+            if [ $((now - last)) -lt $cooldown_secs ]; then
+                echo -e "${yellow}Skipping paru rebuild (cooldown from previous failure).${nc}"
+                return
             fi
         fi
+
+        # Require build tooling
+        if ! command_exists git || ! command_exists makepkg; then
+            echo -e "${yellow}Skipping paru rebuild (missing git/makepkg).${nc}"
+            return
+        fi
+
+        echo -e "${yellow}paru appears broken (library mismatch); rebuilding from AUR...${nc}"
+        local tmpdir
+        tmpdir=$(mktemp -d)
+        if git clone https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
+            if (cd "$tmpdir/paru" && makepkg -si --noconfirm); then
+                rm -f "$cooldown_file"
+            else
+                echo -e "${yellow}paru rebuild failed; continuing with pacman only.${nc}"
+                touch "$cooldown_file"
+            fi
+        else
+            echo -e "${yellow}Failed to clone paru from AUR; continuing with pacman only.${nc}"
+            touch "$cooldown_file"
+        fi
+        rm -rf "$tmpdir"
     }
-    
+
     rebuild_paru_if_broken
-    
+
     # Prefer paru, then yay, then pacman
     if command_exists paru && paru --version >/dev/null 2>&1; then
         paru -Syu --noconfirm || {
