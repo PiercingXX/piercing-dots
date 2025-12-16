@@ -50,8 +50,10 @@ install_software() {
             (
                 if command -v paru &>/dev/null; then
                     paru -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
+                    paru -Slaq --aur 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[aur] /'
                 elif command -v yay &>/dev/null; then
                     yay -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
+                    yay -Slaq --aur 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[aur] /'
                 else
                     pacman -Slq 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[repo] /'
                 fi
@@ -59,7 +61,7 @@ install_software() {
                     flatpak remote-ls --app flathub --columns=application 2>/dev/null | grep -v '^$' | LC_ALL=C grep -v '[^[:print:]]' | sed 's/^/[flatpak] /'
                 fi
             ) | fzf --multi \
-                --preview='name=$(echo {} | cut -d" " -f2-); if echo {} | grep -q "^\[flatpak\]"; then flatpak remote-info flathub "$name" 2>/dev/null || echo ""; elif command -v paru >/dev/null 2>&1; then paru -Si "$name" 2>/dev/null || echo ""; else pacman -Si "$name" 2>/dev/null || echo ""; fi' \
+                --preview='name=$(echo {} | cut -d" " -f2-); if echo {} | grep -q "^\[flatpak\]"; then flatpak remote-info flathub "$name" 2>/dev/null || echo ""; elif echo {} | grep -q "^\[aur\]"; then (command -v paru >/dev/null 2>&1 && paru -Si --aur "$name" 2>/dev/null) || (command -v yay >/dev/null 2>&1 && yay -Si --aur "$name" 2>/dev/null) || echo ""; elif command -v paru >/dev/null 2>&1; then paru -Si "$name" 2>/dev/null || echo ""; elif command -v yay >/dev/null 2>&1; then yay -Si "$name" 2>/dev/null || echo ""; else pacman -Si "$name" 2>/dev/null || echo ""; fi' \
                 --preview-window=down:50% \
             | xargs -ro -I{} bash -c '
                 sel="{}"
@@ -69,6 +71,14 @@ install_software() {
                         flatpak install -y flathub "$name"
                     else
                         echo "flatpak not installed; skipping $name" >&2
+                    fi
+                elif [[ "$sel" == "[aur] "* ]]; then
+                    if command -v paru &>/dev/null; then
+                        paru -S --noconfirm --skipreview "$name"
+                    elif command -v yay &>/dev/null; then
+                        yay -S --noconfirm "$name"
+                    else
+                        echo "AUR requires paru or yay to be installed" >&2
                     fi
                 elif command -v paru &>/dev/null; then
                     paru -S --noconfirm --skipreview "$name"
