@@ -13,7 +13,8 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # Enable bash programmable completion features in interactive shells
-if [[ $iatest -gt 0 ]]; then
+if [[ $iatest -gt 0 ]] && ! shopt -oq posix; then
+    shopt -s progcomp
     if [ -f /usr/share/bash-completion/bash_completion ]; then
         . /usr/share/bash-completion/bash_completion
     elif [ -f /etc/bash_completion ]; then
