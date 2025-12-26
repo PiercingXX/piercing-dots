@@ -437,6 +437,15 @@ if [[ "$DISTRO" == "arch" ]]; then
             return
         fi
 
+        # Detect libalpm ABI mismatch to trigger rebuild immediately
+        if command_exists paru; then
+            local paru_err
+            paru_err=$(paru --version >/dev/null 2>&1 || true)
+            if echo "$paru_err" | grep -q "libalpm.so"; then
+                echo -e "${yellow}paru is broken (libalpm ABI mismatch); rebuilding from AUR...${nc}"
+            fi
+        fi
+
         # Respect cooldown after a failed rebuild to avoid repeated breakage during upstream churn
         if [ -f "$cooldown_file" ]; then
             local now last
@@ -455,6 +464,7 @@ if [[ "$DISTRO" == "arch" ]]; then
         fi
 
         echo -e "${yellow}paru appears broken (library mismatch); rebuilding from AUR...${nc}"
+        sudo pacman -R --noconfirm paru-bin >/dev/null 2>&1 || true
         local tmpdir
         tmpdir=$(mktemp -d)
         if git clone https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
