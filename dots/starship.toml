@@ -6,25 +6,13 @@ $username\
 $directory\
 [](fg:#26233a bg:#31748f)\
 $git_branch\
-$git_status\
-[](fg:#31748f bg:#9ccfd8)\
-$c\
-$elixir\
-$elm\
-$golang\
-$haskell\
-$java\
-$julia\
-$nodejs\
-$nim\
-$rust\
-[](fg:#9ccfd8 bg:#61ffca)\
+[](fg:#31748f bg:#61ffca)\
 $docker_context\
 [](fg:#61ffca bg:#a277ff)\
 $time\
 [ ](fg:#a277ff)\
 """
-command_timeout = 5000
+command_timeout = 1000
 
 [username]
 show_always = true
@@ -70,6 +58,7 @@ style = "bg:#f694ff fg:#e0def4"
 format = '[ $symbol $branch ]($style)'
 
 [git_status]
+disabled = true
 style = "bg:#f694ff fg:#e0def4"
 format = '[$all_status$ahead_behind ]($style)'
 

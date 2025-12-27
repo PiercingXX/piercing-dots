@@ -116,6 +116,7 @@ auto_update_scripts() {
     local GITHUB_REPO="Piercingxx/piercing-dots"
     local REMOTE_PATH="resources/.scripts"
     local LOCAL_DIR="$HOME/.scripts"
+    local monitor_rel="${REMOTE_PATH}/Control-Scripts/launch-server-monitor.sh"
 
     # Ensure local scripts directory exists
     mkdir -p "$LOCAL_DIR"
@@ -145,7 +146,19 @@ auto_update_scripts() {
                     continue
                 fi
                 if [ ! -f "$local_path/$name" ] || ! cmp -s "$local_path/$name" "$tmp_file"; then
+                    local saved_remote_line=""
+                    if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
+                        saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" || true)
+                    fi
+
                     cp "$tmp_file" "$local_path/$name"
+
+                    if [[ "$path" == "$monitor_rel" && -n "$saved_remote_line" ]]; then
+                        local tmp_preserve
+                        tmp_preserve=$(mktemp)
+                        awk -v saved="$saved_remote_line" 'BEGIN{replaced=0} {if(!replaced && $0 ~ /^REMOTE=/){print saved; replaced=1; next} {print}} END{if(!replaced && saved!="") print saved}' "$local_path/$name" > "$tmp_preserve" && mv "$tmp_preserve" "$local_path/$name"
+                    fi
+
                     chmod +x "$local_path/$name"
                     echo -e "${green}Updated $path${nc}"
                 fi
