@@ -145,24 +145,41 @@ auto_update_scripts() {
                     rm -f "$tmp_file"
                     continue
                 fi
-                if [ ! -f "$local_path/$name" ] || ! cmp -s "$local_path/$name" "$tmp_file"; then
-                    local saved_remote_line=""
-                    if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
-                        saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" || true)
+                
+                # Special handling for launch-server-monitor.sh to preserve user's REMOTE line
+                local tmp_compare="$tmp_file"
+                if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
+                    local saved_remote_line
+                    saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" || true)
+                    if [[ -n "$saved_remote_line" ]]; then
+                        # Apply the saved REMOTE line to the temp file for comparison
+                        tmp_compare=$(mktemp)
+                        awk -v saved="$saved_remote_line" 'BEGIN{replaced=0} {if(!replaced && $0 ~ /^REMOTE=/){print saved; replaced=1; next} {print}} END{if(!replaced && saved!="") print saved}' "$tmp_file" > "$tmp_compare"
                     fi
-
+                fi
+                
+                # Compare using the potentially modified temp file
+                if [ ! -f "$local_path/$name" ] || ! cmp -s "$local_path/$name" "$tmp_compare"; then
                     cp "$tmp_file" "$local_path/$name"
-
-                    if [[ "$path" == "$monitor_rel" && -n "$saved_remote_line" ]]; then
+                    
+                    # Re-apply the saved REMOTE line to the installed file
+                    if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
+                        local saved_remote_line
+                        saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" 2>/dev/null || echo "REMOTE=\"dr3k@server-debian-ai\"")
                         local tmp_preserve
                         tmp_preserve=$(mktemp)
                         awk -v saved="$saved_remote_line" 'BEGIN{replaced=0} {if(!replaced && $0 ~ /^REMOTE=/){print saved; replaced=1; next} {print}} END{if(!replaced && saved!="") print saved}' "$local_path/$name" > "$tmp_preserve" && mv "$tmp_preserve" "$local_path/$name"
                     fi
-
+                    
                     chmod +x "$local_path/$name"
                     echo -e "${green}Updated $path${nc}"
                 fi
+                
+                # Clean up temp files
                 rm -f "$tmp_file"
+                if [[ "$tmp_compare" != "$tmp_file" ]]; then
+                    rm -f "$tmp_compare"
+                fi
             fi
         done
     }
