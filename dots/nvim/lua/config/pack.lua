@@ -8,11 +8,11 @@ end
 -- List of plugin specs
 local specs = {
   -- UI and aesthetics
-  { src = gh("helbing/aura.nvim") },
+  { src = gh("helbing/aura.nvim"), optional = true },
   { src = gh("goolord/alpha-nvim") },
 
   -- Completion & snippets
-  { src = gh("saghen/blink.cmp"), version = "1.*" },
+  { src = gh("saghen/blink.cmp"), version = "v1.8.0" },
   { src = gh("rafamadriz/friendly-snippets") },
 
   -- Statusline & small utilities
