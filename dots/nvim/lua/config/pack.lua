@@ -8,7 +8,7 @@ end
 -- List of plugin specs
 local specs = {
   -- UI and aesthetics
-  { src = gh("helbing/aura.nvim"), optional = true },
+  { src = gh("JLighter/aura.nvim") },
   { src = gh("goolord/alpha-nvim") },
 
   -- Completion & snippets
