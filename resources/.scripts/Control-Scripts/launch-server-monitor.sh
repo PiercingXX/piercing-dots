@@ -2,7 +2,7 @@
 set -euo pipefail
 
 
-REMOTE="USER@SERVER TO MONITOR"
+REMOTE="USER@server"
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=2"
 
 # --- Helpers ---
@@ -57,9 +57,9 @@ case "$MODE" in
       sshpass -e ssh $SSH_OPTS -t "$REMOTE" htop
     ;;
   -log)
-    # Single pane: vi on log file
+    # Single pane: lnav on log file
     setsid -f kitty --title "log" \
-      sshpass -e ssh $SSH_OPTS -t "$REMOTE" 'cd ~/log && vi "hhamanagement.com login"'
+      sshpass -e ssh $SSH_OPTS -t "$REMOTE" 'cd ~/log && lnav "hhamanagement.com login"'
     ;;
   *)
     echo "Error: Unknown flag '$MODE'. Use -monitor or -log" >&2
