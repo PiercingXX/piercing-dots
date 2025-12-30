@@ -2,7 +2,8 @@
 set -euo pipefail
 
 
-REMOTE="USER@server"
+REMOTE="dr3k@server-debian-ai"
+
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=2"
 
 # --- Helpers ---
