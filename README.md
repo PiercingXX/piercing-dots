@@ -46,31 +46,41 @@ The update script will
     - Update your entire system (Neovim, pip, npm, cargo, fwupd, flatpak, Docker, Hyprland, etc)
     - Self-update its ofn scropts from the PiercingXX GitHub.
     - Update your github repos 
+	
 Terminal Software Manager
     - Don't use gnome software or search the AUR of Flathub
     - This will allow you to fuzzy find all available install options for whatever you're looking for.
     - You can also uninstall anything on your system with this.
+	
 Audio Input Manager
     - Easily switch input and output audio
     - Toggle through audio output with '<SUPER> O'
+	
 Wifi manager
     - Launches Network Manager TUI
+	
 Bluetooth Manager
-    - Launches 
+    - Launches bluetoith
+	
 Change Wallpaper
     - Does just that on Hyprland and Gnome. 
+	
 Backup & Restore
     - Does what you think
+	
 User Management
     - Yup it does that
+	
 Update Piercing Rice
     - This will install one of 4 options
         -Everything - All dots, scripts, customizations, everything.
         -GIMP dot files only
         -All dotfiles and scripts and gnome customizations without Hyprland dots (this will still replace the keymap file)
         -Gnome Customizations only
+		
 Update Mirrors
     - This is only available for Arch, will find the fastest mirrors and update them.
+	
 Clean System
     - Deletes file remnants, temp folders, and trash.
 
