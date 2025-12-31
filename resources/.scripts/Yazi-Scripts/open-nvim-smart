@@ -1,0 +1,11 @@
+#!/bin/bash
+# Smart nvim opener - opens in tmux window if in tmux, otherwise opens normally
+
+if [ -n "$TMUX" ]; then
+    # We're in tmux - open in new window and switch to it
+    tmux new-window -c "$(pwd)" -n "nvim" "nvim \"$@\""
+    tmux select-window -t "nvim"
+else
+    # Not in tmux - open normally
+    nvim "$@"
+fi

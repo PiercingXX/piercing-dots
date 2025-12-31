@@ -76,11 +76,11 @@
   <div class="container">
   <h1 id="top">PiercingXX Shortcuts</h1>
     <p>Quick reference for PiercingXX keyboard shortcuts.</p>
-  <p><a href="#yazi-shortcuts">Yazi Shortcuts</a> | <a href="#nvim-shortcuts">Neovim Shortcuts</a></p>
+  <p><a href="#yazi-shortcuts">Yazi Shortcuts</a> | <a href="#nvim-shortcuts">Neovim Shortcuts</a> | <a href="#tmux-shortcuts">Tmux Shortcuts</a></p>
+    
+    <h2>Cheat Sheet</h2>
     <table>
-    <h2>Cheat Sheet
-    </h2>
-  <tr><td><code>🐧 + /</code></td><td>Show keybinds (this file)</td></tr>
+      <tr><td><code>🐧 + /</code></td><td>Show keybinds (this file)</td></tr>
     </table>
     <h2>Window Management</h2>
     <table>
@@ -452,11 +452,101 @@
       <tr><td>[d / ]d</td><td>Previous/next diagnostic</td><td>LSP</td></tr>
       <tr><td>&lt;leader&gt;f</td><td>Format buffer</td><td>LSP</td></tr>
     </table>
+    <h1 id="tmux-shortcuts">Tmux Shortcuts</h1>
+    <p>Quick reference for Tmux terminal multiplexer keyboard shortcuts. Prefix: <code>Ctrl+Space</code> <a href="#top">Back to top</a></p>
+    
+    <h3>Prefix Key & General</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Ctrl+Space</td><td>Tmux prefix key</td></tr>
+      <tr><td>Ctrl+Space :reload</td><td>Reload tmux config</td></tr>
+      <tr><td>Prefix m</td><td>Toggle mouse</td></tr>
+      <tr><td>Prefix [ / ]</td><td>Enter copy mode / paste buffer</td></tr>
+    </table>
+
+    <h3>Pane Navigation (Vim Keys)</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix k</td><td>Select pane above</td></tr>
+      <tr><td>Prefix j</td><td>Select pane below</td></tr>
+      <tr><td>Prefix h</td><td>Select pane left</td></tr>
+      <tr><td>Prefix l</td><td>Select pane right</td></tr>
+    </table>
+
+    <h3>Pane Resizing (Vim Keys)</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix K</td><td>Resize pane up (2 units)</td></tr>
+      <tr><td>Prefix J</td><td>Resize pane down (2 units)</td></tr>
+      <tr><td>Prefix H</td><td>Resize pane left (2 units)</td></tr>
+      <tr><td>Prefix L</td><td>Resize pane right (2 units)</td></tr>
+    </table>
+
+    <h3>Pane Management</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix v</td><td>Split pane horizontally</td></tr>
+      <tr><td>Prefix s</td><td>Split pane vertically</td></tr>
+      <tr><td>Prefix x</td><td>Kill current pane</td></tr>
+    </table>
+
+    <h3>Window Management</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix n</td><td>Create new window</td></tr>
+      <tr><td>Prefix 0-9</td><td>Select window by number</td></tr>
+      <tr><td>Prefix ,</td><td>Rename current window</td></tr>
+      <tr><td>Prefix X</td><td>Kill current window</td></tr>
+    </table>
+
+    <h3>Window Navigation</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix Ctrl+h</td><td>Select previous window</td></tr>
+      <tr><td>Prefix Ctrl+l</td><td>Select next window</td></tr>
+      <tr><td>Prefix P</td><td>Previous window</td></tr>
+      <tr><td>Prefix N</td><td>Next window</td></tr>
+    </table>
+
+    <h3>Session Management</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Command</th><th>Action</th></tr>
+      <tr><td>-</td><td>tmux new-session -s name</td><td>Create new session</td></tr>
+      <tr><td>-</td><td>tmux list-sessions</td><td>List all sessions</td></tr>
+      <tr><td>Prefix s</td><td>-</td><td>Choose session (with plugin)</td></tr>
+      <tr><td>Prefix $</td><td>-</td><td>Rename current session</td></tr>
+      <tr><td>Prefix d</td><td>-</td><td>Detach from session</td></tr>
+      <tr><td>Prefix q</td><td>-</td><td>Kill current session</td></tr>
+    </table>
+
+    <h3>Copy Mode (Vi Keys)</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th></tr>
+      <tr><td>Prefix [ then v</td><td>Begin selection</td></tr>
+      <tr><td>Prefix [ then V</td><td>Select entire line</td></tr>
+      <tr><td>Prefix [ then Ctrl+v</td><td>Rectangle toggle (block selection)</td></tr>
+      <tr><td>Prefix [ then y</td><td>Copy selection to clipboard</td></tr>
+      <tr><td>Prefix Y</td><td>Copy line to clipboard</td></tr>
+    </table>
+
+    <h3>Plugin Shortcuts</h3>
+    <table>
+      <tr><th>Shortcut</th><th>Action</th><th>Plugin</th></tr>
+      <tr><td>Prefix p</td><td>Toggle floating pane</td><td>tmux-floax</td></tr>
+      <tr><td>Prefix o</td><td>Open session picker</td><td>tmux-sessionx</td></tr>
+      <tr><td>Prefix Ctrl+y</td><td>New window in session picker</td><td>tmux-sessionx</td></tr>
+    </table>
+
+    <h3>Configuration</h3>
+    <table>
+      <tr><th>File</th><th>Description</th></tr>
+      <tr><td>~/.tmux.conf</td><td>Tmux configuration file</td></tr>
+      <tr><td>~/.tmux/plugins/tpm</td><td>Tmux Plugin Manager directory</td></tr>
+    </table>
+
     <div class="footer">
       Brought to you by <a href="https://github.com/PiercingXX">PiercingXX</a>
     </div>
   </div>
 </body>
-
-
-
+</html>

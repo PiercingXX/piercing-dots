@@ -42,7 +42,8 @@ term = [
 
 # Text/code editors
 edit = [
-	{ run = 'nvim "$@"', block = true, desc = "nvim" },
+	{ run = '$HOME/.scripts/Yazi-Scripts/open-nvim-smart "$@"', orphan = true, desc = "nvim (smart)" },
+	{ run = 'nvim "$@"', block = true, desc = "nvim (direct)" },
 	{ run = 'vim "$@"', block = true, desc = "vim" },
 	{ run = 'code -w "$@"', block = true, desc = "VS Code" },
     { run = 'nano "$@"', block = true, desc = "nano" },
