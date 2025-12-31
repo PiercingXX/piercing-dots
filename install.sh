@@ -44,6 +44,10 @@ builddir=$(pwd)
         cp -f resources/bash/.bashrc /home/"$username"/.bashrc
         source /home/"$username"/.bashrc
         echo "Replaced .bashrc."
+    # Copy .tmux.conf
+        cp -f resources/tmux/.tmux.conf /home/"$username"/.tmux.conf
+        chown "$username":"$username" /home/"$username"/.tmux.conf
+        echo "Copied .tmux.conf."
     # Update scripts
         rm -Rf /home/"$username"/.scripts/*
         sudo mkdir -p /home/"$username"/.scripts
