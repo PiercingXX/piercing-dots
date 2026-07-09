@@ -18,57 +18,18 @@
       "**/.cache/**"
     ]
   },
-  "model": "ollama-local/qwen3-coder:30b",
-  "small_model": "ollama-local/qwen3-coder:30b",
-  "disabled_providers": [
-    "ollama"
-  ],
+  "model": "sglang/qwen3-coder-next",
+  "small_model": "sglang/qwen3-coder-next",
   "provider": {
-    "ollama": {
+    "sglang": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Ollama-Debian-Server",
+      "name": "SGLang-Skippy-Debian-5090",
       "options": {
-        "baseURL": "http://100.106.173.116:11434/v1"
+        "baseURL": "http://100.122.68.2:30000/v1"
       },
       "models": {
-        "mistral:7b-instruct": {
-          "name": "mistral:7b-instruct",
-          "tool_call": true
-        },
-        "qwen2.5-coder:7b": {
-          "name": "qwen2.5-coder:7b",
-          "tool_call": true
-        },
-        "granite3.3:8b": {
-          "name": "granite3.3:8b",
-          "tool_call": true
-        },
-        "mistral-nemo:12b": {
-          "name": "mistral-nemo:12b",
-          "tool_call": true
-        },
-        "gpt-oss:20b": {
-          "name": "gpt-oss:20b",
-          "tool_call": true
-        },
-        "gemma3:27b-it-qat": {
-          "name": "gemma3:27b-it-qat",
-          "tool_call": true
-        },
-        "qwen3-coder:30b": {
-          "name": "qwen3-coder:30b",
-          "tool_call": true
-        },
-        "qwen2.5-coder:32b": {
-          "name": "qwen2.5-coder:32b",
-          "tool_call": true
-        },
-        "qwq:32b": {
-          "name": "qwq:32b",
-          "tool_call": true
-        },
-        "kimi-k2.5:cloud": {
-          "name": "kimi-k2.5:cloud",
+        "qwen3-coder-next": {
+          "name": "qwen3-coder-next",
           "tool_call": true
         }
       }
