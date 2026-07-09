@@ -1,0 +1,238 @@
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║                           SXHKD Configuration                            ║
+# ║                    Hotkey daemon for terminal session                     ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                          Application Launcher                             │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+# Launch app launcher (Ulauncher preferred)
+super + space
+    bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+
+alt + Tab
+    bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+
+super + q
+    bspc node -c || herbstclient close || i3-msg kill || awesome-client 'client.focus:kill()'
+
+super + w
+    kitty
+
+super + t
+    kitty tmux
+
+super + shift + z
+    nautilus --new-window
+
+super + z
+    kitty yazi
+
+super + shift + s
+    pavucontrol
+
+super + alt + s
+    XDG_CURRENT_DESKTOP="gnome" gnome-control-center
+
+# Launch emoji picker
+super + period
+    bash ~/.scripts/Control-Scripts/wm-emoji-picker.sh
+
+Print
+    bash ~/.scripts/Control-Scripts/wm-screenshot.sh region
+
+shift + Print
+    bash ~/.scripts/Control-Scripts/wm-screenshot.sh window
+
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                          Custom Scripts (Super + Key)                     │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+# PiercingXX Settings Menu (Super + s)
+super + s
+    kitty ~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh
+
+super + shift + f
+    herbstclient fullscreen toggle
+
+super + f
+    herbstclient floating toggle
+
+# Daily Notes
+super + n
+    kitty ~/.scripts/Note-Scripts/open_daily_note.sh --split
+
+super + shift + n
+    kitty ~/.scripts/Note-Scripts/open_daily_note.sh --view
+
+super + alt + n
+    kitty ~/.scripts/Note-Scripts/open_daily_note.sh --todo
+
+super + shift + alt + n
+    kitty ~/.scripts/Note-Scripts/open_daily_note.sh --directory
+
+# Inventory (Super + i)
+super + i
+    kitty ~/.scripts/Note-Scripts/inventory.sh
+
+# Server Monitor (Super + m)
+super + m
+    kitty -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -monitor
+
+super + shift + m
+    kitty -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -remote
+
+# Applications
+super + c
+    waterfox || flatpak run net.waterfox.waterfox
+
+super + d
+    discord || flatpak run com.discordapp.Discord
+
+super + shift + v
+    opencode-desktop
+
+super + v
+    kitty nvim
+
+super + alt + v
+    code
+
+super + b
+    obsidian || flatpak run md.obsidian.Obsidian
+
+super + g
+    gimp || flatpak run org.gimp.GIMP
+
+ctrl + alt + Delete
+    kitty flatpak run io.missioncenter.MissionCenter
+
+ctrl + alt + shift + k
+    sudo shutdown -h now
+
+# Clipboard History
+super + shift + y
+    bash ~/.scripts/Control-Scripts/wm-clipboard-menu.sh
+
+# Volume controls (XF86 keys + fallback bindings)
+XF86AudioRaiseVolume
+    ~/.scripts/Control-Scripts/volume.sh inc
+
+XF86AudioLowerVolume
+    ~/.scripts/Control-Scripts/volume.sh dec
+
+XF86AudioMute
+    ~/.scripts/Control-Scripts/volume.sh mute
+
+XF86AudioMicMute
+    pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# Audio Output Manager (Super + o)
+super + o
+    ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output
+
+super + p
+    ~/.scripts/Control-Scripts/notify-time.sh
+
+super + shift + p
+    ~/.scripts/Control-Scripts/notify-calendar.sh
+
+# Brightness controls (XF86 keys)
+XF86MonBrightnessUp
+    ~/.scripts/Control-Scripts/brightness.sh inc
+
+XF86MonBrightnessDown
+    ~/.scripts/Control-Scripts/brightness.sh dec
+
+# Keybinds Help (Super + /)
+super + slash
+    xdg-open "$HOME/.scripts/Control-Scripts/keybinds.html"
+
+# Local AI
+super + a
+    kitty ~/.scripts/Control-Scripts/launch-skippy-remote.sh
+
+super + shift + a
+    kitty ~/.scripts/Control-Scripts/launch-ollama-remote.sh --skippy
+
+super + alt + a
+    kitty ~/.scripts/Control-Scripts/launch-ollama-remote.sh --gemma
+
+# Session
+super + grave
+    bash ~/.scripts/Control-Scripts/wm-lock.sh
+
+super + shift + grave
+    sleep 0.1 && systemctl suspend || loginctl suspend
+
+ctrl + shift + alt + super + Delete
+    systemctl poweroff || loginctl poweroff
+
+# Workspace navigation (vim keys)
+super + h
+    herbstclient focus left
+
+super + j
+    herbstclient focus down
+
+super + k
+    herbstclient focus up
+
+super + l
+    herbstclient focus right
+
+super + shift + h
+    herbstclient shift left
+
+super + shift + j
+    herbstclient shift down
+
+super + shift + k
+    herbstclient shift up
+
+super + shift + l
+    herbstclient shift right
+
+# Workspaces
+super + {1-9,0}
+    herbstclient use {1-9,0}
+
+super + shift + {1-9,0}
+    herbstclient move {1-9,0} && herbstclient use {1-9,0}
+
+# Reload sxhkd config (Super + Shift + r)
+super + shift + r
+    pkill -USR1 -x sxhkd
+
+# Toggle split/layout mode (Super + x)
+super + x
+    herbstclient cycle_layout
+
+# Toggle topbar (Super + r)
+super + r
+    bash ~/.scripts/Control-Scripts/toggle-topbar.sh
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                         Display Rotation Controls                          │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+# Rotate display 90° (matches DSI-1 and DP-2 rotation in Hyprland)
+super + ctrl + r
+    xrandr --output DSI-1 --rotate left --output DP-2 --rotate left
+
+# Rotate display 270° (normal orientation)
+super + ctrl + n
+    xrandr --output DSI-1 --rotate right --output DP-2 --rotate right
+
+# Reset displays to normal orientation
+super + ctrl + 0
+    xrandr --output DSI-1 --rotate normal --output DP-2 --rotate normal
+
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │                              Custom Bindings                              │
+# │                   Add your own keybindings below this line                │
+# └───────────────────────────────────────────────────────────────────────────┘
+
+# Your custom bindings here...

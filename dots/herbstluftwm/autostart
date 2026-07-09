@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hc() {
+	herbstclient "$@"
+}
+
+# Reset existing keybinds/rules and set default layout behavior.
+hc emit_hook reload
+hc keyunbind --all
+hc mouseunbind --all
+hc unrule -F
+
+hc set frame_border_active_color '#327bd1'
+hc set frame_border_normal_color '#414141'
+hc set frame_bg_active_color '#00000000'
+hc set frame_bg_normal_color '#00000000'
+hc set frame_gap 10
+hc set window_gap 13
+hc set frame_border_width 2
+hc set smart_window_surroundings on
+hc set smart_frame_surroundings on
+hc set mouse_recenter_gap 0
+hc set focus_follows_mouse on
+
+# Basic fallback binds. Most launcher/workflow binds are handled by sxhkd.
+hc keybind Mod4-Return spawn kitty
+hc keybind Mod4-Shift-q close
+hc keybind Mod4-Shift-r reload
+hc keybind Mod4-Shift-c quit
+hc keybind Mod4-f fullscreen toggle
+hc keybind Mod4-Shift-f floating toggle
+
+# Focus movement.
+for key in h j k l; do
+	case "$key" in
+		h) dir="left" ;;
+		j) dir="down" ;;
+		k) dir="up" ;;
+		l) dir="right" ;;
+	esac
+	hc keybind "Mod4-$key" focus "$dir"
+	hc keybind "Mod4-Shift-$key" shift "$dir"
+	hc keybind "Mod4-Control-$key" resize "$dir" +0.05
+	hc keybind "Mod4-Control-Shift-$key" resize "$dir" -0.05
+done
+
+# Workspaces.
+for i in 1 2 3 4 5 6 7 8 9 0; do
+	hc add "$i" >/dev/null 2>&1 || true
+	hc keybind "Mod4-$i" use "$i"
+	hc keybind "Mod4-Shift-$i" move "$i"
+done
+
+hc use 1
+
+pkill -x sxhkd >/dev/null 2>&1 || true
+sxhkd -c "$HOME/.config/herbstluftwm/sxhkd/sxhkdrc" &
+
+pkill -f workspace-notify-herbst.sh >/dev/null 2>&1 || true
+bash "$HOME/.config/herbstluftwm/scripts/workspace-notify-herbst.sh" >/dev/null 2>&1 &
+
+pkill -x picom >/dev/null 2>&1 || true
+picom -b --experimental-backends &
+
+pgrep -x pipewire >/dev/null 2>&1 || (command -v pipewire >/dev/null 2>&1 && pipewire >/dev/null 2>&1 &)
+pgrep -x wireplumber >/dev/null 2>&1 || (command -v wireplumber >/dev/null 2>&1 && wireplumber >/dev/null 2>&1 &)
+pgrep -x pipewire-pulse >/dev/null 2>&1 || (command -v pipewire-pulse >/dev/null 2>&1 && pipewire-pulse >/dev/null 2>&1 &)
+command -v easyeffects >/dev/null 2>&1 && easyeffects --gapplication-service >/dev/null 2>&1 &
+
+if command -v polybar >/dev/null 2>&1; then
+	pkill -x polybar >/dev/null 2>&1 || true
+	polybar -q main -c "$HOME/.config/polybar/polybar.ini" &
+fi
+
+pkill -x nm-applet >/dev/null 2>&1 || true
+nm-applet &
+
+xrdb "$HOME/.Xresources" &
+xsetroot -cursor_name left_ptr &
+setxkbmap -layout us -variant colemak -option caps:backspace 2>/dev/null
+command -v libinput-gestures >/dev/null 2>&1 && (pgrep -f "libinput-gestures" >/dev/null 2>&1 || libinput-gestures >/dev/null 2>&1 &)
+
+touchpad_dev=$(xinput list --name-only | grep -i touchpad | head -n1 || true)
+if [ -n "${touchpad_dev:-}" ]; then
+	xinput set-prop "$touchpad_dev" "libinput Natural Scrolling Enabled" 1 2>/dev/null || true
+	xinput set-prop "$touchpad_dev" "libinput Tapping Enabled" 1 2>/dev/null || true
+	xinput set-prop "$touchpad_dev" "libinput Click Method Enabled" 0 1 2>/dev/null || true
+fi
+
+if command -v feh >/dev/null 2>&1; then
+	img="$HOME/.config/wall.png"
+	if [ ! -f "$img" ]; then
+		img=$(find "$HOME/Pictures/backgrounds" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) 2>/dev/null | shuf -n1)
+	fi
+	[ -n "${img:-}" ] && feh --bg-scale --no-fehbg "$img" &
+fi
+
+if command -v gnome-keyring-daemon >/dev/null 2>&1; then
+	gnome-keyring-daemon --start --components=secrets >/dev/null 2>&1
+fi
+
+if [ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ]; then
+	/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+fi

@@ -1,0 +1,102 @@
+
+{
+  "$schema": "https://opencode.ai/config.json",
+  "server": {
+    "hostname": "0.0.0.0",
+    "port": 4096
+  },
+  "watcher": {
+    "ignore": [
+      "**/.git/**",
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/target/**",
+      "**/coverage/**",
+      "**/.turbo/**",
+      "**/.cache/**"
+    ]
+  },
+  "model": "ollama-local/qwen3-coder:30b",
+  "small_model": "ollama-local/qwen3-coder:30b",
+  "disabled_providers": [
+    "ollama"
+  ],
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama-Debian-Server",
+      "options": {
+        "baseURL": "http://100.106.173.116:11434/v1"
+      },
+      "models": {
+        "mistral:7b-instruct": {
+          "name": "mistral:7b-instruct",
+          "tool_call": true
+        },
+        "qwen2.5-coder:7b": {
+          "name": "qwen2.5-coder:7b",
+          "tool_call": true
+        },
+        "granite3.3:8b": {
+          "name": "granite3.3:8b",
+          "tool_call": true
+        },
+        "mistral-nemo:12b": {
+          "name": "mistral-nemo:12b",
+          "tool_call": true
+        },
+        "gpt-oss:20b": {
+          "name": "gpt-oss:20b",
+          "tool_call": true
+        },
+        "gemma3:27b-it-qat": {
+          "name": "gemma3:27b-it-qat",
+          "tool_call": true
+        },
+        "qwen3-coder:30b": {
+          "name": "qwen3-coder:30b",
+          "tool_call": true
+        },
+        "qwen2.5-coder:32b": {
+          "name": "qwen2.5-coder:32b",
+          "tool_call": true
+        },
+        "qwq:32b": {
+          "name": "qwq:32b",
+          "tool_call": true
+        },
+        "kimi-k2.5:cloud": {
+          "name": "kimi-k2.5:cloud",
+          "tool_call": true
+        }
+      }
+    },
+    "ollama-local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama-Local",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {
+        "qwen3-coder:30b": {
+          "name": "qwen3-coder:30b",
+          "tool_call": true
+        },
+        "qwq:32b": {
+          "name": "qwq:32b",
+          "tool_call": true
+        },
+        "qwen3-coder-next:32k": {
+          "name": "qwen3-coder-next:32k",
+          "tool_call": true
+        },
+        "qwen3-coder-next:q4_K_M": {
+          "name": "qwen3-coder-next:q4_K_M",
+          "tool_call": true
+        }
+      }
+    }
+  }
+}

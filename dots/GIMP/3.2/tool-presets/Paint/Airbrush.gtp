@@ -1,0 +1,26 @@
+# GIMP tool preset file
+
+(icon-name "gimp-tool-airbrush")
+(name "Airbrush")
+(tool-options "GimpAirbrushOptions"
+    (tool "gimp-airbrush-tool")
+    (foreground
+        (color "R'G'B'A double" 32 "\0\0\0\0\0\0\0\0\0\0\0\300\350\53\230\77\0\0\0\200N\55\302\77\0\0\0\0\0\0\360\77" 0))
+    (brush "2. Hardness 050")
+    (dynamics "Pressure Opacity")
+    (pattern "Pine")
+    (gradient "Tropical Colors")
+    (palette "Color History")
+    (brush-size 500)
+    (rate 30))
+(use-fg-bg no)
+(use-opacity-paint-mode yes)
+(use-brush yes)
+(use-dynamics yes)
+(use-mypaint-brush no)
+(use-gradient no)
+(use-pattern no)
+(use-palette no)
+(use-font no)
+
+# end of GIMP tool preset file

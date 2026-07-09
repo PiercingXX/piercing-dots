@@ -1,0 +1,215 @@
+# yazi.toml
+
+###################################
+[mgr]
+###################################
+ratio = [1, 3, 4]
+show_hidden = true
+sort_by = "natural"
+sort_dir_first = true
+linemode = "permissions"
+
+###################################
+[preview]
+###################################
+wrap = "yes"
+tab_size = 4
+max_width = 120
+max_height = 80
+
+
+
+###################################
+[plugin]
+###################################
+prepend_previewers = [
+	{ url = "*.csv", run = "rich-preview"}, # for csv files
+	{ url = "*.md", run = "rich-preview" }, # for markdown (.md) files
+	{ url = "*.rst", run = "rich-preview"}, # for restructured text (.rst) files
+	{ url = "*.ipynb", run = "rich-preview"}, # for jupyter notebooks (.ipynb)
+	{ url = "*.json", run = "rich-preview"}, # for json (.json) files
+#    { url = "*.lang_type", run = "rich-preview"} # for particular language files eg. .py, .go., .lua, etc.
+]
+
+
+
+###################################
+[opener]
+###################################
+term = [
+  { run = 'kitty --detach --directory \"$PWD\"', orphan = true, desc = "Kitty here" },
+]
+
+# Text/code editors
+edit = [
+	{ run = '$HOME/.scripts/Control-Scripts/yazi-open-nvim-smart "$@"', block = true, desc = "nvim (smart)" },
+	{ run = 'nvim "$@"', block = true, desc = "nvim (direct)" },
+	{ run = 'vim "$@"', block = true, desc = "vim" },
+	{ run = 'code -w "$@"', block = true, desc = "VS Code" },
+    { run = 'nano "$@"', block = true, desc = "nano" },
+]
+
+# Generic open via system handler
+open = [
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Video/audio players
+play = [
+	{ run = 'mpv --force-window -- "$@"', orphan = true, desc = "mpv" },
+	{ run = 'vlc "$@"', orphan = true, desc = "VLC" },
+	{ run = 'totem "$@"', orphan = true, desc = "GNOME Videos" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Image viewers
+image = [
+	{ run = 'imv "$@"', orphan = true, desc = "imv" },
+	{ run = 'gimp "$@"', orphan = true, desc = "GIMP" },
+	{ run = 'feh "$@"', orphan = true, desc = "feh" },
+	{ run = 'sxiv "$@"', orphan = true, desc = "sxiv" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# PDF/ebook viewers
+pdf = [
+	{ run = 'zathura "$@"', orphan = true, desc = "zathura" },
+	{ run = 'evince "$@"', orphan = true, desc = "evince" },
+	{ run = 'okular "$@"', orphan = true, desc = "okular" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Office documents
+office = [
+	{ run = 'libreoffice "$@"', orphan = true, desc = "LibreOffice" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+# Archives
+archive = [
+	{ run = 'file-roller "$@"', orphan = true, desc = "Archive Manager" },
+	{ run = 'ark "$@"', orphan = true, desc = "Ark" },
+	{ run = 'xarchiver "$@"', orphan = true, desc = "Xarchiver" },
+	{ run = 'xdg-open "$@"', desc = "xdg-open" },
+]
+
+[open]
+appendrules = [
+	# Code and text
+	{ url = "*.md",    use = "edit" },
+	{ url = "*.markdown", use = "edit" },
+	{ url = "*.txt",   use = "edit" },
+	{ url = "*.log",   use = "edit" },
+	{ url = "*.csv",   use = "edit" },
+	{ url = "*.tsv",   use = "edit" },
+	{ url = "*.ini",   use = "edit" },
+	{ url = "*.cfg",   use = "edit" },
+	{ url = "*.conf",  use = "edit" },
+	{ url = "*.toml",  use = "edit" },
+	{ url = "*.yaml",  use = "edit" },
+	{ url = "*.yml",   use = "edit" },
+	{ url = "*.json",  use = "edit" },
+	{ url = "*.xml",   use = "edit" },
+	{ url = "*.html",  use = [ "edit", "open" ] },
+	{ url = "*.htm",   use = [ "edit", "open" ] },
+	{ url = "*.css",   use = "edit" },
+	{ url = "*.scss",  use = "edit" },
+	{ url = "*.less",  use = "edit" },
+	{ url = "*.svg",   use = [ "edit", "image" ] },
+	{ url = "*.sh",    use = "edit" },
+	{ url = "*.bash",  use = "edit" },
+	{ url = "*.zsh",   use = "edit" },
+	{ url = "*.fish",  use = "edit" },
+	{ url = "*.py",    use = "edit" },
+	{ url = "*.rb",    use = "edit" },
+	{ url = "*.pl",    use = "edit" },
+	{ url = "*.pm",    use = "edit" },
+	{ url = "*.lua",   use = "edit" },
+	{ url = "*.go",    use = "edit" },
+	{ url = "*.rs",    use = "edit" },
+	{ url = "*.c",     use = "edit" },
+	{ url = "*.h",     use = "edit" },
+	{ url = "*.cc",    use = "edit" },
+	{ url = "*.cpp",   use = "edit" },
+	{ url = "*.hpp",   use = "edit" },
+	{ url = "*.java",  use = "edit" },
+	{ url = "*.kt",    use = "edit" },
+	{ url = "*.kts",   use = "edit" },
+	{ url = "*.cs",    use = "edit" },
+	{ url = "*.ts",    use = "edit" },
+	{ url = "*.tsx",   use = "edit" },
+	{ url = "*.js",    use = "edit" },
+	{ url = "*.jsx",   use = "edit" },
+	{ url = "*.vue",   use = "edit" },
+	{ url = "*.svelte",use = "edit" },
+	{ url = "*.php",   use = "edit" },
+	{ url = "*.swift", use = "edit" },
+	{ url = "*.sql",   use = "edit" },
+	{ url = "*.vim",   use = "edit" },
+	{ url = "*.desktop", use = "edit" },
+	{ url = "Makefile", use = "edit" },
+	{ url = "CMakeLists.txt", use = "edit" },
+
+	# Media
+	{ mime = "image/*", use = "image" },
+	{ url = "*.gif",   use = [ "image", "play" ] },
+	{ mime = "video/*", use = "play" },
+	{ mime = "audio/*", use = "play" },
+	{ url = "*.mkv",   use = "play" },
+	{ url = "*.mp4",   use = "play" },
+	{ url = "*.webm",  use = "play" },
+	{ url = "*.mp3",   use = "play" },
+	{ url = "*.flac",  use = "play" },
+	{ url = "*.opus",  use = "play" },
+	{ url = "*.wav",   use = "play" },
+	{ url = "*.avi",   use = "play" },
+
+	# Documents
+	{ mime = "application/pdf", use = "pdf" },
+	{ url = "*.pdf",    use = "pdf" },
+	{ mime = "application/epub+zip", use = [ "pdf", "open" ] },
+	{ url = "*.epub",   use = [ "pdf", "open" ] },
+	{ url = "*.djvu",   use = [ "pdf", "open" ] },
+	{ mime = "application/vnd.*", use = "office" },
+	{ url = "*.doc",    use = "office" },
+	{ url = "*.docx",   use = "office" },
+	{ url = "*.xls",    use = "office" },
+	{ url = "*.xlsx",   use = "office" },
+	{ url = "*.ppt",    use = "office" },
+	{ url = "*.pptx",   use = "office" },
+	{ url = "*.odt",    use = "office" },
+	{ url = "*.ods",    use = "office" },
+	{ url = "*.odp",    use = "office" },
+
+	# Archives and images
+	{ mime = "application/zip",                use = "archive" },
+	{ mime = "application/x-zip-compressed",   use = "archive" },
+	{ mime = "application/x-7z-compressed",    use = "archive" },
+	{ mime = "application/x-rar",              use = "archive" },
+	{ mime = "application/x-tar",              use = "archive" },
+	{ mime = "application/gzip",               use = "archive" },
+	{ mime = "application/x-bzip2",            use = "archive" },
+	{ mime = "application/x-xz",               use = "archive" },
+	{ url = "*.tar",     use = "archive" },
+	{ url = "*.tar.gz",  use = "archive" },
+	{ url = "*.tgz",     use = "archive" },
+	{ url = "*.tar.bz2", use = "archive" },
+	{ url = "*.tbz2",    use = "archive" },
+	{ url = "*.tar.xz",  use = "archive" },
+	{ url = "*.txz",     use = "archive" },
+	{ url = "*.7z",      use = "archive" },
+	{ url = "*.rar",     use = "archive" },
+
+	# Misc
+	{ url = "*.torrent", use = "open" },
+	{ url = "*.iso",     use = "open" },
+	{ url = "*.apk",     use = "open" },
+	{ url = "*.AppImage",use = "open" },
+	{ mime = "text/*",    use = "edit" },
+	{ mime = "application/javascript", use = "edit" },
+	{ mime = "application/json",       use = "edit" },
+	{ mime = "application/xml",        use = "edit" },
+
+	# Fallback
+	{ url = "*", use = "open" },
+]

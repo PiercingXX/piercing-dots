@@ -1,0 +1,120 @@
+palette = "monochrome"
+
+format = """
+[](fg:bg0)\
+$python\
+$username\
+[](bg:bg1 fg:bg0)\
+$directory\
+[](fg:bg1 bg:bg2)\
+$git_branch\
+[](fg:bg2 bg:bg3)\
+$docker_context\
+[](fg:bg3 bg:bg4)\
+$time\
+[ ](fg:bg4)\
+"""
+command_timeout = 1000
+
+[palettes.monochrome]
+bg0 = "#0a0a0a"
+bg1 = "#151515"
+bg2 = "#202020"
+bg3 = "#2c2c2c"
+bg4 = "#383838"
+fg = "#d6d6d6"
+muted = "#a8a8a8"
+bright = "#f2f2f2"
+
+[username]
+show_always = true
+style_user = "bg:bg0 fg:fg"
+style_root = "bg:bg0 fg:bright bold"
+format = '[$user ]($style)'
+
+[directory]
+style = "bg:bg1 fg:fg"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[c]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol $context ]($style)$path'
+
+[elixir]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[elm]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[git_branch]
+symbol = ""
+style = "bg:bg2 fg:fg"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+disabled = true
+style = "bg:bg2 fg:fg"
+format = '[$all_status$ahead_behind ]($style)'
+
+[golang]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[haskell]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[julia]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[nim]
+symbol = " "
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[python]
+style = "bg:bg0 fg:muted"
+format = '[(\($virtualenv\) )]($style)'
+
+[rust]
+symbol = ""
+style = "bg:bg3 fg:fg"
+format = '[ $symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:bg4 fg:bright bold"
+format = '[ $time ]($style)'

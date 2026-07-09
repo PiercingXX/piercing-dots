@@ -1,0 +1,291 @@
+#========================#
+#   i3 Configuration     #
+#========================#
+# GitHub.com/PiercingXX
+
+#------------------------#
+# Variables              #
+#------------------------#
+set $mod Mod4
+set $terminal kitty
+set $filemanager yazi
+set $browser waterfox
+set $launcher ulauncher
+set $shiftMod Shift
+set $ctrlMod Control
+set $altMod Mod1
+set $mainMod Mod4
+
+#------------------------#
+# Monitors               #
+#------------------------#
+# Desktop monitors
+exec_always --no-startup-id xrandr --output DP-1 --mode 3840x1600 --rate 144 --pos 2560x1280 --output DP-2 --mode 2560x2880 --rate 60 --pos 0x0
+
+# Workspace to monitor assignments
+workspace 1 output DP-1
+workspace 2 output DP-1
+workspace 3 output DP-1
+workspace 4 output DP-2
+workspace 5 output DP-2
+
+#------------------------#
+# Appearance             #
+#------------------------#
+font xft:JetBrainsMono Nerd Font 10
+for_window [class=".*"] border pixel 2
+gaps inner 8
+gaps outer 10
+smart_borders on
+
+#------------------------#
+# Input Configuration    #
+#------------------------#
+# Keyboard layout (Colemak with caps as backspace)
+exec_always --no-startup-id setxkbmap -layout us -variant colemak -option caps:backspace
+exec_always --no-startup-id numlockx on
+exec_always --no-startup-id bash -lc 'pgrep -x pipewire >/dev/null 2>&1 || (command -v pipewire >/dev/null 2>&1 && pipewire >/dev/null 2>&1 &); pgrep -x wireplumber >/dev/null 2>&1 || (command -v wireplumber >/dev/null 2>&1 && wireplumber >/dev/null 2>&1 &); pgrep -x pipewire-pulse >/dev/null 2>&1 || (command -v pipewire-pulse >/dev/null 2>&1 && pipewire-pulse >/dev/null 2>&1 &)'
+exec_always --no-startup-id bash -lc 'command -v libinput-gestures >/dev/null && (pgrep -f "libinput-gestures" || libinput-gestures)'
+
+# Touchpad settings
+exec_always --no-startup-id sh -c 'dev="$(xinput list --name-only | grep -i touchpad | head -n1)"; [ -n "$dev" ] && xinput set-prop "$dev" "libinput Natural Scrolling Enabled" 1 && xinput set-prop "$dev" "libinput Tapping Enabled" 1 && xinput set-prop "$dev" "libinput Click Method Enabled" 0 1 || true'
+
+# Cursor settings
+exec_always --no-startup-id xsetroot -cursor_name left_ptr
+exec_always --no-startup-id xrdb -merge ~/.Xresources
+
+# Mouse settings
+focus_follows_mouse yes
+
+#------------------------#
+# Autostart Applications #
+#------------------------#
+# Synology Drive
+exec --no-startup-id ~/.config/hypr/hyprland/scripts/SynoDrive.sh
+
+# Status Bar and System Tray
+bar {
+	position top
+	status_command i3blocks -c ~/.config/i3blocks/config
+	tray_output primary
+}
+
+# Core components (authentication, notification)
+exec --no-startup-id nm-applet
+exec --no-startup-id gnome-keyring-daemon --start --components=secrets
+exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+exec --no-startup-id dbus-update-activation-environment --all
+
+# Compositor
+exec --no-startup-id picom -b
+
+# Audio
+exec --no-startup-id easyeffects --gapplication-service
+
+# Clipboard: history
+exec --no-startup-id bash ~/.scripts/Control-Scripts/wm-clipboard-daemon.sh
+exec --no-startup-id bash ~/.config/i3/scripts/workspace-notify-i3.sh
+
+# Docker
+exec --no-startup-id systemctl --user start docker-desktop
+
+# Wallpaper
+exec --no-startup-id sh -lc 'img="$HOME/.config/wall.png"; if [ ! -f "$img" ]; then img=$(find "$HOME/Pictures/backgrounds" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) 2>/dev/null | shuf -n1); fi; [ -n "$img" ] && feh --bg-scale --no-fehbg "$img"'
+
+#------------------------#
+# Window Colors          #
+#------------------------#
+client.focused          #ffffff #ffffff #000000 #ffffff   #ffffff
+client.unfocused        #414141 #414141 #ffffff #414141   #414141
+client.focused_inactive #414141 #414141 #ffffff #414141   #414141
+client.placeholder      #414141 #414141 #ffffff #414141   #414141
+client.urgent           #ff6767 #ff6767 #ffffff #ff6767   #ff6767
+client.background       #000000
+
+# Use Mouse+$mod to drag floating windows to their wanted position
+floating_modifier $mod
+
+# kill focused window
+bindsym $mod+q kill
+
+# Launcher
+bindsym $mod+space exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+
+bindsym $mod+w exec kitty # Open kitty
+bindsym $mod+t exec kitty tmux # Open tmux inside kitty
+bindsym Mod1+Tab exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+bindsym $mod+Shift+z exec nautilus --new-window # Open nautilus
+bindsym $mod+z exec kitty yazi # Open yazi
+bindsym $mod+Shift+s exec pavucontrol # Launch pavucontrol (volume mixer)
+bindsym $mod+Mod1+s exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center # Launch GNOME Settings
+bindsym $mod+s exec kitty ~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh # Open settings menu
+bindsym Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh region # Screenshot a region
+bindsym Shift+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh window # Screenshot a window
+bindsym $mod+x layout toggle split # Toggle split mode
+
+# Applications
+bindsym $mod+c exec waterfox || flatpak run net.waterfox.waterfox # Internet Browser
+bindsym $mod+d exec discord || flatpak run com.discordapp.Discord # Discord
+bindsym $mod+Shift+v exec opencode-desktop
+bindsym $mod+v exec kitty nvim
+bindsym $mod+Mod1+v exec code # Visual Studio Code
+bindsym $mod+b exec obsidian || flatpak run md.obsidian.Obsidian # Obsidian
+bindsym $mod+g exec gimp || flatpak run org.gimp.GIMP
+bindsym Control+Mod1+Delete exec kitty flatpak run io.missioncenter.MissionCenter
+bindsym Control+Mod1+Shift+k exec sudo shutdown -h now
+
+# Notes and To-Do Lists
+bindsym $mod+n exec kitty ~/.scripts/Note-Scripts/open_daily_note.sh --split
+bindsym $mod+Shift+n exec kitty ~/.scripts/Note-Scripts/open_daily_note.sh --view
+bindsym $mod+Mod1+n exec kitty ~/.scripts/Note-Scripts/open_daily_note.sh --todo
+bindsym $mod+Shift+Mod1+n exec kitty ~/.scripts/Note-Scripts/open_daily_note.sh --directory
+bindsym $mod+i exec kitty ~/.scripts/Note-Scripts/inventory.sh
+
+# Server Monitor
+bindsym $mod+m exec kitty -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -monitor
+bindsym $mod+Shift+m exec kitty -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -remote
+
+# Clipboard History
+bindsym $mod+Shift+y exec bash ~/.scripts/Control-Scripts/wm-clipboard-menu.sh # Clipboard history >> clipboard
+
+# Show Keybinds
+bindsym $mod+slash exec xdg-open "/home/$USER/.scripts/Control-Scripts/keybinds.html"
+
+# Audio Output/Input Manager
+bindsym $mod+o exec ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output
+
+# Local AI
+bindsym $mod+a exec kitty ~/.scripts/Control-Scripts/launch-skippy-remote.sh
+bindsym $mod+Shift+a exec kitty ~/.scripts/Control-Scripts/launch-ollama-remote.sh --skippy
+bindsym $mod+Mod1+a exec kitty ~/.scripts/Control-Scripts/launch-ollama-remote.sh --gemma
+
+# Reload the configuration file
+bindsym $mod+Shift+c reload
+# restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
+bindsym $mod+Shift+r restart
+# Reload i3blocks config
+bindsym $mod+Shift+b exec pkill -SIGUSR1 i3blocks
+
+###---Screenshot---###
+bindsym $mod+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh full
+bindsym $mod+shift+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh select
+bindsym $mod+control+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh fulltime
+bindsym $mod+control+shift+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh selecttime
+
+###---Toggle touchpad---###
+bindsym F7 exec bash ~/.scripts/Control-Scripts/wm-toggle-touchpad.sh
+
+#Session
+bindsym $mod+grave exec bash ~/.scripts/Control-Scripts/wm-lock.sh # Lock screen
+bindsym $mod+Shift+grave exec sleep 0.1 && systemctl suspend || loginctl suspend # Suspend system
+bindsym Control+Shift+Mod1+Delete exec systemctl poweroff || loginctl poweroff # Power off
+bindsym $mod+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
+
+
+
+
+
+###---Audio controls---###
+bindsym $mod+p exec ~/.scripts/Control-Scripts/notify-time.sh
+bindsym $mod+shift+p exec ~/.scripts/Control-Scripts/notify-calendar.sh
+bindsym $mod+Up exec ~/.scripts/Control-Scripts/volume.sh inc
+bindsym $mod+Down exec ~/.scripts/Control-Scripts/volume.sh dec
+bindsym $mod+Control+m exec ~/.scripts/Control-Scripts/volume.sh mute
+bindsym XF86AudioRaiseVolume exec ~/.scripts/Control-Scripts/volume.sh inc
+bindsym XF86AudioLowerVolume exec ~/.scripts/Control-Scripts/volume.sh dec
+bindsym XF86AudioMute exec ~/.scripts/Control-Scripts/volume.sh mute
+
+###---Brightness---###
+bindsym $mod+Right exec ~/.scripts/Control-Scripts/brightness.sh inc
+bindsym $mod+Left exec ~/.scripts/Control-Scripts/brightness.sh dec
+bindsym XF86MonBrightnessUp exec ~/.scripts/Control-Scripts/brightness.sh inc
+bindsym XF86MonBrightnessDown exec ~/.scripts/Control-Scripts/brightness.sh dec
+
+bindsym $mod+Shift+f fullscreen toggle # Toggle fullscreen mode
+bindsym $mod+f floating toggle # Toggle floating mode
+
+# Move focus:
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+# Move focused window
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# Resize window with vim keys
+bindsym $mod+Mod1+h resize shrink width 100 px or 5 ppt
+bindsym $mod+Mod1+j resize grow height 100 px or 5 ppt
+bindsym $mod+Mod1+k resize shrink height 100 px or 5 ppt
+bindsym $mod+Mod1+l resize grow width 100 px or 5 ppt
+
+# Define names for default workspaces for which we configure key bindings later on.
+# We use variables to avoid repeating the names in multiple places.
+set $ws1 "1"
+set $ws2 "2"
+set $ws3 "3"
+set $ws4 "4"
+set $ws5 "5"
+set $ws6 "6"
+set $ws7 "7"
+set $ws8 "8"
+set $ws9 "9"
+set $ws10 "10"
+
+# switch to workspace
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+bindsym $mod+0 workspace $ws10
+
+# move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace $ws1; workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2; workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3; workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4; workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5; workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6; workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7; workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8; workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9; workspace $ws9
+bindsym $mod+Shift+0 move container to workspace $ws10; workspace $ws10
+
+# move focused window and swap to that screen
+bindsym $mod+Control+1 move container to workspace $ws1; workspace $ws1
+bindsym $mod+Control+2 move container to workspace $ws2; workspace $ws2
+bindsym $mod+Control+3 move container to workspace $ws3; workspace $ws3
+bindsym $mod+Control+4 move container to workspace $ws4; workspace $ws4
+bindsym $mod+Control+5 move container to workspace $ws5; workspace $ws5
+bindsym $mod+Control+6 move container to workspace $ws6; workspace $ws6
+bindsym $mod+Control+7 move container to workspace $ws7; workspace $ws7
+bindsym $mod+Control+8 move container to workspace $ws8; workspace $ws8
+bindsym $mod+Control+9 move container to workspace $ws9; workspace $ws9
+bindsym $mod+Control+0 move container to workspace $ws10; workspace $ws10
+
+# resize window (you can also use the mouse for that)
+mode "resize" {
+		# These bindings trigger as soon as you enter the resize mode
+
+		# Pressing left will shrink the window’s width.
+		# Pressing right will grow the window’s width.
+		# Pressing up will shrink the window’s height.
+		# Pressing down will grow the window’s height.
+	bindsym Left resize shrink width 10 px or 5 ppt
+	bindsym Down resize grow height 10 px or 5 ppt
+	bindsym Up resize shrink height 10 px or 5 ppt
+	bindsym Right resize grow width 10 px or 5 ppt
+		# back to normal: Enter or Escape or $mod+r
+		bindsym Return mode "default"
+		bindsym Escape mode "default"
+		bindsym $mod+r mode "default"
+}
+bindsym $mod+r mode "resize"

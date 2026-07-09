@@ -1,0 +1,14 @@
+#!/bin/bash
+
+interface="${1:-}"
+
+if command -v nmcli >/dev/null 2>&1; then
+    if [ -n "$interface" ]; then
+        nmcli -t -f IN-USE,SSID,SIGNAL dev wifi list ifname "$interface" 2>/dev/null | awk -F: '$1=="*" {print $2 " " $3 "%"; found=1} END {if (!found) print "disconnected"}'
+    else
+        nmcli -t -f IN-USE,SSID,SIGNAL dev wifi list 2>/dev/null | awk -F: '$1=="*" {print $2 " " $3 "%"; found=1} END {if (!found) print "disconnected"}'
+    fi
+    exit 0
+fi
+
+echo "disconnected"

@@ -1,0 +1,32 @@
+{
+    layer4 {
+        127.0.0.1:3478 {
+            route {
+                proxy {
+                    upstream nextcloud-aio-talk:3478
+                }
+            }
+        }
+        127.0.0.1:3479 {
+            route {
+                proxy {
+                    upstream nextcloud-aio-talk:3479
+                }
+            }
+        }
+    }
+}
+
+https://{$NC_DOMAIN} {
+    reverse_proxy nextcloud-aio-apache:11000 {
+        header_up X-Forwarded-Proto "https"
+        header_up Host {host}
+    }
+}
+
+http://{$NC_DOMAIN} {
+    reverse_proxy nextcloud-aio-apache:11000 {
+        header_up X-Forwarded-Proto "http"
+        header_up Host {host}
+    }
+}

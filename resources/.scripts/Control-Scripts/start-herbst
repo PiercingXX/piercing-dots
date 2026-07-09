@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() {
+    printf '[start-herbst] %s\n' "$*" >&2
+    exit 1
+}
+
+if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
+    die "A graphical session is already active. Run from a text TTY."
+fi
+
+tty_path="$(tty 2>/dev/null || true)"
+[[ "$tty_path" == /dev/tty* ]] || die "No real TTY detected. Run from a text console."
+
+command -v dbus-run-session >/dev/null 2>&1 || die "Missing required command: dbus-run-session"
+command -v startx >/dev/null 2>&1 || die "Missing required command: startx"
+command -v herbstluftwm >/dev/null 2>&1 || die "Missing required command: herbstluftwm"
+
+vt_num="${XDG_VTNR:-}"
+if [[ -z "$vt_num" && "$tty_path" =~ ^/dev/tty([0-9]+)$ ]]; then
+    vt_num="${BASH_REMATCH[1]}"
+fi
+
+client_args=("$(command -v herbstluftwm)")
+server_args=(-keeptty)
+
+if (($#)); then
+    client_args+=("$@")
+fi
+
+if [[ -n "$vt_num" ]]; then
+    server_args+=("vt${vt_num}")
+fi
+
+export DESKTOP_SESSION=herbstluftwm
+export XDG_CURRENT_DESKTOP=herbstluftwm
+export XDG_SESSION_DESKTOP=herbstluftwm
+export XDG_SESSION_TYPE=x11
+
+exec dbus-run-session startx "${client_args[@]}" -- "${server_args[@]}"

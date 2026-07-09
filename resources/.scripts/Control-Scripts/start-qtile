@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() {
+    printf '[start-qtile] %s\n' "$*" >&2
+    exit 1
+}
+
+if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
+    die "A graphical session is already active. Run from a text TTY."
+fi
+
+backend="wayland"
+if [[ "${1:-}" == "--x11" ]]; then
+    backend="x11"
+    shift
+elif [[ "${1:-}" == "--wayland" ]]; then
+    backend="wayland"
+    shift
+fi
+
+tty_path="$(tty 2>/dev/null || true)"
+[[ "$tty_path" == /dev/tty* ]] || die "No real TTY detected. Run from a text console."
+
+command -v dbus-run-session >/dev/null 2>&1 || die "Missing required command: dbus-run-session"
+command -v qtile >/dev/null 2>&1 || die "Missing required command: qtile"
+
+export DESKTOP_SESSION=qtile
+export XDG_CURRENT_DESKTOP=qtile
+export XDG_SESSION_DESKTOP=qtile
+
+if [[ "$backend" == "wayland" ]]; then
+    export XDG_SESSION_TYPE=wayland
+    exec dbus-run-session qtile start -b wayland "$@"
+fi
+
+command -v startx >/dev/null 2>&1 || die "Missing required command: startx"
+
+vt_num="${XDG_VTNR:-}"
+if [[ -z "$vt_num" && "$tty_path" =~ ^/dev/tty([0-9]+)$ ]]; then
+    vt_num="${BASH_REMATCH[1]}"
+fi
+
+client_args=("$(command -v qtile)" start)
+server_args=(-keeptty)
+
+if (($#)); then
+    client_args+=("$@")
+fi
+
+if [[ -n "$vt_num" ]]; then
+    server_args+=("vt${vt_num}")
+fi
+
+export XDG_SESSION_TYPE=x11
+
+exec dbus-run-session startx "${client_args[@]}" -- "${server_args[@]}"

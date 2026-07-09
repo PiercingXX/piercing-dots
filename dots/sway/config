@@ -1,0 +1,358 @@
+#========================#
+#   Sway Configuration   #
+#========================#
+# GitHub.com/PiercingXX
+
+#------------------------#
+# Variables              #
+#------------------------#
+set $mod Mod4
+set $terminal kitty
+set $filemanager yazi
+set $browser waterfox
+set $launcher ulauncher
+set $shiftMod SHIFT
+set $ctrlMod CTRL
+set $altMod ALT
+set $mainMod Mod4
+
+#------------------------#
+# Monitors               #
+#------------------------#
+# Do not hardcode connector names here. Sway will auto-detect outputs,
+# which avoids broken layouts when monitor names differ between systems.
+# Keep the built-in panel in portrait orientation.
+output DSI-1 transform 90
+
+#------------------------#
+# Workspace Switching    #
+#------------------------#
+# Switch between current and last workspace
+bindsym $mod+backslash workspace back_and_forth
+# Next/previous workspace
+bindsym $mod+period workspace next
+bindsym $mod+comma workspace prev
+
+#------------------------#
+# Misc                   #
+#------------------------#
+output * adaptive_sync on
+
+#------------------------#
+# Environment Variables  #
+#------------------------#
+exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
+exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
+
+#------------------------#
+# Autostart Applications #
+#------------------------#
+# Synology Drive
+exec ~/.config/hypr/hyprland/scripts/SynoDrive.sh
+
+# Bar, wallpaper
+exec bash ~/.scripts/Control-Scripts/toggle-topbar.sh --startup
+exec nm-applet
+exec xdg-user-dirs-update
+exec_always sh -lc 'pkill -x swaybg >/dev/null 2>&1 || true; img=$(find "$HOME/Pictures/backgrounds" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) 2>/dev/null | shuf -n1); [ -n "$img" ] && swaybg -i "$img" -m fill'
+# Keep Sway native bindgesture handling in charge of 3/4-finger gestures.
+# libinput-gestures can conflict with Sway's gesture bindings.
+
+# Core components (authentication, lock screen, notification daemon)
+exec bash -lc 'if command -v swaync >/dev/null 2>&1; then pgrep -x swaync >/dev/null || swaync; elif command -v dunst >/dev/null 2>&1; then pgrep -x dunst >/dev/null || dunst; fi'
+exec bash ~/.config/sway/scripts/workspace-notify-sway.sh
+exec gnome-keyring-daemon --start --components=secrets
+exec systemctl --user start plasma-polkit-agent
+exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+exec dbus-update-activation-environment --all
+exec sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+
+# Audio
+exec bash ~/.config/sway/scripts/audio-session.sh
+exec easyeffects --gapplication-service
+
+# Clipboard: history
+exec wl-paste --watch cliphist store &
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+
+# Docker
+exec systemctl --user start docker-desktop
+
+#------------------------#
+# Input Configuration    #
+#------------------------#
+# Keyboard
+input "type:keyboard" {
+    xkb_layout us
+    xkb_variant colemak
+    xkb_options caps:backspace
+    xkb_numlock enabled
+}
+
+# Touchpad
+input "type:touchpad" {
+    natural_scroll enabled
+    tap enabled
+    dwt enabled
+    scroll_factor 0.5
+    click_method clickfinger
+}
+
+# Mouse
+focus_follows_mouse yes
+
+#------------------------#
+# Appearance             #
+#------------------------#
+default_border pixel 2
+default_floating_border pixel 2
+gaps inner 8
+gaps outer 10
+smart_borders on
+
+#------------------------#
+# Window Colors          #
+#------------------------#
+# Active border: white/black alternating pattern (matching Hyprland)
+client.focused          #ffffff #ffffff #000000
+client.unfocused        #414141 #414141 #ffffff
+client.focused_inactive #414141 #414141 #ffffff
+client.placeholder      #414141 #414141 #ffffff
+client.urgent           #ff6767 #ff6767 #ffffff
+client.background       #000000
+
+#------------------------#
+# Floating Windows       #
+#------------------------#
+# Always float certain windows
+for_window [app_id="org.gnome.Calculator"] floating enable, resize set 400 600
+for_window [app_id="pavucontrol"] floating enable
+for_window [app_id="blueman-manager"] floating enable
+for_window [app_id="org.gnome.Settings"] floating enable
+for_window [class="com.valvesoftware.Steam"] floating enable, resize set 1000 600
+for_window [title="Steam"] floating enable, resize set 1000 600
+for_window [class="steamwebhelper"] floating enable, resize set 1000 600
+
+# Picture-in-Picture
+for_window [title="Picture-in-Picture"] floating enable, sticky enable, resize set 25ppt 25ppt, move position 73ppt 72ppt
+for_window [title="Picture in Picture"] floating enable, sticky enable, resize set 25ppt 25ppt, move position 73ppt 72ppt
+
+# File Dialogs
+for_window [title="Open File"] floating enable
+for_window [title="Select a File"] floating enable
+for_window [title="Choose wallpaper"] floating enable
+for_window [title="Open Folder"] floating enable
+for_window [title="Save As"] floating enable
+for_window [title="Library"] floating enable
+for_window [title="File Upload"] floating enable
+
+# Generic floating rules
+for_window [app_id="pop-up"] floating enable
+for_window [app_id="bubble"] floating enable
+for_window [app_id="task_dialog"] floating enable
+for_window [app_id="Preferences"] floating enable
+for_window [app_id="dialog"] floating enable
+for_window [app_id="menu"] floating enable
+for_window [app_id="Organizer"] floating enable
+for_window [app_id="About"] floating enable
+for_window [app_id="toolbox"] floating enable
+for_window [app_id="page-info"] floating enable
+for_window [app_id="webconsole"] floating enable
+for_window [app_id="Authy"] floating enable
+for_window [app_id="termfloat"] floating enable, resize set 960 540
+for_window [app_id="mpv"] floating enable, resize set 960 540
+for_window [app_id="Nautilus"] floating enable, resize set 960 540
+
+# Sticky floating windows
+for_window [app_id="danmufloat"] floating enable, sticky enable, resize set 960 540
+
+#------------------------#
+# Direction Keys (Vim)   #
+#------------------------#
+set $left  h
+set $down  j
+set $up    k
+set $right l
+
+#------------------------#
+# Key Bindings           #
+#------------------------#
+# Drag floating windows
+floating_modifier $mod normal
+
+# Essentials
+bindsym --release Super_L exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+bindsym $mainMod+space exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+bindsym $mainMod+q kill
+bindsym $mainMod+w exec $terminal
+bindsym $mainMod+t exec $terminal tmux new -A -s main
+
+bindsym Mod1+Tab exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh
+bindsym $mainMod+Shift+z exec nautilus --new-window
+bindsym $mainMod+z exec $terminal $filemanager
+bindsym $mainMod+Shift+s exec pavucontrol
+bindsym $mainMod+Mod1+s exec XDG_CURRENT_DESKTOP="gnome" gnome-control-center
+bindsym $mainMod+s exec $terminal ~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh
+bindsym $mainMod+Shift+f fullscreen
+bindsym $mainMod+f floating toggle
+bindsym $mainMod+r exec bash ~/.scripts/Control-Scripts/toggle-topbar.sh
+bindsym Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh region
+bindsym Shift+Print exec bash ~/.scripts/Control-Scripts/wm-screenshot.sh window
+bindsym $mainMod+x layout toggle split
+
+# Notes and To-Do Lists
+bindsym $mainMod+n exec $terminal ~/.scripts/Note-Scripts/open_daily_note.sh --split
+bindsym $mainMod+Shift+n exec $terminal ~/.scripts/Note-Scripts/open_daily_note.sh --view
+bindsym $mainMod+Mod1+n exec $terminal ~/.scripts/Note-Scripts/open_daily_note.sh --todo
+bindsym $mainMod+Shift+Mod1+n exec $terminal ~/.scripts/Note-Scripts/open_daily_note.sh --directory
+bindsym $mainMod+i exec $terminal ~/.scripts/Note-Scripts/inventory.sh
+
+# Server Monitor
+bindsym $mainMod+m exec $terminal -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -monitor
+bindsym $mainMod+Shift+m exec $terminal -o allow_remote_control=yes -o close_on_child_death=yes ~/.scripts/Control-Scripts/launch-server-monitor.sh -remote
+
+# Clipboard History
+bindsym $mainMod+Shift+y exec bash ~/.scripts/Control-Scripts/wm-clipboard-menu.sh
+
+# Applications
+bindsym $mainMod+c exec $browser || flatpak run net.waterfox.waterfox
+bindsym $mainMod+d exec discord || flatpak run com.discordapp.Discord
+bindsym $mainMod+Shift+v exec opencode-desktop
+bindsym $mainMod+v exec $terminal nvim
+bindsym $mainMod+Mod1+v exec code
+bindsym $mainMod+b exec obsidian || flatpak run md.obsidian.Obsidian
+bindsym $mainMod+g exec gimp || flatpak run org.gimp.GIMP
+bindsym Ctrl+Mod1+Delete exec $terminal flatpak run io.missioncenter.MissionCenter
+bindsym Ctrl+Mod1+Shift+k exec sudo shutdown -h now
+
+# Audio Output/Input Manager
+bindsym $mainMod+o exec ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output
+bindsym $mainMod+p exec ~/.scripts/Control-Scripts/notify-time.sh
+bindsym $mainMod+Shift+p exec ~/.scripts/Control-Scripts/notify-calendar.sh
+
+# Show Keybinds
+bindsym $mainMod+slash exec xdg-open "/home/$USER/.scripts/Control-Scripts/keybinds.html"
+
+# Local AI
+bindsym $mainMod+a exec $terminal ~/.scripts/Control-Scripts/launch-skippy-remote.sh
+bindsym $mainMod+Shift+a exec $terminal ~/.scripts/Control-Scripts/launch-ollama-remote.sh --skippy
+bindsym $mainMod+Mod1+a exec $terminal ~/.scripts/Control-Scripts/launch-ollama-remote.sh --gemma
+
+# Session
+bindsym $mainMod+grave exec bash ~/.scripts/Control-Scripts/wm-lock.sh
+bindsym $mainMod+Shift+grave exec sleep 0.1 && systemctl suspend || loginctl suspend
+bindsym Ctrl+Shift+Mod1+$mainMod+Delete exec systemctl poweroff || loginctl poweroff
+
+# Workspace navigation
+# Move focus with vim keys
+bindsym $mainMod+$left focus left
+bindsym $mainMod+$down focus down
+bindsym $mainMod+$up focus up
+bindsym $mainMod+$right focus right
+
+# Move window with vim keys
+bindsym $mainMod+Shift+$left move left
+bindsym $mainMod+Shift+$down move down
+bindsym $mainMod+Shift+$up move up
+bindsym $mainMod+Shift+$right move right
+
+# Resize window with vim keys
+bindsym $mainMod+Mod1+$left resize shrink width 100px
+bindsym $mainMod+Mod1+$down resize grow height 100px
+bindsym $mainMod+Mod1+$up resize shrink height 100px
+bindsym $mainMod+Mod1+$right resize grow width 100px
+#-------------#
+# Workspaces: #
+#-------------#
+# Switch to workspace
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
+bindsym $mod+7 workspace number 7
+bindsym $mod+8 workspace number 8
+bindsym $mod+9 workspace number 9
+bindsym $mod+0 workspace number 10
+
+# Move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace number 1
+bindsym $mod+Shift+2 move container to workspace number 2
+bindsym $mod+Shift+3 move container to workspace number 3
+bindsym $mod+Shift+4 move container to workspace number 4
+bindsym $mod+Shift+5 move container to workspace number 5
+bindsym $mod+Shift+6 move container to workspace number 6
+bindsym $mod+Shift+7 move container to workspace number 7
+bindsym $mod+Shift+8 move container to workspace number 8
+bindsym $mod+Shift+9 move container to workspace number 9
+bindsym $mod+Shift+0 move container to workspace number 10
+
+# Move focused container to workspace (without following, Hypr ALT parity)
+bindsym $mod+Mod1+1 move container to workspace number 1
+bindsym $mod+Mod1+2 move container to workspace number 2
+bindsym $mod+Mod1+3 move container to workspace number 3
+bindsym $mod+Mod1+4 move container to workspace number 4
+bindsym $mod+Mod1+5 move container to workspace number 5
+bindsym $mod+Mod1+6 move container to workspace number 6
+bindsym $mod+Mod1+7 move container to workspace number 7
+bindsym $mod+Mod1+8 move container to workspace number 8
+bindsym $mod+Mod1+9 move container to workspace number 9
+bindsym $mod+Mod1+0 move container to workspace number 10
+
+# Move focused container to workspace (and follow)
+bindsym $mod+Ctrl+1 move container to workspace number 1, workspace 1
+bindsym $mod+Ctrl+2 move container to workspace number 2, workspace 2
+bindsym $mod+Ctrl+3 move container to workspace number 3, workspace 3
+bindsym $mod+Ctrl+4 move container to workspace number 4, workspace 4
+bindsym $mod+Ctrl+5 move container to workspace number 5, workspace 5
+bindsym $mod+Ctrl+6 move container to workspace number 6, workspace 6
+bindsym $mod+Ctrl+7 move container to workspace number 7, workspace 7
+bindsym $mod+Ctrl+8 move container to workspace number 8, workspace 8
+bindsym $mod+Ctrl+9 move container to workspace number 9, workspace 9
+bindsym $mod+Ctrl+0 move container to workspace number 10, workspace 10
+
+#---------------#
+# Layout stuff: #
+#---------------#
+bindsym $mod+semicolon splitv
+bindsym $mod+apostrophe splith
+
+#-------------#
+# Scratchpad: #
+#-------------#
+bindsym $mod+minus move scratchpad
+bindsym $mod+equal scratchpad show
+
+#----------------------#
+# Resizing containers: #
+#----------------------#
+# Better resize with Shift+Ctrl+hjkl
+bindsym Shift+Ctrl+h resize shrink width 5 px or 5 ppt
+bindsym Shift+Ctrl+k resize grow height 5 px or 5 ppt
+bindsym Shift+Ctrl+j resize shrink height 5 px or 5 ppt
+bindsym Shift+Ctrl+l resize grow width 5 px or 5 ppt
+bindsym Shift+Ctrl+Left resize shrink width 5 px or 5 ppt
+bindsym Shift+Ctrl+Up resize grow height 5 px or 5 ppt
+bindsym Shift+Ctrl+Down resize shrink height 5 px or 5 ppt
+bindsym Shift+Ctrl+Right resize grow width 5 px or 5 ppt
+
+#-------------------------------------------------#
+# Control volume, monitor brightness, media       #
+#-------------------------------------------------#
+bindsym XF86AudioRaiseVolume exec ~/.scripts/Control-Scripts/volume.sh inc
+bindsym XF86AudioLowerVolume exec ~/.scripts/Control-Scripts/volume.sh dec
+bindsym XF86AudioMute exec ~/.scripts/Control-Scripts/volume.sh mute
+bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym XF86MonBrightnessUp exec ~/.scripts/Control-Scripts/brightness.sh inc
+bindsym XF86MonBrightnessDown exec ~/.scripts/Control-Scripts/brightness.sh dec
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
+
+# Touchpad gestures
+bindgesture swipe:3:left workspace next
+bindgesture swipe:3:right workspace prev
+bindgesture swipe:4:down kill
+bindgesture swipe:3:up exec bash ~/.scripts/Control-Scripts/wm-app-launcher.sh

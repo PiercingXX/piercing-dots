@@ -1,0 +1,100 @@
+# i3blocks config file
+#
+# Please see man i3blocks for a complete reference!
+# The man page is also hosted at http://vivien.github.io/i3blocks
+#
+# List of valid properties:
+#
+# align
+# color
+# command
+# full_text
+# instance
+# interval
+# label
+# min_width
+# name
+# separator
+# separator_block_width
+# short_text
+# signal
+# urgent
+
+# Global properties
+#
+# The top properties below are applied to every block, but can be overridden.
+# Each block command defaults to the script name to avoid boilerplate.
+command=/usr/lib/i3blocks/$BLOCK_NAME
+separator_block_width=15
+markup=none
+
+
+# Display any packages to install
+[packages]
+command=echo "📦 $(bash ~/.config/i3/scripts/i3updates)"
+separator=true
+interval=1800
+signal=3
+
+# Memory usage
+#
+# The type defaults to "mem" if the instance is not specified.
+[memory]
+separator=false
+interval=30
+command=bash ~/.config/i3/scripts/i3memory
+
+# Disk usage
+#
+# The directory defaults to $HOME if the instance is not specified.
+# The script may be called with a optional argument to set the alert
+# (defaults to 10 for 10%).
+[disk]
+interval=30
+command=bash ~/.config/i3/scripts/i3disk
+
+# Wifi connectivity level
+[wifi]
+command=echo "📡 $(bash ~/.config/i3/scripts/i3wifi wlp2s0)"
+interval=5
+
+# Battery indicator
+#
+# The battery instance defaults to 0.
+[battery]
+command=~/.config/i3/scripts/i3battery
+interval=30
+
+# Volume indicator
+#
+# Displays both the master and the headphone volume
+[volume]
+command=bash ~/.config/i3/scripts/i3volume
+interval=once
+signal=1
+
+# Focused window title
+[window]
+command=bash ~/.config/i3/scripts/i3window
+interval=5
+align=center
+separator=false
+
+# Backlight Level
+[light]
+command=echo "☀️️ $(light -G)%"
+interval=once
+signal=4
+
+# Date Time
+#
+[time]
+command=date '{:%H:%M %a %b %d}'
+interval=5
+align=center
+
+# Power button block
+[powerbutton]
+command=~/.config/i3/scripts/i3powerbutton
+interval=once
+label=⏻

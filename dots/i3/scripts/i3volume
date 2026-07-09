@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if ! command -v pactl >/dev/null 2>&1; then
+    echo "VOL N/A"
+    exit 0
+fi
+
+mute_state="$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | awk '{print $2}')"
+volume="$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -o '[0-9]\+%' | head -n 1)"
+
+if [ "$mute_state" = "yes" ]; then
+    echo "MUTED"
+else
+    echo "VOL ${volume:-0%}"
+fi

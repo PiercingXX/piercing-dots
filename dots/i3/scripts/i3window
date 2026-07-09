@@ -1,0 +1,23 @@
+#!/bin/bash
+
+if ! i3-msg -t get_tree >/dev/null 2>&1; then
+    exit 0
+fi
+
+python3 - <<'PY'
+import json
+import subprocess
+
+tree = json.loads(subprocess.check_output(["i3-msg", "-t", "get_tree"]))
+
+def walk(node):
+    if node.get("focused") and node.get("window_properties") is not None:
+        return node.get("name", "")
+    for child in node.get("nodes", []) + node.get("floating_nodes", []):
+        title = walk(child)
+        if title:
+            return title
+    return ""
+
+print(walk(tree))
+PY

@@ -1,0 +1,68 @@
+@mixin player {
+  .artwork {
+    @include image($cover: true);
+    border-radius: $radius;
+    min-width: 6rem;
+    min-height: 6rem;
+  }
+
+  .metadata {
+    .title {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .artist,
+    .album {
+      font-size: 1rem;
+    }
+  }
+
+  .progress {
+    @include slider;
+    margin: .5rem 0;
+  }
+
+  .position {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  .icon {
+    @include image;
+    margin-right: -.5rem;
+  }
+
+  .time {
+    font-size: .9rem;
+    font-weight: 500;
+  }
+
+  .controls {
+    .loop,
+    .shuffle {
+      font-size: 1.1rem;
+    }
+
+    .toggle {
+      font-size: 1.5rem;
+    }
+
+    .previous,
+    .next{
+      font-size: 1.3rem;
+    }
+
+    .disabled {
+      color: transparentize($fg-color, 0.5);
+    }
+  }
+
+  .volume {
+    padding: 1rem;
+
+    .volume-scale {
+      @include slider;
+    }
+  }
+}

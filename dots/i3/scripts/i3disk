@@ -1,0 +1,3 @@
+#!/bin/bash
+
+df -h "$HOME" | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}'

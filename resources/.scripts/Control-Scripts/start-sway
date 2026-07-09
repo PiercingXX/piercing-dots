@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+die() {
+    printf '[start-sway] %s\n' "$*" >&2
+    exit 1
+}
+
+if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
+    die "A graphical session is already active. Run from a text TTY."
+fi
+
+tty_path="$(tty 2>/dev/null || true)"
+[[ "$tty_path" == /dev/tty* ]] || die "No real TTY detected. Run from a text console."
+
+command -v dbus-run-session >/dev/null 2>&1 || die "Missing required command: dbus-run-session"
+command -v sway >/dev/null 2>&1 || die "Missing required command: sway"
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=sway
+export XDG_SESSION_TYPE=wayland
+
+exec dbus-run-session sway "$@"

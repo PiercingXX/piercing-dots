@@ -1,0 +1,18 @@
+{
+    "arrow-key-aliases": "hjkl",
+    "base-width": 750,
+    "clear-previous-query": true,
+    "close-on-focus-out": true,
+    "daemonless": false,
+    "disable-desktop-filters": false,
+    "enable-application-mode": true,
+    "grab-mouse-pointer": false,
+    "jump-keys": "1234567890abcdefghijklmnopqrstuvwxyz",
+    "max-recent-apps": 0,
+    "raise-if-started": false,
+    "render-on-screen": "mouse-pointer-monitor",
+    "show-recent-apps": "6",
+    "show-tray-icon": true,
+    "theme-name": "Aura-Theme",
+    "tray-icon-name": "ulauncher-indicator-symbolic"
+}

@@ -1,0 +1,25 @@
+# GIMP tool preset file
+
+(icon-name "gimp-tool-clone")
+(name "Smooth Clone (Press.Ctrl)")
+(tool-options "GimpCloneOptions"
+    (tool "gimp-clone-tool")
+    (foreground
+        (color "R'G'B'A double" 32 "\0\0\0\0Pf\324\77\0\0\0\0Pf\324\77\0\0\0\0Pf\324\77\0\0\0\0\0\0\360\77" 0))
+    (brush "2. Hardness 050")
+    (dynamics "Pressure Size")
+    (pattern "Paper")
+    (palette "Color History")
+    (brush-size 150)
+    (sample-merged yes))
+(use-fg-bg no)
+(use-opacity-paint-mode yes)
+(use-brush yes)
+(use-dynamics yes)
+(use-mypaint-brush no)
+(use-gradient no)
+(use-pattern yes)
+(use-palette no)
+(use-font no)
+
+# end of GIMP tool preset file
