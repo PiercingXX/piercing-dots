@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "profiles": {
+    "marketing": {
+      "description": "Landing and conversion surfaces",
+      "requiredAny": [
+        "hero",
+        "pricing",
+        "testimonial",
+        "cta",
+        "features"
+      ],
+      "minSectionCount": 3,
+      "mustHaveH1": true,
+      "mustHaveCta": true
+    },
+    "app": {
+      "description": "Dashboards and product app surfaces",
+      "requiredAny": [
+        "sidebar",
+        "nav",
+        "table",
+        "card",
+        "chart"
+      ],
+      "minSectionCount": 2,
+      "mustHaveH1": true,
+      "mustHaveCta": false
+    },
+    "mobile": {
+      "description": "Mobile app screens and onboarding",
+      "requiredAny": [
+        "phone-frame",
+        "screen",
+        "status-bar",
+        "onboarding"
+      ],
+      "minSectionCount": 1,
+      "mustHaveH1": true,
+      "mustHaveCta": true
+    },
+    "document": {
+      "description": "Runbooks, notes, OKRs, reports, invoices",
+      "requiredAny": [
+        "table",
+        "section",
+        "summary",
+        "owner",
+        "status"
+      ],
+      "minSectionCount": 2,
+      "mustHaveH1": true,
+      "mustHaveCta": false
+    },
+    "deck": {
+      "description": "Presentation and multi-slide artifacts",
+      "requiredAny": [
+        "slide",
+        "deck",
+        "frame",
+        "carousel"
+      ],
+      "minSectionCount": 2,
+      "mustHaveH1": true,
+      "mustHaveCta": false
+    },
+    "media": {
+      "description": "Poster, social, motion, sprite",
+      "requiredAny": [
+        "poster",
+        "carousel",
+        "frame",
+        "sprite",
+        "animation"
+      ],
+      "minSectionCount": 1,
+      "mustHaveH1": false,
+      "mustHaveCta": false
+    },
+    "utility": {
+      "description": "Wireframe and critique tools",
+      "requiredAny": [
+        "wireframe",
+        "critique",
+        "score",
+        "annotation"
+      ],
+      "minSectionCount": 1,
+      "mustHaveH1": false,
+      "mustHaveCta": false
+    }
+  },
+  "skills": {
+    "blog-post": "document",
+    "critique": "utility",
+    "dashboard": "app",
+    "dating-web": "app",
+    "digital-eguide": "document",
+    "docs-page": "document",
+    "email-marketing": "marketing",
+    "eng-runbook": "document",
+    "finance-report": "document",
+    "gamified-app": "app",
+    "guizang-ppt": "deck",
+    "hr-onboarding": "document",
+    "invoice": "document",
+    "kanban-board": "app",
+    "magazine-poster": "media",
+    "meeting-notes": "document",
+    "mobile-app": "mobile",
+    "mobile-onboarding": "mobile",
+    "motion-frames": "media",
+    "pm-spec": "document",
+    "pricing-page": "marketing",
+    "replit-deck": "deck",
+    "saas-landing": "marketing",
+    "simple-deck": "deck",
+    "social-carousel": "media",
+    "sprite-animation": "media",
+    "team-okrs": "document",
+    "tweaks": "utility",
+    "web-prototype": "marketing",
+    "weekly-update": "deck",
+    "wireframe-sketch": "utility"
+  }
+}
