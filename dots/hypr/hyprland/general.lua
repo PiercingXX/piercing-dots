@@ -1,8 +1,9 @@
 -- Monitors
 hl.monitor({ output = "eDP-1", mode = "highres", position = "auto", scale = 1 })
 hl.monitor({ output = "DSI-1", mode = "highres", position = "auto", scale = 1, transform = 3 })
-hl.monitor({ output = "DP-1", mode = "3840x1600@144", position = "1440x960", scale = 1 })
-hl.monitor({ output = "DP-2", mode = "2560x1440@74", position = "0x0", scale = 1, transform = 3 })
+hl.monitor({ output = "DP-1", mode = "3840x1600@144", position = "2560x1280", scale = 1 })
+hl.monitor({ output = "DP-2", mode = "2560x2880@60", position = "0x0", scale = 1, transform = 3 })
+
 
 -- Devices
 hl.device({
