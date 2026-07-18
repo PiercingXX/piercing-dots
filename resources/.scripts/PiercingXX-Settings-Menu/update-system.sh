@@ -1,5 +1,27 @@
-#!/bin/bash
+#!/bin/sh
 # GitHub.com/PiercingXX
+
+# POSIX bootstrap: this script needs bash and curl, which postmarketOS/Alpine
+# don't ship by default. Install them (doas or sudo), then re-exec under bash.
+# On distros that already have bash this just re-execs immediately.
+if [ -z "${PX_BASH_REEXEC:-}" ]; then
+    if ! command -v bash >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then
+        if command -v apk >/dev/null 2>&1; then
+            if command -v doas >/dev/null 2>&1; then
+                doas apk add bash curl
+            elif command -v sudo >/dev/null 2>&1; then
+                sudo apk add bash curl
+            fi
+        fi
+    fi
+    if command -v bash >/dev/null 2>&1; then
+        PX_BASH_REEXEC=1
+        export PX_BASH_REEXEC
+        exec bash "$0" "$@"
+    fi
+    echo "This script requires bash, and it could not be installed automatically." >&2
+    exit 1
+fi
 
 # Define colors
 yellow='\033[1;33m'
@@ -10,6 +32,11 @@ nc='\033[0m'
 
 if [[ -d "$HOME/.cargo/bin" && ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
     PATH="$HOME/.cargo/bin:$PATH"
+fi
+
+# Make sure ~/.local/bin is on PATH (static jq fallback installs there, e.g. on FuriOS)
+if [[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    PATH="$HOME/.local/bin:$PATH"
 fi
 
 
@@ -79,11 +106,38 @@ detect_distro() {
     if [ -r /etc/os-release ]; then
         . /etc/os-release
         DISTRO="${ID,,}"
+        DISTRO_LIKE="${ID_LIKE,,}"
     else
         DISTRO=""
+        DISTRO_LIKE=""
     fi
 }
 detect_distro
+
+# Match derivatives via ID_LIKE too (e.g. FuriOS reports its own ID but is debian-like)
+is_debian_like() {
+    case "$DISTRO" in
+        debian|ubuntu|pop|linuxmint|mint|pureos|droidian|mobian|furios|ubuntutouch|raspbian) return 0 ;;
+    esac
+    [[ " $DISTRO_LIKE " == *debian* || " $DISTRO_LIKE " == *ubuntu* ]]
+}
+
+is_alpine_like() {
+    [[ "$DISTRO" == "alpine" || "$DISTRO" == "postmarketos" || " $DISTRO_LIKE " == *alpine* ]]
+}
+
+# Ubuntu Touch: system partition is read-only; system updates are OTA, not apt
+is_ubuntu_touch() {
+    [[ "$DISTRO" == "ubports" || "$DISTRO" == "ubuntutouch" ]] && return 0
+    grep -qi "ubuntu touch" /etc/os-release 2>/dev/null && return 0
+    command_exists system-image-cli && return 0
+    [ -d /etc/system-image ] && return 0
+    return 1
+}
+
+rootfs_is_readonly() {
+    awk '$2 == "/" {opts=$4} END {exit !(opts ~ /^ro$|^ro,|,ro,|,ro$)}' /proc/mounts 2>/dev/null
+}
 
 # Reliable-ish internet check
 check_internet() {
@@ -130,6 +184,33 @@ if ! check_internet; then
 fi
 
 
+# Fallback for distros whose repos lack jq (e.g. FuriOS): official static binary, no build needed
+install_jq_static() {
+    local arch bin_url dest_dir tmp_bin
+    case "$(uname -m)" in
+        x86_64)        arch="amd64" ;;
+        aarch64)       arch="arm64" ;;
+        armv7l|armv6l) arch="armhf" ;;
+        i386|i686)     arch="i386" ;;
+        riscv64)       arch="riscv64" ;;
+        *) return 1 ;;
+    esac
+    bin_url="https://github.com/jqlang/jq/releases/latest/download/jq-linux-${arch}"
+    dest_dir="$HOME/.local/bin"
+    mkdir -p "$dest_dir"
+    tmp_bin=$(mktemp)
+    echo -e "${yellow}jq not available from the package manager; downloading static jq binary (${arch})...${nc}"
+    if curl -fsSL "$bin_url" -o "$tmp_bin" && chmod +x "$tmp_bin" && "$tmp_bin" --version >/dev/null 2>&1; then
+        mv "$tmp_bin" "$dest_dir/jq"
+        if [[ ":$PATH:" != *":$dest_dir:"* ]]; then
+            PATH="$dest_dir:$PATH"
+        fi
+        return 0
+    fi
+    rm -f "$tmp_bin"
+    return 1
+}
+
 ensure_jq() {
     if command_exists jq; then
         return 0
@@ -144,25 +225,46 @@ ensure_jq() {
         sudo apt update && sudo apt -y install jq && return 0
     elif [[ "$DISTRO" == "void" ]]; then
         sudo xbps-install -Sy jq && return 0
+    elif is_alpine_like; then
+        sudo apk add jq && return 0
+    elif is_debian_like; then
+        sudo apt update && sudo apt -y install jq && return 0
     fi
+    # Last resort (e.g. FuriOS, where the repos don't carry jq)
+    install_jq_static && return 0
     echo -e "${yellow}Could not auto-install jq on this distro; continuing without auto-update of ~/.scripts.${nc}"
     return 1
 }
 
-# Ask for sudo password up front and keep sudo alive
-sudo -v
-# Keep-alive: update existing sudo time stamp until script finishes
-( while true; do sudo -n true; sleep 300; done ) &
-sudo_keepalive_pid=$!
-trap 'kill "$sudo_keepalive_pid" 2>/dev/null' EXIT
+# postmarketOS ships doas instead of sudo; shim it so the rest of the script works unchanged
+if command_exists sudo; then
+    have_real_sudo=1
+else
+    have_real_sudo=0
+    if command_exists doas; then
+        sudo() { doas "$@"; }
+    fi
+fi
+
+if [ "$have_real_sudo" -eq 1 ]; then
+    # Ask for sudo password up front and keep sudo alive (doas has no -v/-n, so real sudo only)
+    sudo -v
+    # Keep-alive: update existing sudo time stamp until script finishes
+    ( while true; do sudo -n true; sleep 300; done ) &
+    sudo_keepalive_pid=$!
+    trap 'kill "$sudo_keepalive_pid" 2>/dev/null' EXIT
+fi
 
 
 # Ensure user can force shutdown and reboot without password
-for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
-    if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
-        echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
-    fi
-done
+# (needs real sudo, an existing /etc/sudoers, and a writable rootfs — skipped on doas/Ubuntu Touch systems)
+if [ "$have_real_sudo" -eq 1 ] && [ -f /etc/sudoers ] && ! rootfs_is_readonly; then
+    for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
+        if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
+            echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
+        fi
+    done
+fi
 
 # Unified function to update all scripts in ~/.scripts from GitHub repo, recursively handling subfolders
 auto_update_scripts() {
@@ -281,6 +383,10 @@ update_bashrc() {
 # Keep Synology Drive client updated on Debian/Ubuntu by pulling the current installer
 update_synology_drive() {
     if ! command_exists dpkg || ! command_exists apt; then
+        return
+    fi
+    # Synology only publishes an x86_64 build; skip on ARM phones (FuriOS/Mobian/Droidian)
+    if [ "$(dpkg --print-architecture 2>/dev/null)" != "amd64" ]; then
         return
     fi
     local version="4.0.1-17885"
@@ -402,7 +508,7 @@ universal_update() {
     echo -e "${yellow}Be Patient...${nc}"
 # Update npm
     if command_exists npm; then
-        if [[ "$DISTRO" == "arch" || "$DISTRO" == "void" ]]; then
+        if [[ "$DISTRO" == "arch" || "$DISTRO" == "void" ]] || is_alpine_like; then
             # On package-managed distros, global npm updates under /usr often create package-manager file conflicts.
             if npm_updates_use_system_prefix; then
                 echo -e "${yellow}Skipping global npm update on $DISTRO because npm is using a system prefix.${nc}"
@@ -790,6 +896,11 @@ void_upgrade() {
     sudo xbps-remove -Oo || true
 }
 
+alpine_upgrade() {
+    sudo apk update || return 1
+    sudo apk upgrade || return 1
+}
+
 if [[ "$DISTRO" == "arch" ]]; then
     # Check and rebuild paru if it has library dependency issues
     rebuild_paru_if_broken() {
@@ -877,6 +988,15 @@ elif [[ "$DISTRO" == "fedora" ]]; then
         fedora_upgrade || true
     }
     universal_update
+elif is_ubuntu_touch; then
+    echo -e "${yellow}Ubuntu Touch detected: the system image is read-only and updates over-the-air.${nc}"
+    if command_exists system-image-cli; then
+        echo -e "${yellow}Checking for an OTA system update (applied on next reboot)...${nc}"
+        sudo system-image-cli --progress dots || true
+    else
+        echo -e "${yellow}Use System Settings -> Updates for system updates.${nc}"
+    fi
+    universal_update
 elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" || "$DISTRO" == "droidian" || "$DISTRO" == "mobian" || "$DISTRO" == "ubuntutouch" || "$DISTRO" == "raspbian" ]]; then
     debian_upgrade || {
         echo -e "${yellow}apt upgrade failed; attempting node-gyp fix...${nc}"
@@ -894,10 +1014,30 @@ elif [[ "$DISTRO" == "void" ]]; then
         exit 1
     }
     universal_update
+elif is_alpine_like; then
+    # postmarketOS / Alpine
+    alpine_upgrade || {
+        echo -e "${yellow}apk upgrade failed; skipping remaining update steps.${nc}"
+        exit 1
+    }
+    universal_update
+elif is_debian_like; then
+    # Debian derivatives with their own ID (e.g. FuriOS)
+    debian_upgrade || {
+        echo -e "${yellow}apt upgrade failed; attempting node-gyp fix...${nc}"
+        debian_fix_node_gyp_conflicts
+        debian_upgrade || true
+    }
+    universal_update
+else
+    echo -e "${yellow}Unrecognized distro '${DISTRO}'; skipped system package upgrade.${nc}"
 fi
 
 if command_exists notify-send; then
     notify-send "System Update" "System update completed successfully!"
 fi
 echo -e "${green}System Updated Successfully!${nc}"
-kill "$sudo_keepalive_pid" 2>/dev/null
+if [ -n "${sudo_keepalive_pid:-}" ]; then
+    kill "$sudo_keepalive_pid" 2>/dev/null
+fi
+exit 0
