@@ -119,18 +119,6 @@ alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias bd='cd "$OLDPWD"'
 
-# SSH targets
-alias xmain='ssh $USER@main-rig-archlinux'
-alias xai='ssh $USER@server-debian-ai'
-alias xla1='ssh $USER@laptop-thinkpad-archlinux'
-alias xta1='ssh $USER@tablet-8in-tiger-debian'
-alias xha1='ssh root@homeassistant-1'
-alias xha2='ssh root@homeassistant-2'
-alias xha3='ssh root@homeassistant-3'
-alias xha4='ssh root@homeassistant-4'
-alias xha5='ssh root@homeassistant-5'
-alias xpi1='ssh $USER@pi-1'
-alias xpi2='ssh $USER@pi-2'
 
 # Listing and ls variants
 if command -v eza &>/dev/null; then
