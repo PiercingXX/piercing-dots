@@ -81,7 +81,6 @@ fi
 
 # Quick helpers
 alias xx='$HOME/.scripts/PiercingXX-Settings-Menu/settings-menu.sh'
-alias ss='$HOME/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh'
 alias ff='fastfetch'
 alias c='clear'
 alias cls='clear'
