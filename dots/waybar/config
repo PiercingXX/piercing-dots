@@ -19,11 +19,12 @@
         "clock"
     ],
     "modules-right": [
+        "custom/skippy",
         "tray",
-        "mpd", 
+        "mpd",
         "pulseaudio",
         "bluetooth",
-        "battery",  
+        "battery",
         "custom/exit"
     ]
 }

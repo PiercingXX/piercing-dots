@@ -37,7 +37,7 @@ Run this before emitting `<artifact>`. P0 = must pass; P1 = should pass; P2 = ni
 
 Look at the page for two seconds. If your gut says any of:
 
-- "looks like every Cursor / Linear / Vercel ripoff I've seen this month"
+- "looks like every Linear / Vercel ripoff I've seen this month"
 - "this could be any AI startup's homepage"
 - "the feature row has an icon, a heading, and three lines of vague benefit copy"
 

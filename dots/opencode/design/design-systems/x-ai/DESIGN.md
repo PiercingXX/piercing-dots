@@ -80,7 +80,7 @@ The spacing system operates on an 8px base grid with values concentrated at the 
 - Radius: 0px (sharp corners)
 - Font: GeistMono 14px weight 400, uppercase, letter-spacing 1.4px
 - Hover: `rgba(255, 255, 255, 0.9)` background
-- Use: Primary CTA ("TRY GROK", "GET STARTED")
+- Use: Primary CTA ("GET STARTED", "VIEW API")
 
 **Ghost / Outlined**
 - Background: transparent

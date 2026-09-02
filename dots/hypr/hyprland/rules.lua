@@ -63,3 +63,12 @@ hl.window_rule({
 })
 hl.window_rule({ name = "steam-app-tearing", match = { class = "steam_app" }, immediate = true })
 hl.window_rule({ name = "no-shadow-tiled", match = { float = false }, no_shadow = true })
+hl.window_rule({
+    name = "skippy-toast",
+    match = { title = "skippy-toast" },
+    float = true,
+    pin = true,
+    decorate = false,
+    no_shadow = true,
+    move = { "100%-372", "40" },
+})

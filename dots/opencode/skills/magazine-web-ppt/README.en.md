@@ -1,6 +1,6 @@
 # Magazine Web PPT · Editorial-Style Web Slide Deck Skill
 
-A [Claude Code / Claude Agent Skills](https://agentskills.io/) skill that generates **single-file HTML horizontal-swipe decks** with an "**editorial magazine × electronic ink**" aesthetic — picture *Monocle* with code stitched in.
+A skill that generates **single-file HTML horizontal-swipe decks** with an "**editorial magazine × electronic ink**" aesthetic — picture *Monocle* with code stitched in.
 
 > Distilled from offline talks like "One-Person Company: Organizations Folded by AI" and "A New Way of Working." Every pitfall hit during those decks is logged in `checklist.md`.
 
@@ -25,24 +25,24 @@ Preview image omitted in this local copy.
 
 ### Option 1: Paste this to an AI (recommended)
 
-> Install the `guizang-ppt-skill` Claude Code skill for me. Steps:
+> Install the `guizang-ppt-skill` skill for me. Steps:
 >
-> 1. Make sure `~/.claude/skills/` exists (create if not)
-> 2. Run `git clone https://example.com/skills/magazine-web-ppt.git ~/.claude/skills/magazine-web-ppt`
-> 3. Verify: `ls ~/.claude/skills/magazine-web-ppt/` should show `SKILL.md`, `assets/`, `references/`
+> 1. Make sure the agent's skills directory exists (create if not)
+> 2. Run `git clone https://example.com/skills/magazine-web-ppt.git` into that skills directory
+> 3. Verify the clone contains `SKILL.md`, `assets/`, `references/`
 > 4. Tell me when done. Later, saying things like "make me a magazine-style deck" will trigger this skill.
 
-Paste the block above into Claude Code / Cursor / any AI agent with shell access and it handles the install.
+Paste the block above into any AI agent with shell access and it handles the install.
 
 ### Option 2: Manual CLI
 
 ```bash
-git clone https://example.com/skills/magazine-web-ppt.git ~/.claude/skills/magazine-web-ppt
+git clone https://example.com/skills/magazine-web-ppt.git ./skills/magazine-web-ppt
 ```
 
 ### How to trigger it
 
-Once installed, Claude Code auto-detects the skill. Trigger phrases:
+Once installed, the agent auto-detects the skill. Trigger phrases:
 
 - "Make me a magazine-style deck"
 - "Generate a horizontal swipe deck"
@@ -51,7 +51,7 @@ Once installed, Claude Code auto-detects the skill. Trigger phrases:
 
 ## Workflow
 
-The skill is a structured 6-step flow; Claude walks you through each:
+The skill is a structured 6-step flow; the agent walks you through each:
 
 1. **Clarify intent** — 6-question checklist: audience, duration, source material, images, theme, hard constraints
 2. **Copy template** — `assets/template.html` → project folder, update `<title>`, swap theme vars

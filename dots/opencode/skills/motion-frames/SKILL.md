@@ -6,7 +6,7 @@ description: |
   Renders as a hero video poster you can hand straight to HyperFrames or
   any keyframe-based exporter. Use when the brief asks for "motion design",
   "animated hero", "loop", "video poster", "title card", or pairs Open
-  Claude Design with HyperFrames for a kinetic export.
+  Design with HyperFrames for a kinetic export.
 triggers:
   - "motion design"
   - "motion graphic"

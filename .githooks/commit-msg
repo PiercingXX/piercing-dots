@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Strip vendor Co-authored-by trailers before the commit object is written.
+# GitHub paints those names on the repo as contributors — that is an ad.
+# Skippy-Agent stays. Cursor, Cursor Agent, Claude, Grok, Copilot, OpenAI do not.
+[ -f "$1" ] || exit 0
+sed -i -E \
+  '/^Co-authored-by:[[:space:]]*(Cursor([[:space:]]+Agent)?|Claude([[:space:]]+Code)?|Anthropic|GitHub Copilot|OpenAI|Codex|Grok|xAI|X\.AI)\b/Id;
+   /^Co-authored-by:.*<(cursoragent@cursor\.com|noreply@anthropic\.com|(noreply|codex)@openai\.com|copilot@github\.com)>/Id;
+   /^(Claude|Grok|Cursor)-Session:/Id;
+   /^Made with \[Cursor\]/Id;
+   /^Made-with:[[:space:]]*(Cursor|Claude|Grok)/Id;
+   /^Generated-By:[[:space:]]*(cursor|claude|grok)/Id' \
+  "$1"

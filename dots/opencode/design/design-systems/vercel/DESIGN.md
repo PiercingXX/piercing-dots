@@ -171,7 +171,7 @@ What distinguishes Vercel from other monochrome design systems is its shadow-as-
 - The visual metaphor for Vercel's core value proposition
 
 **Trust Bar / Logo Grid**
-- Company logos (Perplexity, ChatGPT, Cursor, etc.) in grayscale
+- Company logos (Perplexity, ChatGPT, etc.) in grayscale
 - Horizontal scroll or grid layout
 - Subtle `#ebebeb` border separation
 

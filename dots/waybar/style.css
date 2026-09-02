@@ -165,6 +165,23 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
+ * Skippy desk seat — product accent only on the chevron
+ * ----------------------------------------------------- */
+
+#custom-skippy {
+    font-family: "Space Mono", "JetBrainsMono Nerd Font", monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #82E2FF;
+    margin: 2px 10px 0px 0px;
+    padding: 0px;
+}
+
+#custom-skippy.stopped {
+    color: rgba(255, 255, 255, 0.50);
+}
+
+/* -----------------------------------------------------
  * Custom Exit
  * ----------------------------------------------------- */
 
@@ -287,7 +304,12 @@ window#waybar.empty #window {
  * ----------------------------------------------------- */
 
 #tray {
-    margin:0px 10px 0px 0px;
+    margin: 6px 10px 6px 0px;
+    padding: 0 4px;
+}
+
+#tray image {
+    padding: 0 2px;
 }
 
 #tray > .passive {

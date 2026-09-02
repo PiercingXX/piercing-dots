@@ -149,7 +149,7 @@ What makes Ollama distinctive is the combination of SF Pro Rounded (Apple's roun
 - Copy button integrated
 
 **Integration Grid**
-- Grid of integration logos (Codex, Claude Code, OpenCode, LangChain, etc.)
+- Grid of integration logos (OpenCode, LangChain, etc.)
 - Each in a bordered pill or card with icon + name
 - Tabbed by category (Coding, Documents & RAG, Automation, Chat)
 

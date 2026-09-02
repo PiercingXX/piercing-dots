@@ -2,7 +2,7 @@
 
 > 🌏 **English version: [README.en.md](./README.en.md)**
 
-一个 [Claude Code / Claude Agent Skills](https://agentskills.io/) 技能,用于生成**单文件 HTML 横向翻页 PPT**,视觉基调是"**电子杂志 × 电子墨水**"——像 *Monocle* 贴上了代码的样子。
+一个技能,用于生成**单文件 HTML 横向翻页 PPT**,视觉基调是"**电子杂志 × 电子墨水**"——像 *Monocle* 贴上了代码的样子。
 
 > 由线下分享"一人公司:被 AI 折叠的组织"、"一种新的工作方式"等内容沉淀而成,踩过的每一个坑都写进了 `checklist.md`。
 
@@ -27,24 +27,24 @@
 
 ### 方式一:把下面这段话直接发给 AI(推荐)
 
-> 帮我安装 `guizang-ppt-skill` 这个 Claude Code skill。请按下面步骤做:
+> 帮我安装 `guizang-ppt-skill` 这个 skill。请按下面步骤做:
 >
-> 1. 确保 `~/.claude/skills/` 目录存在(不存在就创建)
-> 2. 执行 `git clone https://example.com/skills/magazine-web-ppt.git ~/.claude/skills/magazine-web-ppt`
-> 3. 验证:`ls ~/.claude/skills/magazine-web-ppt/` 应该看到 `SKILL.md`、`assets/`、`references/` 三项
+> 1. 确保 agent 的 skills 目录存在(不存在就创建)
+> 2. 执行 `git clone https://example.com/skills/magazine-web-ppt.git` 到该 skills 目录
+> 3. 验证克隆里有 `SKILL.md`、`assets/`、`references/` 三项
 > 4. 告诉我安装好了,之后我说"做一份杂志风 PPT"之类的话就会触发这个 skill
 
-把这段话复制粘贴给 Claude Code / Cursor / 任何有 shell 权限的 AI Agent,它会自动完成安装。
+把这段话复制粘贴给任何有 shell 权限的 AI Agent,它会自动完成安装。
 
 ### 方式二:手动命令行
 
 ```bash
-git clone https://example.com/skills/magazine-web-ppt.git ~/.claude/skills/magazine-web-ppt
+git clone https://example.com/skills/magazine-web-ppt.git ./skills/magazine-web-ppt
 ```
 
 ### 触发方式
 
-装好后,Claude Code 会在对话里自动发现并调用这个 skill。触发关键词:
+装好后,agent 会在对话里自动发现并调用这个 skill。触发关键词:
 
 - "帮我做一份杂志风 PPT"
 - "生成一个 horizontal swipe deck"
@@ -53,7 +53,7 @@ git clone https://example.com/skills/magazine-web-ppt.git ~/.claude/skills/magaz
 
 ## 使用流程
 
-Skill 本身是结构化的 6 步工作流,Claude 会逐步引导:
+Skill 本身是结构化的 6 步工作流,agent 会逐步引导:
 
 1. **需求澄清** — 6 问清单:受众、时长、素材、图片、主题色、硬约束
 2. **拷贝模板** — `assets/template.html` → 项目目录,改 `<title>`,换主题色

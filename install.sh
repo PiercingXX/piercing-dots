@@ -280,3 +280,10 @@ set_keyboard_layout() {
             wait
             cd "$builddir" || exit
         echo -e "${GREEN}SFP Fiber Lockout Fix applied successfully!${NC}"
+    # Strip Cursor/Claude/Grok Co-authored-by trailers on commit (Skippy stays)
+        echo -e "${YELLOW}Installing git vendor-trailer hook...${NC}"
+        cd scripts || exit
+            chmod u+x install-git-vendor-trailer-hook.sh
+            sudo -H -u "$username" ./install-git-vendor-trailer-hook.sh
+            cd "$builddir" || exit
+        echo -e "${GREEN}Git vendor-trailer hook installed.${NC}"

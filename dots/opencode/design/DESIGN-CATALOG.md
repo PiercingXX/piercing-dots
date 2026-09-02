@@ -9,7 +9,7 @@ Catalog location: ~/.config/opencode/design/DESIGN-CATALOG.md
 
 ## Inventory Summary
 
-- Design systems: 138
+- Design systems: 136
 - Aesthetic design skills: 57
 - Workflow skills: 31
 
@@ -36,7 +36,6 @@ Source directory: ~/.config/opencode/design/design-systems
 - cafe
 - cal
 - canva
-- claude
 - clay
 
 - claymorphism
@@ -51,7 +50,6 @@ Source directory: ~/.config/opencode/design/design-systems
 - cosmic
 
 - creative
-- cursor
 - dashboard
 - default
 - discord
@@ -257,7 +255,7 @@ Source directory: ~/.config/opencode/skills
 | meeting-notes | Meeting notes page — title bar with attendees, agenda checklist, decisions block, action items table with owners + dates, and a "next meeting" footer. Use when the brief mentions "meeting notes", "minutes", "1:1 notes", "all-hands recap", or "会议纪要". |
 | mobile-app | A mobile-app screen rendered inside a pixel-accurate iPhone 15 Pro frame on the page. Built by copying the seed `assets/template.html` and pasting one screen archetype from `references/layouts.md`. Use when the brief asks for "mobile app", "iOS app", "Android app", "phone screen", or "app UI". |
 | mobile-onboarding | A multi-screen mobile onboarding flow rendered as three phone frames side by side — splash, value-prop, sign-in. Status bar, swipe dots, primary CTA. Use when the brief mentions "mobile onboarding", "iOS onboarding", "phone signup", or "移动端引导". |
-| motion-frames | A single-frame motion-design composition with looping CSS animations — rotating type ring, animated globe, ticking timer, parallax labels. Renders as a hero video poster you can hand straight to HyperFrames or any keyframe-based exporter. Use when the brief asks for "motion design", "animated hero", "loop", "video poster", "title card", or pairs Open Claude Design with HyperFrames for a kinetic export. |
+| motion-frames | A single-frame motion-design composition with looping CSS animations — rotating type ring, animated globe, ticking timer, parallax labels. Renders as a hero video poster you can hand straight to HyperFrames or any keyframe-based exporter. Use when the brief asks for "motion design", "animated hero", "loop", "video poster", "title card", or pairs Open Design with HyperFrames for a kinetic export. |
 | pm-spec | Product spec / PRD as a single page — problem, success metrics, scope, user stories, design notes, rollout plan, open questions. Use when the brief mentions "PRD", "spec", "product spec", "feature brief", or "需求文档". |
 | pricing-page | A standalone pricing page — header, plan tiers, feature comparison table, and an FAQ. Use when the brief asks for "pricing", "plans", "subscription tiers", or a "compare plans" page. |
 | replit-deck | Single-file horizontal-swipe HTML deck in the style of Replit Slides's landing-page template gallery. Eight distinct themes (helix, holm, vance, bevel, world-dark, world-mint, atlas, bluehouse) — each a complete visual system (palette + type + accent) captured from replit.com/slides. Pick one theme, do not mix. For pitch decks, board reports, brand memos, campaign reveals — when the user explicitly wants "Replit Slides style". |

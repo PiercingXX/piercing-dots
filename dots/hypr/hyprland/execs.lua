@@ -5,6 +5,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd([[bash -lc '[ -x ~/.local/bin/hyprpaper ] && exec ~/.local/bin/hyprpaper || exec hyprpaper']])
     hl.exec_cmd([[bash ~/.scripts/Control-Scripts/toggle-topbar.sh --startup]])
     hl.exec_cmd([[bash -lc 'command -v nm-applet >/dev/null && nm-applet']])
+    hl.exec_cmd([[bash ~/.scripts/Control-Scripts/skippy-desk.sh autostart]])
     hl.exec_cmd([[xdg-user-dirs-update]])
 
     hl.exec_cmd([[bash -lc '

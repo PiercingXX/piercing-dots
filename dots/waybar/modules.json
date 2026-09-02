@@ -102,10 +102,22 @@
         }
     },
 
-    // System tray
+    // Skippy desk seat (GTK4 has no working SNI under this bar)
+    "custom/skippy": {
+        "exec": "~/.scripts/Control-Scripts/skippy-desk.sh status",
+        "interval": 5,
+        "return-type": "json",
+        "format": "{}",
+        "on-click": "~/.scripts/Control-Scripts/skippy-desk.sh show",
+        "on-click-right": "~/.scripts/Control-Scripts/skippy-desk.sh quit",
+        "tooltip": true
+    },
+
+    // System tray (nm-applet and other Gtk 3 StatusNotifier items)
     "tray": {
-        // "icon-size": 23,
-        "spacing": 13
+        "icon-size": 18,
+        "spacing": 8,
+        "show-passive-items": true
     },
 
     // Clock
