@@ -5,7 +5,12 @@ local M = {}
 -- Example: require('config.helpers').try('module', function(m) m.setup({}) end)
 function M.try(mod, fn)
   local ok, m = pcall(require, mod)
-  if not ok then return nil end
+  if not ok then
+    vim.schedule(function()
+      vim.notify('require failed for ' .. mod .. ': ' .. tostring(m), vim.log.levels.ERROR)
+    end)
+    return nil
+  end
   if fn then
     local ok2, err = pcall(fn, m)
     if not ok2 then

@@ -37,7 +37,7 @@ prepend_previewers = [
 [opener]
 ###################################
 term = [
-  { run = 'kitty --detach --directory \"$PWD\"', orphan = true, desc = "Kitty here" },
+  { run = 'kitty --detach --directory "$PWD"', orphan = true, desc = "Kitty here" },
 ]
 
 # Text/code editors

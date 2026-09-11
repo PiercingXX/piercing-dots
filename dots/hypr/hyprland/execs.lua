@@ -1,6 +1,7 @@
 hl.on("hyprland.start", function()
     hl.exec_cmd([[~/.config/hypr/hyprland/scripts/SynoDrive.sh]])
-    hl.exec_cmd([[bash -lc '[ -x ~/.scripts/Control-Scripts/hyprsunset-scheduler.sh ] && ~/.scripts/Control-Scripts/hyprsunset-scheduler.sh']])
+    -- Native timed profiles live in ~/.config/hypr/hyprsunset.conf (do not also run the bash scheduler).
+    hl.exec_cmd([[bash -lc 'command -v hyprsunset >/dev/null && pgrep -x hyprsunset >/dev/null || hyprsunset']])
 
     hl.exec_cmd([[bash -lc '[ -x ~/.local/bin/hyprpaper ] && exec ~/.local/bin/hyprpaper || exec hyprpaper']])
     hl.exec_cmd([[bash ~/.scripts/Control-Scripts/toggle-topbar.sh --startup]])

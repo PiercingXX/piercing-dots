@@ -257,13 +257,23 @@ fi
 
 
 # Ensure user can force shutdown and reboot without password
-# (needs real sudo, an existing /etc/sudoers, and a writable rootfs — skipped on doas/Ubuntu Touch systems)
-if [ "$have_real_sudo" -eq 1 ] && [ -f /etc/sudoers ] && ! rootfs_is_readonly; then
-    for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
-        if ! sudo grep -q "$USER ALL=NOPASSWD: $cmd" /etc/sudoers; then
-            echo "$USER ALL=NOPASSWD: $cmd" | sudo tee -a /etc/sudoers > /dev/null
-        fi
-    done
+# Drop-in under sudoers.d — never append raw lines to /etc/sudoers (easy to brick sudo).
+if [ "$have_real_sudo" -eq 1 ] && [ -d /etc/sudoers.d ] && ! rootfs_is_readonly; then
+    sudoers_dropin="/etc/sudoers.d/piercingxx-power"
+    tmp_sudoers="$(mktemp)"
+    {
+        echo "# Managed by PiercingXX update-system.sh"
+        for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
+            [ -x "$cmd" ] || continue
+            echo "$USER ALL=NOPASSWD: $cmd"
+        done
+    } >"$tmp_sudoers"
+    if sudo visudo -cf "$tmp_sudoers" >/dev/null 2>&1; then
+        sudo install -m 0440 "$tmp_sudoers" "$sudoers_dropin"
+    else
+        echo "Warning: rejected invalid sudoers drop-in; left /etc/sudoers untouched." >&2
+    fi
+    rm -f "$tmp_sudoers"
 fi
 
 # Unified function to update all scripts in ~/.scripts from GitHub repo, recursively handling subfolders
@@ -486,9 +496,9 @@ update_hyprland_builds() {
 
 # Universal update logic
 universal_update() {
-# Update Neovim plugins
+# Update Neovim plugins (vim.pack — not Lazy.nvim)
     if command_exists nvim; then
-        nvim --headless "+Lazy! sync" +qa 2>/dev/null || true
+        nvim --headless "+lua pcall(vim.pack.update)" "+quitall!" 2>/dev/null || true
     fi
 # Update fwupd
     if command_exists fwupdmgr; then
@@ -542,7 +552,8 @@ universal_update() {
 # Update Docker images
     if command_exists docker; then
         echo -e "${yellow}Updating Docker images...${nc}"
-        docker system prune -af --volumes
+        # Images/containers only — never wipe volumes unless explicitly requested.
+        docker system prune -af
         mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
         echo -e "${yellow}Updating ${#images[@]} Docker image(s)...${nc}"
         for img in "${images[@]}"; do
@@ -866,9 +877,11 @@ arch_upgrade_with_conflict_repair() {
 
 debian_fix_node_gyp_conflicts() {
     echo -e "${yellow}Attempting node-gyp reinstall fix (Debian/Ubuntu)...${nc}"
-    sudo apt update || true
-    sudo apt -y install --reinstall node-gyp npm || true
-    sudo apt -y install --reinstall nodejs npm || true
+    export DEBIAN_FRONTEND=noninteractive
+    export APT_LISTCHANGES_FRONTEND=none
+    sudo -E apt update || true
+    sudo -E apt -y install --reinstall node-gyp npm || true
+    sudo -E apt -y install --reinstall nodejs npm || true
 }
 
 fedora_fix_node_gyp_conflicts() {
@@ -878,13 +891,15 @@ fedora_fix_node_gyp_conflicts() {
 }
 
 debian_upgrade() {
-    sudo apt update && sudo apt upgrade -y || true
-    sudo apt full-upgrade -y || return 1
-    sudo apt install -f || true
+    export DEBIAN_FRONTEND=noninteractive
+    export APT_LISTCHANGES_FRONTEND=none
+    sudo -E apt update && sudo -E apt upgrade -y || true
+    sudo -E apt full-upgrade -y || return 1
+    sudo -E apt install -f || true
     sudo dpkg --configure -a || true
-    sudo apt --fix-broken install -y || true
-    sudo apt autoremove -y || true
-    sudo apt update && sudo apt upgrade -y || true
+    sudo -E apt --fix-broken install -y || true
+    sudo -E apt autoremove -y || true
+    sudo -E apt update && sudo -E apt upgrade -y || true
 }
 
 fedora_upgrade() {

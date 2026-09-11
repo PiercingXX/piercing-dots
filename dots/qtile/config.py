@@ -176,7 +176,6 @@ def autostart() -> None:
         "xsetroot -cursor_name left_ptr",
     "bash -lc 'command -v libinput-gestures >/dev/null && (pgrep -x libinput-gestures || libinput-gestures -d)'",
         "bash -lc '[ -x ~/.config/hypr/hyprland/scripts/SynoDrive.sh ] && ~/.config/hypr/hyprland/scripts/SynoDrive.sh'",
-        "bash -lc '[ -x ~/.scripts/Control-Scripts/hyprsunset-scheduler.sh ] && ~/.scripts/Control-Scripts/hyprsunset-scheduler.sh'",
         "bash -lc 'command -v nm-applet >/dev/null && nm-applet'",
         "xdg-user-dirs-update",
         "bash -lc 'command -v picom >/dev/null && picom --experimental-backends'",

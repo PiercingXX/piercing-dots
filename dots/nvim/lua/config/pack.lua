@@ -5,9 +5,16 @@ local function gh(repo)
   return string.format("https://github.com/%s", repo)
 end
 
+-- tpipeline only makes sense inside tmux; skip it otherwise to avoid false health errors
+local enable_tpipeline = vim.env.TMUX and vim.env.TMUX ~= ""
+if enable_tpipeline then
+  vim.g.tpipeline_clearstl = 1
+end
+
 -- List of plugin specs
 local specs = {
-  -- UI and aesthetics
+  -- UI and aesthetics (lush required by aura)
+  { src = gh("rktjmp/lush.nvim") },
   { src = gh("JLighter/aura.nvim") },
   { src = gh("goolord/alpha-nvim") },
 
@@ -37,9 +44,8 @@ local specs = {
   -- FZF alternative
   { src = gh("ibhagwan/fzf-lua") },
 
-  -- Files, icons, bufferline
+  -- Icons
   { src = gh("nvim-tree/nvim-web-devicons") },
-  { src = gh("akinsho/bufferline.nvim") },
 
   -- Markdown, images, preview
   { src = gh("ellisonleao/glow.nvim") },
@@ -51,7 +57,7 @@ local specs = {
   -- Motions & navigation
   { src = gh("folke/flash.nvim") },
   { src = gh("folke/which-key.nvim") },
-  { src = gh("tris203/precognition.nvim") }, -- motion hints & practice
+  { src = gh("tris203/precognition.nvim") },
 
   -- Editing helpers
   { src = gh("Wansmer/treesj") },
@@ -65,12 +71,16 @@ local specs = {
 
   -- Misc
   { src = gh("tpope/vim-sleuth") },
-  { src = gh("vimpostor/vim-tpipeline") },
   { src = gh("mikavilpas/yazi.nvim") },
   { src = gh("vimichael/floatingtodo.nvim") },
   { src = gh("folke/zen-mode.nvim") },
-  { src = gh("ThePrimeagen/vim-be-good") }, -- motion training game
+  { src = gh("ThePrimeagen/vim-be-good") },
 }
+
+if enable_tpipeline then
+  table.insert(specs, { src = gh("vimpostor/vim-tpipeline") })
+end
+
 
 -- Ensure plugins are installed and loaded
 vim.pack.add(specs, { load = true, confirm = false })
@@ -80,26 +90,40 @@ vim.api.nvim_create_autocmd({ "PackChanged" }, {
   callback = function(ev)
     local name, kind = ev.data.spec.name, ev.data.kind
     if name == "telescope-fzf-native.nvim" and (kind == "install" or kind == "update") then
-      vim.system({ "make" }, { cwd = ev.data.path }, function() end)
+      vim.system({ "make" }, { cwd = ev.data.path }, function(obj)
+        if obj.code ~= 0 then
+          vim.schedule(function()
+            vim.notify("telescope-fzf-native: make failed", vim.log.levels.WARN)
+          end)
+        end
+      end)
     end
   end,
 })
 
--- Configure plugins (requires after loading)
+-- Configure plugins (requires after loading). Surface failures instead of swallowing them.
 local function safe_require(mod)
-  local ok, m = pcall(require, mod)
-  if not ok then return nil end
-  return m
+  local ok, err = pcall(require, mod)
+  if not ok then
+    vim.schedule(function()
+      vim.notify(("config: failed to load %s\n%s"):format(mod, err), vim.log.levels.ERROR)
+    end)
+    return nil
+  end
+  return true
 end
 
 -- Icons and devicons early
 safe_require("setup.webdevicons")
 safe_require("setup.mini_icons")
 
--- Try to apply the Aura colorscheme if available
-pcall(function()
-  vim.cmd.colorscheme('aura')
-end)
+-- Apply Aura (needs lush.nvim)
+local ok_aura, aura_err = pcall(vim.cmd.colorscheme, "aura")
+if not ok_aura then
+  vim.schedule(function()
+    vim.notify("colorscheme aura failed: " .. tostring(aura_err), vim.log.levels.WARN)
+  end)
+end
 
 -- Core setups
 safe_require("setup.treesitter")
@@ -121,4 +145,6 @@ safe_require("setup.todo")
 safe_require("setup.blink_cmp")
 safe_require("setup.alpha")
 safe_require("setup.multicursor")
-safe_require("setup.tpipeline")
+if enable_tpipeline then
+  safe_require("setup.tpipeline")
+end

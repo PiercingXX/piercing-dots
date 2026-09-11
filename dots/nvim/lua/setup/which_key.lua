@@ -13,6 +13,7 @@ pcall(function()
     { '<leader>f', group = 'find' },
     { '<leader>m', group = 'motion' },
     { '<leader>t', group = 'tools' },
+    { 'gz', group = 'surround' },
   }
   if wk.add then
     wk.add(groups_new)
@@ -23,6 +24,7 @@ pcall(function()
       ['<leader>f'] = { name = '+find' },
       ['<leader>m'] = { name = '+motion' },
       ['<leader>t'] = { name = '+tools' },
+      ['gz'] = { name = '+surround' },
     })
   end
 end)

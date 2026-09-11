@@ -28,7 +28,7 @@
 -- Basics
     vim.keymap.set('n', '<leader>w', ':write<CR>', { desc = 'Write' })
     vim.keymap.set('n', '<leader>q', ':quit<CR>', { desc = 'Quit' })
-    vim.keymap.set('n', '<leader>o', ':update<CR> :source $HOME/.config/nvim/init.lua <CR>', { desc = 'Shoutout' })
+    vim.keymap.set('n', '<leader>o', ':update | source $MYVIMRC<CR>', { desc = 'Write and reload config' })
 
 
 
@@ -55,8 +55,8 @@
 
 
 -- go to errors
-    vim.keymap.set("n", "[e", vim.diagnostic.goto_next)
-    vim.keymap.set("n", "]e", vim.diagnostic.goto_next)
+    vim.keymap.set("n", "[e", vim.diagnostic.goto_prev, { desc = "Prev diagnostic" })
+    vim.keymap.set("n", "]e", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
 
 
 

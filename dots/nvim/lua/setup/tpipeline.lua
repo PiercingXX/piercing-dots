@@ -1,3 +1,3 @@
 ---@diagnostic disable: undefined-global
--- Clear Neovim's own statusline after tpipeline starts; tmux will show it instead
-vim.g.tpipeline_clearstl = 1
+-- Globals are set in config.pack before the plugin loads.
+-- This file kept as a no-op hook for clarity/ordering.

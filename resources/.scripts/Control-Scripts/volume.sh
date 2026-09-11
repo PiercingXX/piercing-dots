@@ -47,9 +47,28 @@ install_if_missing() {
     fi
 }
 
-# Ensure pactl and notify-send are installed
-install_if_missing "pulseaudio" "pactl"
-install_if_missing "libnotify-bin" "notify-send"
+# Ensure pactl and notify-send are installed (distro-correct package names)
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+fi
+case "${ID:-}" in
+    arch|manjaro|endeavouros|cachyos)
+        install_if_missing "libpulse" "pactl"
+        install_if_missing "libnotify" "notify-send"
+        ;;
+    ubuntu|debian|pop|linuxmint)
+        install_if_missing "pulseaudio-utils" "pactl"
+        install_if_missing "libnotify-bin" "notify-send"
+        ;;
+    fedora)
+        install_if_missing "pulseaudio-utils" "pactl"
+        install_if_missing "libnotify" "notify-send"
+        ;;
+    *)
+        install_if_missing "pulseaudio-utils" "pactl"
+        install_if_missing "libnotify-bin" "notify-send"
+        ;;
+esac
 
 NOTIFY_ID=99970
 QUICK_TIMEOUT=1100
