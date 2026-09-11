@@ -59,7 +59,7 @@
 
 (defwidget night_light []
   (quick_settings_button  
-    :condition {nightlight} 
+    :condition {!nightlight} 
     :action "scripts/nightlight.sh toggle"
     :icon "󰖔"
     :label "Night light"
@@ -80,7 +80,7 @@
 (defwidget microphone []
   (quick_settings_button  
     :condition {microphone == false} 
-    :action "pamixer --togle-mute"
+    :action "pamixer --toggle-mute"
     :icon ""
     :label "Microphone"
     :class "right-bottom-plite"

@@ -1,8 +1,51 @@
 #!/bin/bash
-# Shared nightlight toggle for eww (wlsunset).
+# Manual night-color override via hyprsunset (schedule lives in hyprsunset.conf).
+# Does NOT kill the daemon — only toggles identity vs warm temperature.
+
+set -u
+
+STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/eww"
+STATE_FILE="$STATE_DIR/nightlight"
+TEMP_K=2200  # match dots/hypr/hyprsunset.conf
+
+ensure_daemon() {
+  if ! pgrep -x hyprsunset >/dev/null 2>&1; then
+    command -v hyprsunset >/dev/null 2>&1 || return 1
+    hyprsunset >/tmp/hyprsunset.log 2>&1 &
+    sleep 0.3
+  fi
+  return 0
+}
+
+is_on() {
+  if [[ -f "$STATE_FILE" ]]; then
+    [[ "$(cat "$STATE_FILE" 2>/dev/null)" == "on" ]]
+    return
+  fi
+  # Fallback: treat low temperature as warm if hyprctl reports it
+  local t
+  t="$(hyprctl hyprsunset temperature 2>/dev/null | tr -dc '0-9' || true)"
+  [[ -n "$t" && "$t" -gt 0 && "$t" -lt 5000 ]]
+}
+
+set_on() {
+  mkdir -p "$STATE_DIR"
+  ensure_daemon || return 1
+  hyprctl hyprsunset temperature "$TEMP_K" >/dev/null 2>&1 || true
+  echo on >"$STATE_FILE"
+  command -v eww >/dev/null 2>&1 && eww update nightlight=true
+}
+
+set_off() {
+  mkdir -p "$STATE_DIR"
+  ensure_daemon || return 1
+  hyprctl hyprsunset identity >/dev/null 2>&1 || true
+  echo off >"$STATE_FILE"
+  command -v eww >/dev/null 2>&1 && eww update nightlight=false
+}
 
 state() {
-  if pgrep -x wlsunset >/dev/null 2>&1; then
+  if is_on; then
     echo true
   else
     echo false
@@ -10,17 +53,17 @@ state() {
 }
 
 toggle() {
-  if [[ $(state) == true ]]; then
-    eww update nightlight=false
-    pkill wlsunset
+  if is_on; then
+    set_off
   else
-    eww update nightlight=true
-    wlsunset -t 3400 &
+    set_on
   fi
 }
 
 case "${1:-}" in
   toggle) toggle ;;
   get) state ;;
-  *) echo "Usage: $0 [toggle|get]" >&2; exit 1 ;;
+  on) set_on ;;
+  off) set_off ;;
+  *) echo "Usage: $0 [toggle|get|on|off]" >&2; exit 1 ;;
 esac

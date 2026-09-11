@@ -11,13 +11,23 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 CACHE = os.path.expandvars("$XDG_CACHE_HOME/eww")
+if CACHE == "$XDG_CACHE_HOME/eww" or not CACHE.startswith("/"):
+    CACHE = os.path.expanduser("~/.cache/eww")
+
+EWW_CONFIG = os.path.expandvars("$XDG_CONFIG_HOME/eww")
+if EWW_CONFIG == "$XDG_CONFIG_HOME/eww" or not EWW_CONFIG.startswith("/"):
+    EWW_CONFIG = os.path.expanduser("~/.config/eww")
 
 APPS_DIR = os.path.join(CACHE, "apps")
 NOTIFICATIONS_DIR = os.path.join(CACHE, "notifications")
 MPRIS_DIR = os.path.join(CACHE, "mpris")
 WEATHER_DIR = os.path.join(CACHE, "weather")
 COLORS_DIR = os.path.join(CACHE, "colors")
-TEMPLATES_DIR = os.path.join(COLORS_DIR, "templates")
+# Prefer repo templates shipped with the rice; fall back to cache copy.
+TEMPLATES_DIR = os.path.join(EWW_CONFIG, "scripts", "templates")
+if not os.path.isdir(TEMPLATES_DIR):
+    TEMPLATES_DIR = os.path.join(COLORS_DIR, "templates")
+GENERATED_SCSS = os.path.join(EWW_CONFIG, "scss", "generated", "colors.scss")
 
 APPS_JSON = os.path.join(APPS_DIR, "apps.json")
 DOCK_JSON = os.path.join(APPS_DIR, "dock.json")
@@ -31,7 +41,8 @@ for file in [
     APPS_DIR, 
     NOTIFICATIONS_DIR,
     MPRIS_DIR, 
-    WEATHER_DIR, 
+    WEATHER_DIR,
+    COLORS_DIR,
 ]:
     os.makedirs(file, exist_ok=True)
 

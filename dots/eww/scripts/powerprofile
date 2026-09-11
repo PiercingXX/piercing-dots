@@ -1,16 +1,25 @@
 #!/bin/bash
 
-PROFILE=$(powerprofilesctl get)
+PROFILE="$(powerprofilesctl get 2>/dev/null || echo balanced)"
 
 toggle() {
-  if [[ $PROFILE == 'balanced' ]]; then
-    eww update powerprofile=power-saver
-    powerprofilesctl set power-saver
-  else
-    eww update powerprofile=balanced
-    powerprofilesctl set balanced
-  fi
+  case "$PROFILE" in
+    performance)
+      next=balanced
+      ;;
+    balanced)
+      next=power-saver
+      ;;
+    *)
+      next=performance
+      ;;
+  esac
+  powerprofilesctl set "$next"
+  command -v eww >/dev/null 2>&1 && eww update powerprofile="$next"
 }
 
-if [[ $1 == 'toggle' ]]; then toggle; fi
-if [[ $1 == 'get' ]]; then echo $PROFILE; fi
+case "${1:-}" in
+  toggle) toggle ;;
+  get) echo "$PROFILE" ;;
+  *) echo "Usage: $0 [toggle|get]" >&2; exit 1 ;;
+esac

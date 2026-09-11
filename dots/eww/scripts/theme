@@ -2,7 +2,7 @@
 
 INTERFACE="org.gnome.desktop.interface"
 THEME=$(gsettings get $INTERFACE color-scheme | tr -d "'")
-SCSS="$XDG_CONFIG_HOME/eww/scss/variables.scss"
+SCSS="${XDG_CONFIG_HOME:-$HOME/.config}/eww/scss/variables.scss"
 
 set_dark() {
   gsettings set $INTERFACE gtk-theme 'adw-gtk3-dark'
@@ -26,7 +26,7 @@ toggle() {
     eww update theme=dark
     set_dark
   fi
-  python $XDG_CONFIG_HOME/eww/scripts/python/material-colors.py --toggle
+  python "${XDG_CONFIG_HOME:-$HOME/.config}/eww/scripts/python/material-colors.py" --toggle
 }
 
 get() {

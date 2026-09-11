@@ -8,7 +8,7 @@ import argparse
 from jinja2 import Template
 from material_color_utilities_python import *
 from PIL import Image
-from utils import COLORS_DIR, TEMPLATES_DIR, CURRENT_JSON, WALLPAPER_PATH
+from utils import COLORS_DIR, TEMPLATES_DIR, CURRENT_JSON, WALLPAPER_PATH, GENERATED_SCSS
 
 
 def get_colors(colorscheme):
@@ -90,27 +90,49 @@ def write_config(data):
 
 
 def render_templates(colors_list):
-    for template in os.listdir(TEMPLATES_DIR):
+    if not os.path.isdir(TEMPLATES_DIR):
+        return
 
+    os.makedirs(COLORS_DIR, exist_ok=True)
+    for template in os.listdir(TEMPLATES_DIR):
         with open(f"{TEMPLATES_DIR}/{template}", "r") as file:
             template_rendered = Template(file.read()).render(colors_list)
-            
+
         with open(f"{COLORS_DIR}/{template}", "w") as output_file:
-            
             if 'foot' in template or 'hyprland' in template:
                 output_file.write(template_rendered.replace('#', ''))
             else:
                 output_file.write(template_rendered)
+
+        # Keep eww's live scss import in sync
+        if template == "colors.scss":
+            os.makedirs(os.path.dirname(GENERATED_SCSS), exist_ok=True)
+            with open(GENERATED_SCSS, "w") as out:
+                out.write(template_rendered)
+
 
 def setup(img):
     try:
         shutil.copyfile(img, WALLPAPER_PATH)
     except shutil.SameFileError:
         pass
-    os.system("eww reload")
-    os.system("pkill -SIGUSR1 foot")
-    os.system(f"gradience-cli apply -p '{COLORS_DIR}/colors-gradience.json' --gtk both")
-    os.system(f"swww img {WALLPAPER_PATH} --transition-fps 75 --transition-type wipe --transition-duration 2")
+    except FileNotFoundError:
+        pass
+
+    os.system("eww reload >/dev/null 2>&1")
+
+    # Optional legacy terminals / theming — never hard-fail the rice
+    if shutil.which("pkill"):
+        os.system("pkill -SIGUSR1 foot >/dev/null 2>&1")
+    if shutil.which("gradience-cli") and os.path.isfile(f"{COLORS_DIR}/colors-gradience.json"):
+        os.system(f"gradience-cli apply -p '{COLORS_DIR}/colors-gradience.json' --gtk both >/dev/null 2>&1")
+
+    # Prefer hyprpaper preload+wallpaper when on Hyprland; else swww if present
+    if shutil.which("hyprctl") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        os.system(f"hyprctl hyprpaper preload '{WALLPAPER_PATH}' >/dev/null 2>&1")
+        os.system(f"hyprctl hyprpaper wallpaper ',{WALLPAPER_PATH}' >/dev/null 2>&1")
+    elif shutil.which("swww"):
+        os.system(f"swww img {WALLPAPER_PATH} --transition-fps 75 --transition-type wipe --transition-duration 2 >/dev/null 2>&1")
 
 
 def main(colors, image, scheme, type, base_color):

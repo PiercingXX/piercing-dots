@@ -206,12 +206,12 @@
 
 (defwidget volume-indicator []
   (eventbox
-    :onscroll "volume {}"
+    :onscroll "scripts/volume {}"
     :cursor "pointer"
     :valign "center"
     (button
       :class "volume-indicator ${audio.output.muted}"
-      :onclick "volume toggle"
+      :onclick "scripts/volume toggle"
       :tooltip "${audio.output.volume}%"
       {icons.volume[audio.output.muted]}
     )

@@ -1,19 +1,115 @@
 #!/bin/bash
+# Volume listen + control for eww (pamixer + pactl).
+# Usage:
+#   scripts/volume              # listen (JSON stream for deflisten)
+#   scripts/volume get          # one-shot JSON
+#   scripts/volume set <0-100>
+#   scripts/volume toggle
+#   scripts/volume up|down
+#   scripts/volume mic          # toggle default source mute
 
-input_source=$(volume source | jq .input)
+set -u
 
-output=$(pamixer --get-volume)
-output_mute=$(pamixer --get-mute)
-input=$(pamixer --source $input_source --get-volume)
-input_mute=$(pamixer --source $input_source --get-mute)
+have_pamixer() { command -v pamixer >/dev/null 2>&1; }
+have_pactl() { command -v pactl >/dev/null 2>&1; }
 
-echo '{"output": {"volume": '$output', "muted": "'$output_mute'"}, "input": {"volume": '$input', "muted": "'$input_mute'"}}'
+default_source() {
+  if have_pactl; then
+    pactl get-default-source 2>/dev/null && return
+  fi
+  if have_pamixer; then
+    pamixer --list-sources 2>/dev/null | awk '/Running|Idle/{print $1; exit}'
+  fi
+}
 
-pactl subscribe | rg --line-buffered "on sink|on source" | while read -r _; do
-  output=$(pamixer --get-volume)
-  output_mute=$(pamixer --get-mute)
-  input=$(pamixer --source $input_source --get-volume)
-  input_mute=$(pamixer --source $input_source --get-mute)
+emit() {
+  local out_vol=0 out_mute=false in_vol=0 in_mute=false src
+  src="$(default_source)"
 
-  echo '{"output": {"volume": '$output', "muted": "'$output_mute'"}, "input": {"volume": '$input', "muted": "'$input_mute'"}}'
-done
+  if have_pamixer; then
+    out_vol="$(pamixer --get-volume 2>/dev/null || echo 0)"
+    out_mute="$(pamixer --get-mute 2>/dev/null || echo false)"
+    if [[ -n "$src" ]]; then
+      in_vol="$(pamixer --source "$src" --get-volume 2>/dev/null || echo 0)"
+      in_mute="$(pamixer --source "$src" --get-mute 2>/dev/null || echo false)"
+    fi
+  elif have_pactl; then
+    out_vol="$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -oP '\d+%' | head -1 | tr -d '%' || echo 0)"
+    if pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | grep -q yes; then out_mute=true; else out_mute=false; fi
+    in_vol="$(pactl get-source-volume @DEFAULT_SOURCE@ 2>/dev/null | grep -oP '\d+%' | head -1 | tr -d '%' || echo 0)"
+    if pactl get-source-mute @DEFAULT_SOURCE@ 2>/dev/null | grep -q yes; then in_mute=true; else in_mute=false; fi
+  fi
+
+  printf '{"output":{"volume":%s,"muted":"%s"},"input":{"volume":%s,"muted":"%s"}}\n' \
+    "${out_vol:-0}" "${out_mute:-false}" "${in_vol:-0}" "${in_mute:-false}"
+}
+
+listen() {
+  emit
+  if have_pactl; then
+    pactl subscribe 2>/dev/null | grep --line-buffered -E 'on sink|on source' | while read -r _; do
+      emit
+    done
+  else
+    while true; do
+      sleep 2
+      emit
+    done
+  fi
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  ""|listen)
+    listen
+    ;;
+  get)
+    emit
+    ;;
+  set)
+    vol="${2:-0}"
+    if have_pamixer; then
+      pamixer --set-volume "$vol"
+    elif have_pactl; then
+      pactl set-sink-volume @DEFAULT_SINK@ "${vol}%"
+    fi
+    ;;
+  toggle)
+    if have_pamixer; then
+      pamixer --toggle-mute
+    elif have_pactl; then
+      pactl set-sink-mute @DEFAULT_SINK@ toggle
+    fi
+    ;;
+  up)
+    if have_pamixer; then
+      pamixer -i 5
+    elif have_pactl; then
+      pactl set-sink-volume @DEFAULT_SINK@ +5%
+    fi
+    ;;
+  down)
+    if have_pamixer; then
+      pamixer -d 5
+    elif have_pactl; then
+      pactl set-sink-volume @DEFAULT_SINK@ -5%
+    fi
+    ;;
+  mic)
+    src="$(default_source)"
+    if have_pamixer && [[ -n "$src" ]]; then
+      pamixer --source "$src" --toggle-mute
+    elif have_pactl; then
+      pactl set-source-mute @DEFAULT_SOURCE@ toggle
+    fi
+    ;;
+  *)
+    # eww onscroll may pass literal scroll tokens; treat unknown as no-op listen tick
+    if [[ "$cmd" == "up" || "$cmd" == "down" ]]; then
+      :
+    else
+      echo "Usage: $0 [listen|get|set N|toggle|up|down|mic]" >&2
+      exit 1
+    fi
+    ;;
+esac

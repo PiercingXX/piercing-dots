@@ -2,8 +2,8 @@
 (include "yuck/windows.yuck")
 (include "yuck/setup.yuck")
 
-(defpoll nightlight      :interval "10h" `scripts/nightlight get`)
-(defpoll powerprofile    :interval "10h" `scripts/powerprofile get`)
+(defpoll nightlight      :interval "1m"  `scripts/nightlight get`)
+(defpoll powerprofile    :interval "1m"  `scripts/powerprofile get`)
 (defpoll theme           :interval "10h" `scripts/theme get`)
 (defpoll date            :interval "5m"  `date +'{"day": "%d", "month": "%m", "year": "%Y"}'`)
 (defpoll uptime          :interval "1m"  `awk '{print $1 / 60}' /proc/uptime`)
@@ -14,11 +14,11 @@
 (deflisten network       :initial "{}" `scripts/network`)
 (deflisten workspaces    :initial "{}" `scripts/python/hyprland.py`)
 (deflisten weather       :initial "{}" `scripts/python/weather.py`)
-(deflisten notifications :initial "{}" `scripts/python/notifications.py`)
+(deflisten notifications :initial '{"dnd":false,"notifications":[],"popups":[]}' `scripts/notifications-listen`)
 (deflisten mpris         :initial "{}" `scripts/python/mpris.py`)
 (deflisten apps          :initial "{}" `scripts/python/apps.py`)
-  
-(defvar user             "klyn@arch")
+
+(defvar user             "piercingxx")
 (defvar active           "{}")
 (defvar dock             "{}")
 (defvar positions        "{}")

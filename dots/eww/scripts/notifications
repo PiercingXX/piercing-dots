@@ -1,32 +1,52 @@
 #!/bin/bash
+# Notification actions for eww.
+# Prefers swaync when it owns the session bus; otherwise talks to eww's python daemon.
+
+set -u
+
+have_swaync() {
+  pgrep -x swaync >/dev/null 2>&1 && command -v swaync-client >/dev/null 2>&1
+}
 
 dismiss() {
+  if have_swaync; then
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
     org.freedesktop.Notifications.DismissPopup \
-    uint32:$1
+    uint32:"$1"
 }
 
 close() {
+  if have_swaync; then
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
     org.freedesktop.Notifications.CloseNotification \
-    uint32:$1
+    uint32:"$1"
 }
 
 action() {
+  if have_swaync; then
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
     org.freedesktop.Notifications.InvokeAction \
-    uint32:$1 string:$2
-
+    uint32:"$1" string:"$2"
   eww update info-center_rev=false
 }
 
 clear_all() {
+  if have_swaync; then
+    swaync-client -C >/dev/null 2>&1 || true
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
@@ -34,6 +54,10 @@ clear_all() {
 }
 
 toggle_dnd() {
+  if have_swaync; then
+    swaync-client -d >/dev/null 2>&1 || swaync-client --toggle-dnd >/dev/null 2>&1 || true
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
@@ -41,16 +65,22 @@ toggle_dnd() {
 }
 
 remove_id() {
+  if have_swaync; then
+    return 0
+  fi
   dbus-send --session --type=method_call \
     --dest=org.freedesktop.Notifications \
     /org/freedesktop/Notifications \
     org.freedesktop.Notifications.RemovePopupID \
-    uint32:$1
+    uint32:"$1"
 }
 
-if [[ $1 == 'dismiss' ]]; then dismiss $2 $3; fi
-if [[ $1 == 'close' ]]; then close $2; fi
-if [[ $1 == 'action' ]]; then action $2 $3; fi
-if [[ $1 == 'clear' ]]; then clear_all; fi
-if [[ $1 == 'toggle' ]]; then toggle_dnd; fi
-if [[ $1 == 'pop' ]]; then remove_id $2; fi
+case "${1:-}" in
+  dismiss) dismiss "${2:-0}" ;;
+  close) close "${2:-0}" ;;
+  action) action "${2:-0}" "${3:-}" ;;
+  clear) clear_all ;;
+  toggle) toggle_dnd ;;
+  pop) remove_id "${2:-0}" ;;
+  *) echo "Usage: $0 [dismiss|close|action|clear|toggle|pop] ..." >&2; exit 1 ;;
+esac

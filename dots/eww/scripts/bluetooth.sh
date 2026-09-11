@@ -1,12 +1,13 @@
 #!/bin/bash
+# Bluetooth powered-on state (not merely bluetoothd present).
 
-function state() {
-  STATE=$(pgrep bluetoothd)
-  if [[ -z $STATE ]]; then
-    echo 'false'
-  else
-    echo 'true'
-  fi
-}
+if ! command -v bluetoothctl >/dev/null 2>&1; then
+  echo false
+  exit 0
+fi
 
-state
+if bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
+  echo true
+else
+  echo false
+fi

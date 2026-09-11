@@ -1,0 +1,37 @@
+#!/bin/bash
+# Notification stream for eww deflisten.
+# If swaync (or another daemon) already owns the bus, emit a compatible stub
+# instead of fighting for org.freedesktop.Notifications.
+
+set -u
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PYTHON="$SCRIPT_DIR/python/notifications.py"
+
+emit_stub() {
+  local dnd=false
+  if command -v swaync-client >/dev/null 2>&1; then
+    if swaync-client -D 2>/dev/null | grep -qiE 'true|1|yes'; then
+      dnd=true
+    fi
+  fi
+  printf '{"dnd":%s,"notifications":[],"popups":[]}\n' "$dnd"
+}
+
+external_daemon() {
+  pgrep -x swaync >/dev/null 2>&1 && return 0
+  pgrep -x dunst >/dev/null 2>&1 && return 0
+  pgrep -x mako >/dev/null 2>&1 && return 0
+  pgrep -x notification-daemon >/dev/null 2>&1 && return 0
+  return 1
+}
+
+if external_daemon; then
+  emit_stub
+  while true; do
+    sleep 5
+    emit_stub
+  done
+fi
+
+exec python3 "$PYTHON"

@@ -14,13 +14,13 @@
             :value {audio.output.volume}
             :orientation "v"
             :flipped true
-            :onchange "volume set {}"
+            :onchange "scripts/volume set {}"
           )
         )
         (label
           :halign "center"
           :valign "end"
-          :text {icons.media[audio.output.muted]}
+          :text {icons.volume[audio.output.muted]}
         )
       )
     )

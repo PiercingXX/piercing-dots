@@ -63,7 +63,7 @@ class Notifications(dbus.service.Object):
     def GetServerInformation(self):
         return (
             "dbus notifications", 
-            "klyn", 
+            "piercingxx", 
             "1.0", 
             "1.2"
         )

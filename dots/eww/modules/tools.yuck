@@ -32,7 +32,7 @@
 
 (defwidget screenshot_area []
   (button 
-    :onclick "sleep 0.1 && exec ~/.config/hypr/scripts/screenshot crop &" 
+    :onclick "sleep 0.1 && ~/.scripts/Control-Scripts/wm-screenshot.sh region &" 
     :tooltip "Screenshot area"
     :class "tool" "󰆞"
   )
@@ -40,7 +40,7 @@
 
 (defwidget screenshot_full []
   (button 
-    :onclick "sleep 0.1 && exec ~/.config/hypr/scripts/screenshot full &" 
+    :onclick "sleep 0.1 && ~/.scripts/Control-Scripts/wm-screenshot.sh full &" 
     :tooltip "Screenshot full"
     :class "tool" "󰆟"
   )
