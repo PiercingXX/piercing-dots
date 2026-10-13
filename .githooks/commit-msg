@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 # Strip vendor Co-authored-by trailers before the commit object is written.
 # GitHub paints those names on the repo as contributors — that is an ad.
-# Skippy-Agent stays. Cursor, Cursor Agent, Claude, Grok, Copilot, OpenAI do not.
+# Skippy-Agent stays. Cursor, Claude, Grok, Copilot, OpenAI, Gemini, Devin,
+# Aider, Windsurf, Codeium, Jules and Qwen do not.
+# POSIX awk instead of GNU sed so it also works on macOS/BSD clones.
 [ -f "$1" ] || exit 0
-sed -i -E \
-  '/^Co-authored-by:[[:space:]]*(Cursor([[:space:]]+Agent)?|Claude([[:space:]]+Code)?|Anthropic|GitHub Copilot|OpenAI|Codex|Grok|xAI|X\.AI)\b/Id;
-   /^Co-authored-by:.*<(cursoragent@cursor\.com|noreply@anthropic\.com|(noreply|codex)@openai\.com|copilot@github\.com)>/Id;
-   /^(Claude|Grok|Cursor)-Session:/Id;
-   /^Made with \[Cursor\]/Id;
-   /^Made-with:[[:space:]]*(Cursor|Claude|Grok)/Id;
-   /^Generated-By:[[:space:]]*(cursor|claude|grok)/Id' \
-  "$1"
+
+tmp="$(mktemp "${TMPDIR:-/tmp}/commit-msg.XXXXXX")" || exit 0
+trap 'rm -f "$tmp"' EXIT
+
+vendors='cursor([[:space:]]+agent)?|claude([[:space:]]+code)?|anthropic|github[[:space:]]+copilot|copilot|openai|codex|grok|xai|x[.]ai|(google[[:space:]]+)?gemini([[:space:]]+code[[:space:]]+assist)?|devin|aider|windsurf|codeium|jules|qwen([[:space:]]+code)?'
+
+awk -v vendors="$vendors" '
+{
+    l = tolower($0)
+    if (l ~ ("^co-authored-by:[[:space:]]*(" vendors ")([^a-z0-9_]|$)")) next
+    if (l ~ /^co-authored-by:.*<(cursoragent@cursor\.com|noreply@anthropic\.com|(noreply|codex)@openai\.com|copilot@github\.com|[^>]*(copilot|devin-ai-integration|gemini-code-assist|google-labs-jules|windsurf|aider)[^>]*\[bot\]@users\.noreply\.github\.com|[^>]*@aider\.chat|[^>]*@codeium\.com|[^>]*@windsurf\.com)>/) next
+    if (l ~ ("^(" vendors ")-session:")) next
+    if (l ~ /^made with \[cursor\]/) next
+    if (l ~ ("^made-with:[[:space:]]*(" vendors ")")) next
+    if (l ~ ("^generated-by:[[:space:]]*(" vendors ")")) next
+    if (l ~ ("^[^a-z]*generated with \\[(" vendors ")\\]")) next
+    print
+}' "$1" > "$tmp" && cat "$tmp" > "$1"

@@ -1,0 +1,43 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{sh,bash}]
+indent_style = space
+indent_size = 4
+
+# Extensionless shell scripts and rc files
+[{.bashrc,.githooks/*,resources/.scripts/Control-Scripts/start-*,resources/.scripts/Control-Scripts/yazi-open-nvim-smart}]
+indent_style = space
+indent_size = 4
+
+# sfp-fiber-lockout-fix.sh and the waybar module scripts keep their existing style
+[scripts/sfp-fiber-lockout-fix.sh]
+indent_size = 2
+
+[dots/waybar/scripts/{brightness,kb-brightness,volume}]
+indent_style = tab
+
+[*.{lua,py}]
+indent_style = space
+indent_size = 4
+
+[*.{json,jsonc,yml,yaml,toml}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# Vendored trees: leave untouched
+[dots/{GIMP,opencode}/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset

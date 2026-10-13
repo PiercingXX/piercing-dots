@@ -1,0 +1,45 @@
+name: shellcheck
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Collect shell scripts
+        # Every tracked *.sh plus extensionless files with a bash/sh shebang,
+        # .githooks and .bashrc. Vendored GIMP/opencode trees and fuzzel-emoji
+        # (script header + raw emoji data after exit) are skipped.
+        run: |
+          : > scripts.list
+          git ls-files | grep -vE '^dots/(GIMP|opencode)/|^dots/fuzzel/fuzzel-emoji$' | while read -r f; do
+            [ -f "$f" ] || continue
+            case "$f" in
+              *.sh|.githooks/*|resources/bash/.bashrc) echo "$f" >> scripts.list; continue ;;
+            esac
+            if head -n1 "$f" | grep -qE '^#!.*[/ ](ba)?sh([[:space:]]|$)'; then
+              echo "$f" >> scripts.list
+            fi
+          done
+          wc -l < scripts.list
+          cat scripts.list
+
+      - name: Syntax check (bash -n)
+        run: |
+          fail=0
+          while read -r f; do
+            bash -n "$f" || { echo "::error file=$f::bash -n failed"; fail=1; }
+          done < scripts.list
+          exit $fail
+
+      - name: shellcheck (errors)
+        # Error level for now; raise to -S warning once the backlog is cleared.
+        run: xargs -d '\n' shellcheck -S error -x < scripts.list

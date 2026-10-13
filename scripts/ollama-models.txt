@@ -1,0 +1,20 @@
+# Models for ollama-setup.sh --pull. One tag per line; # comments and blank lines are skipped.
+# Uncomment what fits your VRAM. Check https://ollama.com/library for current tags.
+
+# Small / low VRAM (<= 12 GB)
+#gemma3:12b
+#qwen3:8b
+#mistral-small3.2:24b
+#gpt-oss:20b
+
+# Mid (16-24 GB)
+#gemma3:27b-it-qat
+#qwen3:32b
+#qwen3-coder:30b
+#devstral:24b
+
+# Large (48 GB+ / multi-GPU)
+#llama3.3:70b
+#deepseek-r1:70b
+#gpt-oss:120b
+#qwen3:235b

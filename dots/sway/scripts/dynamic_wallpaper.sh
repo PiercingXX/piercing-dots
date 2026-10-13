@@ -1,18 +1,29 @@
-#!/bin/sh
-isServerExist=`ps -ef|grep -m 1 swaybg|grep -v "grep"|wc -l`
-if [ "$isServerExist" = "0" ]; then
-	echo "my_server not found"
-elif [ "$isServerExist" = "1" ]; then
-  killall swaybg
-fi
-# Automatically change wallpaper every 10 minutes
-swaybg -i $(find ~/.config/sway/wallpaper/. -name "*.png" | shuf -n1) -m fill &
-OLD_PID=$!
+#!/usr/bin/env bash
+# Rotate a random wallpaper from ~/.config/sway/wallpaper every INTERVAL seconds.
+
+WALL_DIR="${WALL_DIR:-$HOME/.config/sway/wallpaper}"
+INTERVAL="${INTERVAL:-600}"   # 10 minutes
+
+pick() {
+    find "$WALL_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
+        | shuf -n1
+}
+
+pkill -x swaybg 2>/dev/null
+
+img=$(pick)
+[ -n "$img" ] || { echo "No wallpapers in $WALL_DIR" >&2; exit 1; }
+swaybg -i "$img" -m fill &
+old_pid=$!
+
 while true; do
-    sleep 120
-    swaybg -i $(find ~/.config/sway/wallpaper/. -name "*.png" | shuf -n1) -m fill &
-    NEXT_PID=$!
+    sleep "$INTERVAL"
+    img=$(pick)
+    [ -n "$img" ] || continue
+    swaybg -i "$img" -m fill &
+    next_pid=$!
+    # Let the new one draw before removing the old one (no flash)
     sleep 5
-    kill $OLD_PID
-    OLD_PID=$NEXT_PID
+    kill "$old_pid" 2>/dev/null
+    old_pid=$next_pid
 done

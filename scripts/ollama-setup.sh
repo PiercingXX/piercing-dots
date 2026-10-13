@@ -1,182 +1,191 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# GitHub.com/PiercingXX
+#
+# Ollama install + model-directory migration.
+# Installs Ollama (distro package on Arch, upstream installer elsewhere),
+# then moves the models directory to a custom location and points the
+# systemd service at it.
+#
+# Usage: sudo ./ollama-setup.sh [--pull]
+#   OLLAMA_TARGET=/path   models destination (default: $PIERCINGXX_WORK_ROOT/.ollama-models)
+#   OLLAMA_VARIANT=cuda|rocm|cpu   Arch package flavour (default: auto-detect GPU)
+#   --pull                pull every uncommented model in ollama-models.txt
 
-# Ollama Install and Migration Script
-# Installs Ollama (if needed) and moves models directory to a custom location
+set -euo pipefail
 
-set -e  # Exit on any error
+script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck disable=SC1091
+. "$script_dir/../resources/.scripts/lib/common.sh"
 
-SOURCE="/usr/share/ollama/.ollama/models"
-TARGET="/media/Working-Storage/.ollama-models"
 SERVICE="ollama"
+TARGET="${OLLAMA_TARGET:-$PX_WORK_ROOT/.ollama-models}"
+MODELS_FILE="$script_dir/ollama-models.txt"
+PULL=0
+[ "${1:-}" = "--pull" ] && PULL=1
 
 echo "=== Ollama Install & Migration Script ==="
 echo "Target models directory: $TARGET"
 echo ""
 
-# Check if running as root
 if [[ $EUID -ne 0 ]]; then
-   echo "❌ This script must be run with sudo"
-   exit 1
+    die "This script must be run with sudo."
 fi
 
-# Check and install rsync if necessary
-if ! command -v rsync &> /dev/null; then
-    echo "📦 rsync not found. Installing..."
-    
-    if command -v apt-get &> /dev/null; then
-        apt-get update
-        apt-get install -y rsync
-    elif command -v pacman &> /dev/null; then
-        pacman -Sy --noconfirm rsync
-    elif command -v dnf &> /dev/null; then
-        dnf install -y rsync
-    elif command -v yum &> /dev/null; then
-        yum install -y rsync
+detect_distro
+[ "$INIT" = systemd ] || die "Model migration configures a systemd drop-in; $INIT is not supported."
+
+# The target must live on a mounted volume, not silently on the root fs
+target_parent="$(dirname "$TARGET")"
+if [ ! -d "$target_parent" ]; then
+    die "Parent of target does not exist: $target_parent (is the drive mounted? set OLLAMA_TARGET to override)"
+fi
+
+dir_empty() { [ -z "$(find "$1" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; }
+
+command_exists rsync || pkg_install rsync
+
+# --- Install --------------------------------------------------------------
+arch_variant() {
+    case "${OLLAMA_VARIANT:-}" in
+        cuda) echo ollama-cuda; return ;;
+        rocm) echo ollama-rocm; return ;;
+        cpu)  echo ollama; return ;;
+    esac
+    local gpus
+    gpus=$(lspci 2>/dev/null | grep -iE 'vga|3d' || true)
+    if grep -qi nvidia <<<"$gpus"; then
+        echo ollama-cuda
+    elif grep -qiE 'amd|ati' <<<"$gpus"; then
+        echo ollama-rocm
     else
-        echo "❌ Could not determine package manager. Please install rsync manually:"
-        echo "   apt: sudo apt-get install rsync"
-        echo "   arch: sudo pacman -S rsync"
-        echo "   fedora: sudo dnf install rsync"
-        echo "   centos: sudo yum install rsync"
-        exit 1
+        echo ollama
     fi
-    echo "✅ rsync installed successfully"
-else
-    echo "✅ rsync is already installed"
-fi
+}
 
-# Check and install Ollama if necessary
-if ! command -v ollama &> /dev/null; then
-    echo ""
-    echo "📦 Ollama not found. Installing from official source..."
-    curl -fsSL https://ollama.com/install.sh | sh
-    echo "✅ Ollama installed successfully"
+if ! command_exists ollama; then
+    echo "📦 Ollama not found. Installing..."
+    if is_arch_like; then
+        pkg_install "$(arch_variant)"
+        systemctl enable --now "$SERVICE"
+    else
+        tmp_installer=$(mktemp)
+        curl -fsSL https://ollama.com/install.sh -o "$tmp_installer"
+        sh "$tmp_installer"
+        rm -f "$tmp_installer"
+    fi
     sleep 2
+    echo "✅ Ollama installed"
 else
     echo "✅ Ollama is already installed"
 fi
 
-# Ollama model pulling (optional - uncomment to pull specific models)
-    # Tiny models for testing and low VRAM:
-        #ollama pull kimi-k2.5:cloud
-        #ollama pull mistral:7b
-        #ollama pull gemma3:12b
-        #ollama pull gpt-oss:20b
-        #ollama pull gemma3:27b-it-qat
-        #ollama pull codellama:34b
-    # Better Models, more vram usage:
-        #ollama pull qwen3-coder:30b
-        #ollama pull qwq:32b
-        #ollama pull deepseek-r1:70b
-        #ollama pull llama3.3:70b
-        #ollama pull llama3.2-vision:90b
-        #ollama pull command-r-plus:104b
-        #ollama pull gpt-oss:120b
-        #ollama pull qwen3.5:122b
-        #ollama pull milkey/deepseek-v2.5-1210-UD:IQ1_M
-        #ollama pull qwen3-coder-next:q4_K_M
-        #ollama pull qwen3-coder-next:q8_0
+# --- Find where the service keeps models today ----------------------------
+service_env() {
+    systemctl show "$SERVICE" -p Environment --value 2>/dev/null | tr ' ' '\n' | sed -n "s/^$1=//p" | tail -1
+}
 
-
-# Check if target already has models (indicates migration was already done)
-if [ -d "$TARGET" ] && [ "$(ls -A $TARGET 2>/dev/null)" ]; then
-    echo ""
-    echo "=== Models Already Migrated ==="
-    echo "✅ Target directory already has models: $TARGET"
-    echo "ℹ️  Skipping migration (already completed)"
-    MIGRATION_NEEDED=false
-else
-    MIGRATION_NEEDED=true
+SOURCE="$(service_env OLLAMA_MODELS)"
+if [ -z "$SOURCE" ] || [ "$SOURCE" = "$TARGET" ]; then
+    for cand in /var/lib/ollama/.ollama/models /var/lib/ollama /usr/share/ollama/.ollama/models; do
+        if [ -d "$cand" ] && [ "$cand" != "$TARGET" ]; then
+            SOURCE="$cand"
+            break
+        fi
+    done
 fi
 
-if [ "$MIGRATION_NEEDED" = true ]; then
-    # Check if source exists (it should after install)
-    if [ ! -d "$SOURCE" ]; then
-        echo "❌ Source directory does not exist: $SOURCE"
-        echo "   Ollama may not have initialized yet. Please try again after starting Ollama."
-        exit 1
-    fi
+svc_user="$(systemctl show "$SERVICE" -p User --value 2>/dev/null || true)"
+dynamic_user="$(systemctl show "$SERVICE" -p DynamicUser --value 2>/dev/null || echo no)"
 
+# --- Migrate --------------------------------------------------------------
+if [ -d "$TARGET" ] && ! dir_empty "$TARGET"; then
+    echo ""
+    echo "✅ Target already has models: $TARGET — skipping migration."
+elif [ -z "$SOURCE" ] || [ ! -d "$SOURCE" ]; then
+    echo "ℹ️  No existing models directory found; target will start empty."
+    mkdir -p "$TARGET"
+else
     echo ""
     echo "=== Beginning Model Migration ==="
     echo "Source: $SOURCE"
     echo "Target: $TARGET"
-    echo ""
 
-    # Check if service is running
-    if systemctl is-active --quiet $SERVICE; then
+    if systemctl is-active --quiet "$SERVICE"; then
         echo "⏹️  Stopping ollama service..."
-        systemctl stop $SERVICE
+        systemctl stop "$SERVICE"
         sleep 2
-    else
-        echo "ℹ️  ollama service is not running"
     fi
 
-    # Create target parent directory if it doesn't exist
-    echo "📁 Creating target directory..."
     mkdir -p "$TARGET"
-
-    # Copy models (only if there are models to copy)
-    if [ "$(ls -A $SOURCE)" ]; then
+    if ! dir_empty "$SOURCE"; then
         echo "📋 Copying models (this may take a while)..."
-        rsync -av --progress "$SOURCE/" "$TARGET/"
-        echo "✅ Models copied successfully"
-        
-        # Remove original models directory after successful copy
-        echo "🗑️  Removing original model files..."
-        rm -rf "$SOURCE"
-        echo "✅ Original directory removed"
+        # Only blobs/ and manifests/ are model data; Arch keeps them directly in /var/lib/ollama
+        if [ -d "$SOURCE/blobs" ] || [ -d "$SOURCE/manifests" ]; then
+            for sub in blobs manifests; do
+                [ -d "$SOURCE/$sub" ] || continue
+                rsync -a --info=progress2 "$SOURCE/$sub/" "$TARGET/$sub/"
+            done
+            echo "✅ Models copied"
+            echo "🗑️  Removing original model files..."
+            rm -rf "${SOURCE:?}/blobs" "${SOURCE:?}/manifests"
+        else
+            rsync -a --info=progress2 "$SOURCE/" "$TARGET/"
+            echo "✅ Models copied"
+            if [ "$SOURCE" != /var/lib/ollama ]; then
+                rm -rf "${SOURCE:?}"
+            fi
+        fi
+        echo "✅ Original model files removed"
     else
         echo "ℹ️  No existing models to copy"
-        echo "📁 Target directory ready for new models"
     fi
 fi
 
-# Fix permissions
-echo "🔐 Setting permissions for ollama user..."
-chown -R ollama:ollama "$TARGET"
-chmod -R u+rwX,g+rX,o-rwx "$TARGET"
+# --- Permissions + service drop-in ----------------------------------------
+dropin_dir="/etc/systemd/system/${SERVICE}.service.d"
+mkdir -p "$dropin_dir"
+{
+    echo "[Service]"
+    echo "Environment=\"OLLAMA_MODELS=$TARGET\""
+    # Hardened units (ProtectSystem/DynamicUser) need explicit write access
+    echo "ReadWritePaths=$TARGET"
+} > "$dropin_dir/override.conf"
+echo "📝 Wrote $dropin_dir/override.conf"
 
-# Create systemd override directory
-echo "⚙️  Configuring systemd service..."
-mkdir -p /etc/systemd/system/${SERVICE}.service.d
+if [ "$dynamic_user" = yes ]; then
+    echo "ℹ️  Service uses DynamicUser; leaving ownership to systemd (StateDirectory)."
+    chmod -R u+rwX,g+rX,o+rX "$TARGET"
+else
+    owner="${svc_user:-ollama}"
+    if id "$owner" >/dev/null 2>&1; then
+        echo "🔐 Setting permissions for $owner..."
+        chown -R "$owner":"$(id -gn "$owner")" "$TARGET"
+        chmod -R u+rwX,g+rX,o-rwx "$TARGET"
+    else
+        warn "Service user '$owner' not found; check ownership of $TARGET manually."
+    fi
+fi
 
-# Write the override file
-cat > /etc/systemd/system/${SERVICE}.service.d/override.conf <<EOF
-[Service]
-Environment="OLLAMA_MODELS=$TARGET"
-EOF
-
-echo "📝 Created systemd override at /etc/systemd/system/${SERVICE}.service.d/override.conf"
-
-# Reload systemd
-echo "🔄 Reloading systemd daemon..."
 systemctl daemon-reload
-
-# Start the service
-echo "▶️  Starting ollama service..."
-systemctl start $SERVICE
+systemctl restart "$SERVICE"
 sleep 3
 
 echo ""
 echo "=== Verification ==="
+systemctl show "$SERVICE" -p Environment | grep OLLAMA_MODELS || warn "OLLAMA_MODELS not in the service environment"
+journalctl -u "$SERVICE" -n 20 --no-pager | grep -i error || echo "✅ No errors in logs"
 
-# Check systemd environment
-echo "Checking systemd configuration..."
-systemctl show $SERVICE -p Environment | grep OLLAMA_MODELS || echo "⚠️  Environment var not found"
+# --- Optional model pulls -------------------------------------------------
+if [ "$PULL" -eq 1 ] && [ -f "$MODELS_FILE" ]; then
+    echo ""
+    echo "=== Pulling models from $(basename "$MODELS_FILE") ==="
+    grep -vE '^\s*(#|$)' "$MODELS_FILE" | while read -r model; do
+        echo "⬇️  $model"
+        ollama pull "$model" || warn "Pull failed: $model"
+    done
+fi
 
-# Check journal for errors
-echo ""
-echo "Checking service logs (last 20 lines)..."
-journalctl -u $SERVICE -n 20 --no-pager | grep -i error || echo "✅ No errors in logs"
-
-# Check if models are accessible
 echo ""
 echo "✅ Installation & Migration Complete!"
-echo ""
-echo "All model files have been successfully moved to: $TARGET"
-echo ""
-echo "Next steps:"
-echo "1. Verify models are accessible: ollama list"
-echo "2. Test with a model: ollama pull <model-name>"
-echo "3. Confirm new models are stored in: $TARGET"
+echo "Models live in: $TARGET"
+echo "Next: 'ollama list', or edit $(basename "$MODELS_FILE") and rerun with --pull."

@@ -1,27 +1,49 @@
 #!/usr/bin/env bash
 # Install the vendor-trailer strip hook so Cursor/Claude/Grok cannot
 # paint themselves onto GitHub as contributors. Skippy-Agent is kept.
+#
+# Repos under these roots get the hook (one level deep):
+#   ~/GitHub, $PIERCINGXX_WORK_ROOT/GitHub and its project folders.
+# Override with GIT_HOOK_ROOTS="/path/one:/path/two".
+# An existing, different commit-msg hook is backed up to commit-msg.bak-<date>.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 HOOK_SRC="$ROOT/.githooks/commit-msg"
 [ -f "$HOOK_SRC" ] || { echo "missing $HOOK_SRC" >&2; exit 1; }
 
+# Always the invoking user's real home (plain `sudo` keeps HOME=/root otherwise)
 username="$(id -un)"
-home_dir="${HOME:-$(getent passwd "$username" | cut -d: -f6)}"
+home_dir="$(getent passwd "$username" | cut -d: -f6)"
+[ -n "$home_dir" ] || home_dir="$HOME"
+work_root="${PIERCINGXX_WORK_ROOT:-/media/Working-Storage}"
+stamp="$(date +%Y%m%d-%H%M%S)"
+
+# install_hook DEST : copy the hook, backing up a different existing one
+install_hook() {
+    local dest="$1"
+    mkdir -p "$(dirname "$dest")"
+    if [ -e "$dest" ] && ! cmp -s "$HOOK_SRC" "$dest"; then
+        if [ "$(readlink -f "$HOOK_SRC")" = "$(readlink -f "$dest")" ]; then
+            return 0
+        fi
+        cp -a "$dest" "$dest.bak-$stamp"
+        echo "Backed up existing hook: $dest.bak-$stamp"
+    fi
+    cmp -s "$HOOK_SRC" "$dest" 2>/dev/null || install -m 755 "$HOOK_SRC" "$dest"
+}
+
 template_dir="$home_dir/.config/git/templates"
 template_hook="$template_dir/hooks/commit-msg"
 
-mkdir -p "$template_dir/hooks"
-install -m 755 "$HOOK_SRC" "$template_hook"
+install_hook "$template_hook"
 
 current_template="$(git config --global --get init.templateDir || true)"
 if [ -z "$current_template" ]; then
     git config --global init.templateDir "$template_dir"
     echo "Set init.templateDir to $template_dir"
 elif [ "$current_template" != "$template_dir" ]; then
-    mkdir -p "$current_template/hooks"
-    install -m 755 "$HOOK_SRC" "$current_template/hooks/commit-msg"
+    install_hook "$current_template/hooks/commit-msg"
     echo "Installed commit-msg into existing templateDir $current_template"
 fi
 
@@ -35,10 +57,7 @@ install_into_repo() {
             /*) dest="$hp" ;;
             *) dest="$repo/$hp" ;;
         esac
-        mkdir -p "$dest"
-        if [ "$(readlink -f "$HOOK_SRC")" != "$(readlink -f "$dest/commit-msg" 2>/dev/null || true)" ]; then
-            install -m 755 "$HOOK_SRC" "$dest/commit-msg"
-        fi
+        install_hook "$dest/commit-msg"
     else
         local gitdir
         gitdir="$(git -C "$repo" rev-parse --git-dir)"
@@ -46,8 +65,7 @@ install_into_repo() {
             /*) ;;
             *) gitdir="$repo/$gitdir" ;;
         esac
-        mkdir -p "$gitdir/hooks"
-        install -m 755 "$HOOK_SRC" "$gitdir/hooks/commit-msg"
+        install_hook "$gitdir/hooks/commit-msg"
     fi
 }
 
@@ -58,15 +76,21 @@ if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "Enabled .githooks for piercing-dots"
 fi
 
-# Existing clones under the usual GitHub work roots.
-for root in \
-    "$home_dir/GitHub" \
-    /media/Working-Storage/GitHub \
-    /media/Working-Storage/GitHub/Skippy-Project \
-    /media/Working-Storage/GitHub/Battlezone-Projects \
-    /media/Working-Storage/GitHub/Phone-Projects \
-    /media/Working-Storage/GitHub/Linux-Mods \
-    /media/Working-Storage/GitHub/xx-stack
+# Existing clones under the usual GitHub work roots: each root, its repos,
+# and project folders that group repos one level further down.
+roots=()
+if [ -n "${GIT_HOOK_ROOTS:-}" ]; then
+    IFS=':' read -r -a roots <<< "$GIT_HOOK_ROOTS"
+else
+    roots=("$home_dir/GitHub" "$work_root/GitHub")
+    for sub in "$work_root"/GitHub/*/; do
+        sub="${sub%/}"
+        [ -d "$sub/.git" ] && continue   # a repo, not a project folder
+        roots+=("$sub")
+    done
+fi
+
+for root in "${roots[@]}"
 do
     [ -d "$root" ] || continue
     if [ -d "$root/.git" ]; then

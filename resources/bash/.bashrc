@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+# shellcheck shell=bash
+# (sourced by bash, never executed)
 
 # Detect interactive shell
 case $- in *i*) iatest=1 ;; *) iatest=0 ;; esac
@@ -11,10 +12,29 @@ case $- in *i*) iatest=1 ;; *) iatest=0 ;; esac
 # Core sourcing and completion
 #######################################################
 
-# Source global definitions
+# Source global definitions (Fedora/openSUSE; Arch/Debian auto-source /etc/bash.bashrc)
 if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
+
+# PATH first, so tools in ~/.local/bin, ~/.cargo/bin, etc. are found below.
+# pathmunge only prepends entries that aren't already there (no dupes in
+# nested shells / tmux).
+pathmunge() {
+    case ":$PATH:" in
+        *":$1:"*) ;;
+        *) PATH="$1:$PATH" ;;
+    esac
+}
+for _p in "$HOME/go/bin" \
+          "$HOME/.local/share/flatpak/exports/bin" \
+          /var/lib/flatpak/exports/bin \
+          "$HOME/.cargo/bin" \
+          "$HOME/.local/bin"; do
+    [ -d "$_p" ] && pathmunge "$_p"
+done
+unset _p
+export PATH  # ~/.local/bin is first (linux-mod checks for this line)
 
 # Enable bash programmable completion in interactive shells
 if [[ $iatest -gt 0 ]] && ! shopt -oq posix; then
@@ -31,8 +51,9 @@ fi
 #######################################################
 
 # History and window sizing
-export HISTFILESIZE=10000
-export HISTSIZE=500
+export HISTFILESIZE=50000
+export HISTSIZE=10000
+export HISTCONTROL=ignoreboth:erasedups
 shopt -s checkwinsize
 shopt -s histappend
 export HISTTIMEFORMAT="%F %T "
@@ -40,7 +61,7 @@ PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }history -a"
 
 # Bell and flow control
 if [[ $iatest -gt 0 ]]; then bind "set bell-style visible"; fi
-if [[ $iatest -gt 0 ]]; then stty -ixon; fi
+if [[ $iatest -gt 0 ]] && [ -t 0 ]; then stty -ixon; fi
 
 # Readline tweaks (interactive only)
 if [[ $iatest -gt 0 ]]; then
@@ -49,7 +70,9 @@ if [[ $iatest -gt 0 ]]; then
     bind 'TAB:menu-complete'
     bind '"\e[A": history-search-backward'
     bind '"\e[B": history-search-forward'
-    bind '"\C-f":"zi\n"' # Insert zoxide shortcut
+    if command -v zoxide >/dev/null 2>&1; then
+        bind '"\C-f":"zi\n"' # Insert zoxide shortcut
+    fi
 fi
 
 #######################################################
@@ -62,7 +85,7 @@ alias vim='nvim'
 
 export CLICOLOR=1
 export LS_COLORS='no=00:fi=00:di=00;34:ln=01;36:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.gz=01;31:*.bz2=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.avi=01;35:*.fli=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.ogg=01;35:*.mp3=01;35:*.wav=01;35:*.xml=00;31:'
-alias grep='/usr/bin/grep --color=auto'
+alias grep='grep --color=auto'
 
 export LESS_TERMCAP_mb=$'\E[01;31m'
 export LESS_TERMCAP_md=$'\E[01;31m'
@@ -90,9 +113,9 @@ alias da='date "+%Y-%m-%d %A %T %Z"'
 alias reboot='sudo reboot'
 alias shutdown='sudo shutdown -h now'
 alias logout='$HOME/.scripts/Control-Scripts/wm-logout-to-tty.sh'
-alias freshclam='sudo freshclam'
-alias topcpu="/bin/ps -eo pcpu,pid,user,args | sort -k 1 -r | head -10"
-alias openports='netstat -nape --inet'
+alias freshclam='$HOME/.scripts/PiercingXX-Settings-Menu/virus-scan.sh --update-db'
+alias topcpu="ps -eo pcpu,pid,user,args --sort=-pcpu | head -11"
+alias openports='ss -tulpn'
 alias mountedinfo='df -hT'
 alias docker-clean=' \
     docker container prune -f ; \
@@ -103,10 +126,15 @@ alias docker-clean=' \
 # Editing and safety
 alias cp='cp -i'
 alias mv='mv -i'
-alias rm='trash -v'
+# rm goes to the trash (trash-cli); `rmd` is the real recursive rm.
+if command -v trash >/dev/null 2>&1; then
+    alias rm='trash -v'
+else
+    alias rm='rm -i'
+fi
 alias mkdir='mkdir -p'
 alias vi='nvim'
-alias svi='sudo vi'
+alias svi='sudoedit'
 alias vis='nvim "+set si"'
 alias less='less -R'
 
@@ -137,8 +165,8 @@ alias lm='\ls -alh |more'
 alias lw='\ls -xAh'
 alias ll='\ls -Fls'
 alias labc='\ls -lap'
-alias lf="\ls -l | egrep -v '^d'"
-alias ldir="\ls -l | egrep '^d'"
+alias lf="\ls -l | grep -E -v '^d'"
+alias ldir="\ls -l | grep -E '^d'"
 alias lla='\ls -Al'
 alias las='\ls -A'
 alias lls='\ls -l'
@@ -156,8 +184,8 @@ alias 777='chmod -R 777'
 alias h="history | grep "
 alias p="ps aux | grep "
 alias ping='ping -c 10'
-alias multitail='multitail --no-repeat -c'
-alias rmd='/bin/rm  --recursive --force --verbose '
+command -v multitail >/dev/null 2>&1 && alias multitail='multitail --no-repeat -c'
+alias rmd='command rm -rfv'
 
 # Archives and storage
 alias mktar='tar -cvf'
@@ -173,23 +201,38 @@ alias treed='tree -CAFd'
 alias logs='sudo find /var/log -type f -exec file {} \; | grep text | cut -d" " -f1 | sed -e"s/:$//g" | grep -v "[0-9]$" | xargs tail -f'
 
 # Applications
-alias sd='QT_QPA_PLATFORM=xcb synology-drive > /dev/null 2>&1 &'
+if command -v synology-drive >/dev/null 2>&1; then
+    alias sd='QT_QPA_PLATFORM=xcb synology-drive > /dev/null 2>&1 &'
+fi
 
 #######################################################
 # Functions
 #######################################################
 
 # Desktop session launchers (alias form for maximum shell compatibility)
-alias gnome='$HOME/.scripts/Control-Scripts/start-session.sh'
+# start-* names so the aliases don't shadow the real sway/i3/... binaries
 alias hypr='start-hyprland'
-alias sway='$HOME/.scripts/Control-Scripts/start-sway'
-alias i3='$HOME/.scripts/Control-Scripts/start-i3'
-alias bspwm='$HOME/.scripts/Control-Scripts/start-bspwm'
-alias herb='$HOME/.scripts/Control-Scripts/start-herbst'
-alias awesome='$HOME/.scripts/Control-Scripts/start-awesome'
-alias dwm='$HOME/.scripts/Control-Scripts/start-dwm'
-alias qtile='$HOME/.scripts/Control-Scripts/start-qtile'
-alias qtilex='$HOME/.scripts/Control-Scripts/start-qtile --x11'
+alias start-sway='$HOME/.scripts/Control-Scripts/start-sway'
+alias start-i3='$HOME/.scripts/Control-Scripts/start-i3'
+alias start-bspwm='$HOME/.scripts/Control-Scripts/start-bspwm'
+alias start-herbst='$HOME/.scripts/Control-Scripts/start-herbst'
+alias start-awesome='$HOME/.scripts/Control-Scripts/start-awesome'
+alias start-dwm='$HOME/.scripts/Control-Scripts/start-dwm'
+alias start-qtile='$HOME/.scripts/Control-Scripts/start-qtile'
+alias start-qtilex='$HOME/.scripts/Control-Scripts/start-qtile --x11'
+alias herb='start-herbst'
+
+# Repairs/reconfigures greetd + tuigreet (uses sudo)
+alias greetd-fix='$HOME/.scripts/Control-Scripts/start-session.sh'
+
+# ls used after cd/z/cdf: no --git (slow in big repos)
+_cd_ls() {
+    if command -v eza >/dev/null 2>&1; then
+        eza -a -F --icons --color=always --group-directories-first
+    else
+        command ls -a -F --color=auto
+    fi
+}
 
 cdf() {
     if ! command -v fzf >/dev/null 2>&1; then
@@ -203,7 +246,7 @@ cdf() {
     else
         target=$(find "$root" -type d 2>/dev/null | fzf) || return
     fi
-    [ -n "$target" ] && builtin cd -- "$target" && ls
+    [ -n "$target" ] && builtin cd -- "$target" && _cd_ls
 }
 
 undotrash() {
@@ -215,82 +258,89 @@ undotrash() {
     fi
 }
 
-mkc() { mkdir -p "$1" && cd "$1"; }
-
-pathmunge() {
-    case ":$PATH:" in
-        *":$1:") ;;
-        *) PATH="$1:$PATH" ;;
-    esac
-}
+mkc() { command mkdir -p -- "$1" && { builtin cd -- "$1" || return; }; }
 
 f() {
-    sudo find . -type f -iname "*${1:-}*" 2>/dev/null
+    find . -type f -iname "*${1:-}*" 2>/dev/null
 }
 
 countfiles() {
+    local t
     for t in files links directories; do
-        echo "$(find . -type ${t:0:1} | wc -l) $t"
+        echo "$(find . -type "${t:0:1}" | wc -l) $t"
     done 2> /dev/null
 }
 
 install_bashrc_support() {
     local dtype
     dtype=$(distribution)
+    local common=(tree zoxide trash-cli fzf bash-completion fastfetch bat eza chafa w3m)
     case $dtype in
         "fedora")
-            if command -v dnf &> /dev/null; then
-                sudo dnf install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza chafa w3m jump -y
-                curl -sS https://starship.rs/install.sh | sh
-            else
-                sudo yum install multitail tree zoxide trash-cli fzf bash-completion fastfetch bat eza chafa w3m jump -y
-                curl -sS https://starship.rs/install.sh | sh
-            fi
+            sudo dnf install -y multitail starship "${common[@]}" || sudo dnf install -y multitail "${common[@]}"
             ;;
         "debian")
-            for pkg in multitail tree zoxide starship bat trash-cli fzf bash-completion fastfetch eza chafa w3m jump; do
-                if sudo apt install "$pkg" -y; then
+            local pkg
+            for pkg in multitail starship "${common[@]}"; do
+                if sudo apt-get install -y "$pkg"; then
                     echo "$pkg installed via apt"
-                else
+                elif command -v brew >/dev/null 2>&1; then
                     echo "$pkg not available in apt, installing via brew"
                     brew install "$pkg"
+                else
+                    echo "$pkg not available in apt (and no brew)"
                 fi
             done
             ;;
         "arch")
-            sudo pacman -S fastfetch tree zoxide bash-completion starship eza bat fzf trash-cli chafa w3m --noconfirm
+            sudo pacman -S --needed --noconfirm starship "${common[@]}"
             if command -v paru &> /dev/null; then
-                paru -S multitail jump-bin --noconfirm
+                paru -S --needed --noconfirm multitail jump-bin
             elif command -v yay &> /dev/null; then
-                yay -S multitail jump-bin --noconfirm
+                yay -S --needed --noconfirm multitail jump-bin
             else
-                echo "Install paru or yay."
+                echo "Install paru or yay for multitail and jump."
             fi
             ;;
         "void")
-            sudo xbps-install -y fastfetch tree zoxide bash-completion starship eza bat fzf trash-cli chafa w3m multitail
+            sudo xbps-install -y multitail starship "${common[@]}"
+            ;;
+        "suse")
+            sudo zypper -n install multitail starship "${common[@]}"
+            ;;
+        "alpine")
+            sudo apk add multitail starship tree zoxide fzf bash-completion fastfetch bat eza chafa w3m
             ;;
         *)
             echo "Unknown distribution"
             ;;
     esac
+    # Last resort for starship when the distro has no package
+    if ! command -v starship >/dev/null 2>&1; then
+        local installer
+        installer=$(mktemp) && curl -fsSL https://starship.rs/install.sh -o "$installer" \
+            && sh "$installer" -y && rm -f "$installer"
+    fi
 }
 
 extract() {
     for archive in "$@"; do
         if [ -f "$archive" ]; then
             case $archive in
-                *.tar.bz2) tar xvjf $archive ;;
-                *.tar.gz) tar xvzf $archive ;;
-                *.bz2) bunzip2 $archive ;;
-                *.rar) rar x $archive ;;
-                *.gz) gunzip $archive ;;
-                *.tar) tar xvf $archive ;;
-                *.tbz2) tar xvjf $archive ;;
-                *.tgz) tar xvzf $archive ;;
-                *.zip) unzip $archive ;;
-                *.Z) uncompress $archive ;;
-                *.7z) 7z x $archive ;;
+                *.tar.bz2) tar xvjf "$archive" ;;
+                *.tar.gz) tar xvzf "$archive" ;;
+                *.tar.xz) tar xvJf "$archive" ;;
+                *.tar.zst) tar --zstd -xvf "$archive" ;;
+                *.bz2) bunzip2 "$archive" ;;
+                *.rar) unrar x "$archive" 2>/dev/null || rar x "$archive" ;;
+                *.gz) gunzip "$archive" ;;
+                *.xz) unxz "$archive" ;;
+                *.tar) tar xvf "$archive" ;;
+                *.tbz2) tar xvjf "$archive" ;;
+                *.tgz) tar xvzf "$archive" ;;
+                *.zip) unzip "$archive" ;;
+                *.Z) uncompress "$archive" ;;
+                *.7z) 7z x "$archive" ;;
                 *) echo "don't know how to extract '$archive'..." ;;
             esac
         else
@@ -299,8 +349,16 @@ extract() {
     done
 }
 
+# cpp SRC DEST : copy with a progress bar
 cpp() {
-    set -e
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -ah --info=progress2 -- "$1" "$2"
+        return
+    fi
+    if ! command -v strace >/dev/null 2>&1; then
+        cp -- "$1" "$2"
+        return
+    fi
     strace -q -ewrite cp -- "${1}" "${2}" 2>&1 |
     awk '{
         count += $NF
@@ -319,20 +377,16 @@ cpp() {
 }
 
 mkdirg() {
-    mkdir -p "$1"
-    cd "$1"
+    command mkdir -p -- "$1" && { builtin cd -- "$1" || return; }
 }
 
 if [[ $iatest -gt 0 ]]; then
     cd () {
         if [ -n "$1" ]; then
-            builtin cd "$@" && ls
+            builtin cd "$@" && _cd_ls
         else
-            builtin cd ~ && ls
+            builtin cd ~ && _cd_ls
         fi
-    }
-    z() {
-        __zoxide_z "$@" && ls
     }
 fi
 
@@ -341,43 +395,48 @@ pwdtail() {
 }
 
 distribution () {
-    local dtype="unknown"
+    local dtype="unknown" id="" id_like=""
     if [ -r /etc/os-release ]; then
-        source /etc/os-release
-        case $ID in
-            fedora|rhel|centos)
+        # subshell: don't leak NAME/VERSION/... into the interactive shell
+        id=$(. /etc/os-release && echo "${ID:-}")
+        id_like=$(. /etc/os-release && echo "${ID_LIKE:-}")
+        case $id in
+            fedora|rhel|centos|bazzite)
                 dtype="fedora"
                 ;;
             sles|opensuse*)
                 dtype="suse"
                 ;;
-            debian|pop|mint|ubuntu|droidian|mobian|ubuntutouch|pureos|raspbian)
+            debian|pop|mint|linuxmint|ubuntu|droidian|mobian|furios|ubuntutouch|ubuntu-touch|pureos|raspbian)
                 dtype="debian"
                 ;;
             gentoo)
                 dtype="gentoo"
                 ;;
-            arch|manjaro)
+            arch|artix|manjaro|endeavouros|cachyos|garuda)
                 dtype="arch"
                 ;;
             void)
                 dtype="void"
                 ;;
+            alpine|postmarketos)
+                dtype="alpine"
+                ;;
             slackware)
                 dtype="slackware"
                 ;;
             *)
-                if [ -n "$ID_LIKE" ]; then
-                    case $ID_LIKE in
-                        *fedora*|*rhel*|*centos*) dtype="fedora" ;;
-                        *ubuntu*|*debian*|*pop*|*mint*) dtype="debian" ;;
-                        *arch*) dtype="arch" ;;
-                    esac
-                fi
+                case $id_like in
+                    *fedora*|*rhel*|*centos*) dtype="fedora" ;;
+                    *ubuntu*|*debian*|*pop*|*mint*) dtype="debian" ;;
+                    *arch*) dtype="arch" ;;
+                    *suse*) dtype="suse" ;;
+                    *alpine*) dtype="alpine" ;;
+                esac
                 ;;
         esac
     fi
-    echo $dtype
+    echo "$dtype"
 }
 
 alias whatismyip="whatsmyip"
@@ -411,32 +470,52 @@ y() {
     tmp="$(mktemp -t "yazi-cwd.XXXXXX")"
     yazi "$@" --cwd-file="$tmp"
     IFS= read -r -d '' cwd < "$tmp"
-    [ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+    [ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && { builtin cd -- "$cwd" || return; }
     rm -f -- "$tmp"
 }
 
-if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
-if command -v zoxide &>/dev/null; then eval "$(zoxide init bash)"; fi
-if command -v jump &>/dev/null; then eval "$(jump shell)"; fi
+# Cache tool init scripts; regenerate only when the tool binary changes.
+# Saves several process spawns on every new shell.
+_px_cached_init() {
+    local name="$1"; shift
+    local bin cache
+    bin=$(command -v "$1" 2>/dev/null) || return 1
+    cache="${XDG_CACHE_HOME:-$HOME/.cache}/bashrc/$name.bash"
+    if [[ ! -s $cache || $bin -nt $cache ]]; then
+        command mkdir -p "${cache%/*}"
+        "$@" > "$cache" 2>/dev/null || { command rm -f "$cache"; return 1; }
+    fi
+    # shellcheck source=/dev/null
+    . "$cache"
+}
+
+_px_cached_init starship starship init bash --print-full-init
+if _px_cached_init zoxide zoxide init bash; then
+    # zoxide defines z(); wrap it so jumps list the directory like cd does
+    if [[ $iatest -gt 0 ]]; then
+        z() { __zoxide_z "$@" && _cd_ls; }
+    fi
+fi
+_px_cached_init jump jump shell bash
 [[ -r /usr/share/fzf/key-bindings.bash ]] && source /usr/share/fzf/key-bindings.bash
 [[ -r /usr/share/fzf/completion.bash ]] && source /usr/share/fzf/completion.bash
 
+# Linuxbrew (Debian fallback for packages apt lacks)
 if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    _px_cached_init brew /home/linuxbrew/.linuxbrew/bin/brew shellenv bash
 elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
-    eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+    _px_cached_init brew "$HOME/.linuxbrew/bin/brew" shellenv bash
 fi
 
-if [[ $iatest -gt 0 ]] && command -v fastfetch &>/dev/null; then
+# fastfetch only in the first interactive shell of a terminal, not in tmux,
+# nvim's :terminal, or nested shells
+if [[ $iatest -gt 0 && ${SHLVL:-1} -le 1 && -z ${TMUX:-} && -z ${NVIM:-} ]] && command -v fastfetch &>/dev/null; then
     fastfetch
 fi
 
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/var/lib/flatpak/exports/bin:$HOME/.local/share/flatpak/exports/bin:$PATH"
-export PATH="$HOME/go/bin:$PATH"
-
 # Desktop autostart is disabled by default.
 # To opt in on tty1, export PIERCINGXX_AUTOSTART_X=1 before this block runs.
-if [[ ${PIERCINGXX_AUTOSTART_X:-0} = 1 ]] && [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]] && command -v startx &>/dev/null; then
+if [[ ${PIERCINGXX_AUTOSTART_X:-0} = 1 ]] && [[ -z ${DISPLAY:-} ]] && [[ $(tty) = /dev/tty1 ]] && command -v startx &>/dev/null; then
     # Don't auto-start if Cosmic is present (Pop!_OS 24.04)
     if ! command -v cosmic-session &>/dev/null && ! command -v cosmic-comp &>/dev/null; then
         exec startx

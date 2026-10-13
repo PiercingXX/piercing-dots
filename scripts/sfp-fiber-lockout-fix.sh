@@ -6,7 +6,7 @@ usage() {
 ixgbe SFP+ vendor-unlock & power management helper (Intel 82599 / X520-2)
 
 Usage:
-  sudo ./ixgbe-sfp-unlock.sh [COMMAND] [OPTIONS]
+  sudo ./sfp-fiber-lockout-fix.sh [COMMAND] [OPTIONS]
 
 Commands:
   sfp-unlock    SFP+ vendor unlock operations (default)
@@ -15,8 +15,10 @@ Commands:
 SFP+ Unlock Options:
   --status      Show current ixgbe parameter value, default route, and ixgbe ifaces.
   --apply       Persistently set: options ixgbe allow_unsupported_sfp=1
+                (no-op unless an ixgbe NIC is present; --force applies anyway)
   --reload      Unload/reload ixgbe so the setting takes effect immediately (briefly drops ixgbe links).
-  --force       Allow reload even if default route uses ixgbe (risk: drop SSH).
+  --force       Apply without an ixgbe NIC present / reload even if the default
+                route uses ixgbe (risk: drop SSH).
 
 Power Management Options:
   --detect      Detect Intel ixgbe devices and their power state
@@ -29,15 +31,15 @@ Global Options:
   -h, --help    Show this help message.
 
 Examples:
-  sudo ./ixgbe-sfp-unlock.sh sfp-unlock --status
-  sudo ./ixgbe-sfp-unlock.sh sfp-unlock --apply --reload
-  sudo ./ixgbe-sfp-unlock.sh power-mgmt --detect
-  sudo ./ixgbe-sfp-unlock.sh power-mgmt --fix
-  sudo ./ixgbe-sfp-unlock.sh power-mgmt --verify
-  sudo ./ixgbe-sfp-unlock.sh power-mgmt --undo
+  sudo ./sfp-fiber-lockout-fix.sh sfp-unlock --status
+  sudo ./sfp-fiber-lockout-fix.sh sfp-unlock --apply --reload
+  sudo ./sfp-fiber-lockout-fix.sh power-mgmt --detect
+  sudo ./sfp-fiber-lockout-fix.sh power-mgmt --fix
+  sudo ./sfp-fiber-lockout-fix.sh power-mgmt --verify
+  sudo ./sfp-fiber-lockout-fix.sh power-mgmt --undo
 
 Supported Distributions:
-  Debian, Ubuntu, Pop!_OS, Arch Linux, Fedora, RHEL/CentOS
+  Arch/Artix, Debian/Ubuntu/Pop!_OS, Fedora/RHEL, Void, openSUSE, Alpine
 EOF
 }
 
@@ -58,11 +60,33 @@ DRYRUN=0
 COMMAND="sfp-unlock"
 
 log() { printf '%s\n' "$*"; }
+
+# run cmd args... : execute (or print under --dry-run); no eval, no word re-splitting
 run() {
   if (( DRYRUN )); then
     log "[dry-run] $*"
   else
-    eval "$@"
+    "$@"
+  fi
+}
+
+# run_write FILE : write stdin to FILE (or print under --dry-run)
+run_write() {
+  local file="$1"
+  if (( DRYRUN )); then
+    log "[dry-run] write $file:"
+    sed 's/^/    /'
+  else
+    cat > "$file"
+  fi
+}
+
+# write_sysfs FILE VALUE
+write_sysfs() {
+  if (( DRYRUN )); then
+    log "[dry-run] echo $2 > $1"
+  else
+    printf '%s\n' "$2" > "$1"
   fi
 }
 
@@ -75,8 +99,7 @@ need_root() {
 
 detect_distro() {
   if [[ -f /etc/os-release ]]; then
-    . /etc/os-release
-    echo "${ID:-unknown}"
+    ( . /etc/os-release; echo "${ID:-unknown}" )
   elif [[ -f /etc/arch-release ]]; then
     echo "arch"
   elif [[ -f /etc/fedora-release ]]; then
@@ -89,51 +112,39 @@ detect_distro() {
 }
 
 install_dependencies() {
-  local distro packages_needed=""
-  
-  # Check if ethtool is installed
-  if ! command -v ethtool >/dev/null 2>&1; then
-    packages_needed="ethtool"
+  command -v ethtool >/dev/null 2>&1 && return 0
+
+  local cmd=()
+  if command -v pacman >/dev/null 2>&1; then
+    cmd=(pacman -S --needed --noconfirm ethtool)
+  elif command -v apt-get >/dev/null 2>&1; then
+    cmd=(apt-get install -y ethtool)
+  elif command -v dnf >/dev/null 2>&1; then
+    cmd=(dnf install -y ethtool)
+  elif command -v xbps-install >/dev/null 2>&1; then
+    cmd=(xbps-install -y ethtool)
+  elif command -v zypper >/dev/null 2>&1; then
+    cmd=(zypper -n install ethtool)
+  elif command -v apk >/dev/null 2>&1; then
+    cmd=(apk add ethtool)
+  else
+    log "WARNING: Unknown package manager ($(detect_distro)). Install ethtool manually."
+    exit 1
   fi
-  
-  # If no packages needed, return
-  [[ -z "$packages_needed" ]] && return 0
-  
-  distro="$(detect_distro)"
-  log "Installing required packages: $packages_needed"
-  
-  case "$distro" in
-    debian|ubuntu|pop)
-      if (( DRYRUN )); then
-        log "[dry-run] apt-get update && apt-get install -y $packages_needed"
-      else
-        apt-get update -qq && apt-get install -y $packages_needed
-      fi
-      ;;
-    arch|manjaro)
-      if (( DRYRUN )); then
-        log "[dry-run] pacman -Sy --noconfirm $packages_needed"
-      else
-        pacman -Sy --noconfirm $packages_needed
-      fi
-      ;;
-    fedora|rhel|centos)
-      if (( DRYRUN )); then
-        log "[dry-run] dnf install -y $packages_needed"
-      else
-        dnf install -y $packages_needed
-      fi
-      ;;
-    *)
-      log "WARNING: Unknown distribution ($distro). Please install manually: $packages_needed"
-      log "  Debian/Ubuntu/Pop!_OS: sudo apt-get install -y $packages_needed"
-      log "  Arch Linux: sudo pacman -S $packages_needed"
-      log "  Fedora: sudo dnf install -y $packages_needed"
-      exit 1
-      ;;
-  esac
-  
+
+  log "Installing required package: ethtool"
+  # No `pacman -Sy`: a stale database fails here and tells you to update first.
+  if ! run "${cmd[@]}"; then
+    log "ERROR: could not install ethtool. Update the system first, then rerun."
+    exit 1
+  fi
   log "Dependencies installed successfully."
+}
+
+# True when an Intel 10GbE (ixgbe-driven) NIC is present
+has_ixgbe_hw() {
+  [[ -d /sys/module/ixgbe ]] && return 0
+  lspci -d 8086: 2>/dev/null | grep -iE "ethernet|network" | grep -qE "82599|X520|X540|X550"
 }
 
 default_route_iface() {
@@ -180,21 +191,21 @@ list_ixgbe_ifaces() {
 apply_config() {
   local conf="/etc/modprobe.d/ixgbe-allow-unsupported-sfp.conf"
   log "Writing: $conf"
-  run "printf '%s\n' 'options ixgbe allow_unsupported_sfp=1' > '$conf'"
+  printf '%s\n' 'options ixgbe allow_unsupported_sfp=1' | run_write "$conf"
 
   # Rebuild initramfs if the system uses one that might preload ixgbe.
   # Debian/Ubuntu/Pop!_OS use update-initramfs
   if command -v update-initramfs >/dev/null 2>&1; then
     log "Initramfs: update-initramfs -u (Debian/Ubuntu/Pop!_OS)"
-    run "update-initramfs -u || true"
+    run update-initramfs -u || true
   # Arch Linux uses mkinitcpio
   elif command -v mkinitcpio >/dev/null 2>&1; then
     log "Initramfs: mkinitcpio -P (Arch Linux)"
-    run "mkinitcpio -P || true"
+    run mkinitcpio -P || true
   # Fedora/RHEL/CentOS use dracut
   elif command -v dracut >/dev/null 2>&1; then
     log "Initramfs: dracut --force (Fedora/RHEL)"
-    run "dracut --force || true"
+    run dracut --force || true
   else
     log "WARNING: Initramfs tool not found; skipping rebuild."
     log "  Changes will take effect after reboot or manual module reload."
@@ -220,17 +231,17 @@ reload_ixgbe() {
   if [[ -n "$ifaces" ]]; then
     while read -r i; do
       [[ -z "$i" ]] && continue
-      run "ip link set '$i' down || true"
+      run ip link set "$i" down || true
     done <<<"$ifaces"
   fi
 
-  run "modprobe -r ixgbe"
-  run "modprobe ixgbe"
+  run modprobe -r ixgbe
+  run modprobe ixgbe
 
   if [[ -n "$ifaces" ]]; then
     while read -r i; do
       [[ -z "$i" ]] && continue
-      run "ip link set '$i' up || true"
+      run ip link set "$i" up || true
     done <<<"$ifaces"
   fi
 }
@@ -239,7 +250,7 @@ status() {
   log "Kernel: $(uname -r)"
   log "Distribution: $(detect_distro)"
   log "Default route iface: $(default_route_iface || true)"
-  log "ixgbe loaded: $(lsmod | awk '$1==\"ixgbe\"{print \"yes\"; found=1} END{if(!found) print \"no\"}')"
+  log "ixgbe loaded: $([[ -d /sys/module/ixgbe ]] && echo yes || echo no)"
   log "allow_unsupported_sfp: $(ixgbe_param_value)"
   if command -v ethtool >/dev/null 2>&1; then
     log "ixgbe ifaces:"
@@ -290,8 +301,8 @@ pm_fix_immediate() {
     pci_path="/sys/bus/pci/devices/0000:${addr}"
     if [[ -f "${pci_path}/power/control" ]]; then
       current=$(cat "${pci_path}/power/control" 2>/dev/null || echo "unknown")
-      run "echo 'on' > '${pci_path}/power/control'"
-      log "  ✓ Set 0000:${addr} power/control to: on"
+      write_sysfs "${pci_path}/power/control" on
+      log "  ✓ Set 0000:${addr} power/control: ${current} -> on"
     else
       log "  ⚠ Could not find ${pci_path}/power/control"
     fi
@@ -303,78 +314,58 @@ pm_create_udev_rule() {
   
   log "Creating persistent udev rule: $udev_rule"
   
-  if (( DRYRUN )); then
-    log "[dry-run] Would create udev rule at: $udev_rule"
-  else
-    run "cat > '$udev_rule' << 'EOFUDEV'
+  run_write "$udev_rule" <<'EOFUDEV'
 # Disable runtime PM for Intel ixgbe network cards to prevent D3cold power state issues
-ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x8086\", ATTR{device}==\"0x10fb\", ATTR{power/control}=\"on\"
-ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x8086\", ATTR{device}==\"0x1528\", ATTR{power/control}=\"on\"
-ACTION==\"add\", SUBSYSTEM==\"pci\", ATTR{vendor}==\"0x8086\", ATTR{device}==\"0x1563\", ATTR{power/control}=\"on\"
-EOFUDEV"
-    log "  ✓ Created udev rule"
-  fi
-  
-  run "udevadm control --reload-rules"
-  run "udevadm trigger --subsystem-match=pci --attr-match=vendor=0x8086"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x10fb", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x1528", ATTR{power/control}="on"
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x8086", ATTR{device}=="0x1563", ATTR{power/control}="on"
+EOFUDEV
+  log "  ✓ Created udev rule"
+
+  run udevadm control --reload-rules
+  run udevadm trigger --subsystem-match=pci --attr-match=vendor=0x8086
   log "  ✓ Reloaded udev rules"
 }
 
-pm_update_modprobe() {
-  local modprobe_file="/etc/modprobe.d/ixgbe-power-management.conf"
-  
-  log "Creating per-device power management modprobe config..."
-  
-  if (( DRYRUN )); then
-    log "[dry-run] Would create modprobe config at: $modprobe_file"
-  else
-    run "cat > '$modprobe_file' << 'EOFMOD'
-# Intel ixgbe power management - targets ixgbe driver only
-options ixgbe allow_unsupported_sfp=1
-EOFMOD"
-    log "  ✓ Created per-device ixgbe modprobe config"
-  fi
+# Legacy: older versions wrote a second file with the same SFP option
+LEGACY_PM_MODPROBE="/etc/modprobe.d/ixgbe-power-management.conf"
+
+# Where the kernel command line is configured, and whether pcie_aspm=off is in it
+kernel_cmdline_sources() {
+  local esp
+  [[ -f /etc/default/grub ]] && echo /etc/default/grub
+  [[ -f /etc/kernel/cmdline ]] && echo /etc/kernel/cmdline
+  esp="$(bootctl --print-esp-path 2>/dev/null || true)"
+  for esp in "$esp" /boot /efi /boot/efi; do
+    [[ -n "$esp" && -d "$esp/loader/entries" ]] || continue
+    ls "$esp"/loader/entries/*.conf 2>/dev/null
+    break
+  done
+}
+
+aspm_configured() {
+  grep -q 'pcie_aspm=off' /proc/cmdline && return 0
+  local f
+  while read -r f; do
+    [[ -n "$f" ]] && grep -q 'pcie_aspm=off' "$f" 2>/dev/null && return 0
+  done < <(kernel_cmdline_sources)
+  return 1
 }
 
 pm_regenerate_grub() {
-  local distro
-  distro="$(detect_distro)"
-  
+  [[ -f /etc/default/grub ]] || { log "  GRUB not in use; nothing to regenerate."; return 0; }
   log "Regenerating GRUB bootloader..."
-  case "$distro" in
-    debian|ubuntu|pop|devuan)
-      if command -v update-grub &>/dev/null; then
-        run "update-grub"
-        log "  ✓ GRUB updated (update-grub)"
-      else
-        log "  ERROR: update-grub not found"
-        return 1
-      fi
-      ;;
-    fedora|rhel|centos|rocky)
-      if command -v grub2-mkconfig &>/dev/null; then
-        run "grub2-mkconfig -o /boot/grub2/grub.cfg"
-        log "  ✓ GRUB2 updated (grub2-mkconfig)"
-      else
-        log "  ERROR: grub2-mkconfig not found"
-        return 1
-      fi
-      ;;
-    arch|manjaro)
-      if command -v grub-mkconfig &>/dev/null; then
-        run "grub-mkconfig -o /boot/grub/grub.cfg"
-        log "  ✓ GRUB updated (grub-mkconfig)"
-      else
-        log "  ERROR: grub-mkconfig not found"
-        return 1
-      fi
-      ;;
-    *)
-      log "  WARNING: Unknown distribution ($distro)"
-      log "  Please manually update GRUB bootloader"
-      return 1
-      ;;
-  esac
+  if command -v update-grub &>/dev/null; then
+    run update-grub
+  elif command -v grub2-mkconfig &>/dev/null && [[ -d /boot/grub2 ]]; then
+    run grub2-mkconfig -o /boot/grub2/grub.cfg
+  elif command -v grub-mkconfig &>/dev/null; then
+    run grub-mkconfig -o /boot/grub/grub.cfg
+  else
+    log "  ERROR: no GRUB config generator found"
+    return 1
+  fi
+  log "  ✓ GRUB updated"
 }
 
 pm_fix() {
@@ -392,9 +383,6 @@ pm_fix() {
   pm_create_udev_rule
   log ""
   
-  pm_update_modprobe
-  log ""
-  
   log "======================================"
   log "Power Management Fix Applied!"
   log "======================================"
@@ -402,7 +390,6 @@ pm_fix() {
   log "Summary of changes:"
   log "  1. Disabled runtime PM for ixgbe cards (immediate)"
   log "  2. Created udev rule: /etc/udev/rules.d/99-ixgbe-power-control.rules"
-  log "  3. Created per-device ixgbe modprobe config: /etc/modprobe.d/ixgbe-power-management.conf"
   log ""
   log "NOTE: These changes target Intel ixgbe devices specifically and do NOT"
   log "affect other PCIe devices (unlike system-wide ASPM changes)."
@@ -441,11 +428,11 @@ pm_detect() {
   fi
   
   log ""
-  log "GRUB pcie_aspm setting:"
-  if grep -q "pcie_aspm=off" /etc/default/grub 2>/dev/null; then
+  log "Kernel pcie_aspm setting (GRUB / systemd-boot / kernel-install):"
+  if aspm_configured; then
     log "  ✓ pcie_aspm=off is configured"
   else
-    log "  ✗ pcie_aspm=off NOT configured (may need fixes)"
+    log "  - pcie_aspm=off not set (not needed when the udev rule is in place)"
   fi
   
   log ""
@@ -465,24 +452,23 @@ pm_verify() {
   fi
   
   log ""
-  log "Checking GRUB configuration:"
-  grep "^GRUB_CMDLINE_LINUX_DEFAULT" /etc/default/grub 2>/dev/null || \
-    log "  Could not read GRUB config"
+  log "Kernel command line:"
+  log "  $(cat /proc/cmdline)"
   
   log ""
   log "Checking udev rule:"
   if [[ -f /etc/udev/rules.d/99-ixgbe-power-control.rules ]]; then
-    log "  \u2713 Udev rule exists"
+    log "  ✓ Udev rule exists"
   else
-    log "  \u2717 Udev rule NOT found"
+    log "  ✗ Udev rule NOT found"
   fi
   
   log ""
   log "Checking ixgbe modprobe config:"
-  if [[ -f /etc/modprobe.d/ixgbe-power-management.conf ]]; then
-    log "  \u2713 Modprobe config exists"
+  if [[ -f /etc/modprobe.d/ixgbe-allow-unsupported-sfp.conf ]]; then
+    log "  ✓ Modprobe config exists"
   else
-    log "  \u2717 Modprobe config NOT found"
+    log "  ✗ Modprobe config NOT found (run: sfp-unlock --apply)"
   fi
   
   log ""
@@ -499,32 +485,31 @@ pm_undo() {
   # Remove udev rule
   if [[ -f /etc/udev/rules.d/99-ixgbe-power-control.rules ]]; then
     log "Removing udev rule..."
-    run "rm -f /etc/udev/rules.d/99-ixgbe-power-control.rules"
-    log "  \u2713 Removed: /etc/udev/rules.d/99-ixgbe-power-control.rules"
-    ((files_removed++))
+    run rm -f /etc/udev/rules.d/99-ixgbe-power-control.rules
+    log "  ✓ Removed: /etc/udev/rules.d/99-ixgbe-power-control.rules"
+    files_removed=$((files_removed + 1))
   else
     log "Udev rule not found (already removed)"
   fi
   
   log ""
   
-  # Remove modprobe config
-  if [[ -f /etc/modprobe.d/ixgbe-power-management.conf ]]; then
-    log "Removing ixgbe modprobe config..."
-    run "rm -f /etc/modprobe.d/ixgbe-power-management.conf"
-    log "  \u2713 Removed: /etc/modprobe.d/ixgbe-power-management.conf"
-    ((files_removed++))
-  else
-    log "Modprobe config not found (already removed)"
+  # Remove the legacy duplicate modprobe config (the SFP option itself stays
+  # in ixgbe-allow-unsupported-sfp.conf; that's the sfp-unlock setting)
+  if [[ -f "$LEGACY_PM_MODPROBE" ]]; then
+    log "Removing legacy ixgbe modprobe config..."
+    run rm -f "$LEGACY_PM_MODPROBE"
+    log "  ✓ Removed: $LEGACY_PM_MODPROBE"
+    files_removed=$((files_removed + 1))
   fi
   
   log ""
   
   # Reload udev rules
   log "Reloading udev rules..."
-  run "udevadm control --reload-rules"
-  run "udevadm trigger --subsystem-match=pci"
-  log "  \u2713 udev rules reloaded"
+  run udevadm control --reload-rules
+  run udevadm trigger --subsystem-match=pci
+  log "  ✓ udev rules reloaded"
   
   log ""
   
@@ -586,10 +571,20 @@ main() {
         usage
         exit 0
       fi
+      if (( DO_APPLY )) && ! has_ixgbe_hw && (( !FORCE )); then
+        log "No Intel ixgbe NIC detected; skipping SFP unlock (use --force to apply anyway)."
+        DO_APPLY=0
+        DO_RELOAD=0
+        (( DO_STATUS )) || exit 0
+      fi
       install_dependencies
-      (( DO_STATUS )) && status
-      (( DO_APPLY )) && apply_config
-      (( DO_RELOAD )) && reload_ixgbe
+      if (( DO_STATUS )); then status; fi
+      if (( DO_APPLY )); then
+        apply_config
+        # Clean up the duplicate file older versions wrote
+        if [[ -f "$LEGACY_PM_MODPROBE" ]]; then run rm -f "$LEGACY_PM_MODPROBE"; fi
+      fi
+      if (( DO_RELOAD )); then reload_ixgbe; fi
       if (( DO_APPLY || DO_RELOAD )); then
         log "Final allow_unsupported_sfp: $(ixgbe_param_value)"
       fi
@@ -601,10 +596,10 @@ main() {
         usage
         exit 1
       fi
-      (( PM_DETECT )) && pm_detect
-      (( PM_FIX )) && pm_fix
-      (( PM_VERIFY )) && pm_verify
-      (( PM_UNDO )) && pm_undo
+      if (( PM_DETECT )); then pm_detect; fi
+      if (( PM_FIX )); then pm_fix; fi
+      if (( PM_VERIFY )); then pm_verify; fi
+      if (( PM_UNDO )); then pm_undo; fi
       ;;
     *)
       log "ERROR: Unknown command: $COMMAND"

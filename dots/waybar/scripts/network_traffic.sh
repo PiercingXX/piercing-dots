@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # network_traffic.sh [-tPOLLING_INTERVAL] [NETWORK_INTERFACE...]
 
 getopts t: __ && shift
 isecs=${OPTARG:-1}
-ifaces=($@)
+ifaces=("$@")
 : ${rate_max:=1000000} # maximum transfer rate for {percent}, can be overridden setting the env var
 
 # `snore` adapted from https://blog.dhampir.no/content/sleeping-without-a-subprocess-in-bash-and-how-to-sleep-forever
@@ -20,7 +20,7 @@ human_readable() {
   local ndigits=${#1}
   local idxunit=$(( (2 + ndigits) / 3 - 1))
   local lentrim=$(( ndigits - (idxunit * 3 ) ))
-  echo ${1::$lentrim}${hrunits[$idxunit]}
+  echo "${1::$lentrim}${hrunits[$idxunit]}"
 }
 
 exit_err() {
@@ -30,19 +30,22 @@ exit_err() {
 
 if test ${#ifaces[@]} -gt 0; then
 # sanity check the interface names
-  for iface in ${ifaces[@]}; do
+  for iface in "${ifaces[@]}"; do
     test -h "/sys/class/net/${iface}" || exit_err "${iface}" "${iface} is not an existing network interface name"
   done
 else
 # default to all interfaces except `lo`
-  ifaces=(/sys/class/net/*)
-  ifaces=(${ifaces[@]##*/})
-  ifaces=(${ifaces[@]//lo/})
-# TODO: check that filtering out `lo` is enough, else `^(eth|wlan|enp|wlp)` as suggested
+  ifaces=()
+  for _path in /sys/class/net/*; do
+    _name=${_path##*/}
+    [[ $_name == lo ]] && continue
+    ifaces+=("$_name")
+  done
+  unset _path _name
 fi
 
 # sanity check polling interval
-if test ${isecs} -lt 1; then
+if ! [[ $isecs =~ ^[0-9]+$ ]] || test "${isecs}" -lt 1; then
   exit_err "${isecs}" "${isecs} is not a valid polling interval"
 fi
 # NOTE: `snore` would take a decimal interval but bash arithmetic does not
@@ -58,29 +61,41 @@ fi
 # NOTE: array items are:
 # 0=rx_bytes 1=rx_packets 2=rx_errs 3=rx_drop
 # 4=tx_bytes 5=tx_packets 6=tx_errs 7=tx_drop
-for iface in ${ifaces[@]} aggregate; do
-  declare -a traffic_prev_${iface} traffic_curr_${iface} traffic_delt_${iface}
-  declare -n traffic_prev=traffic_prev_${iface}
-  declare -n traffic_curr=traffic_curr_${iface}
-  declare -n traffic_delt=traffic_delt_${iface}
+# Interface names can contain '-' or '.', which aren't valid in variable names
+varname() { local v=${1//[^a-zA-Z0-9_]/_}; echo "$v"; }
+
+for iface in "${ifaces[@]}" aggregate; do
+  vn=$(varname "$iface")
+  declare -a "traffic_prev_${vn}" "traffic_curr_${vn}" "traffic_delt_${vn}"
+  declare -n traffic_prev="traffic_prev_${vn}"
+  declare -n traffic_curr="traffic_curr_${vn}"
+  declare -n traffic_delt="traffic_delt_${vn}"
   traffic_prev=( 0 0 0 0  0 0 0 0 )
   traffic_curr=( 0 0 0 0  0 0 0 0 )
   traffic_delt=( 0 0 0 0  0 0 0 0 )
 done
 
-# TODO: rearrange the loop, do not show bogus on first iteration
-while snore ${isecs} ;do
+first_sample=1
+# Exact-match membership test (substring matching treated wlo1 as "lo")
+is_watched() {
+  local w
+  for w in "${ifaces[@]}"; do [[ $w == "$1" ]] && return 0; done
+  return 1
+}
+
+while snore "${isecs}" ;do
   tooltip=""
   traffic_delt_aggregate=( 0 0 0 0  0 0 0 0 )
 
   readarray -s2 proc_net_dev </proc/net/dev
-  while read -a data; do
+  while read -r -a data; do
     iface=${data[0]%:}
-    test "${ifaces[*]}" = "${ifaces[*]//${iface}/}" && continue
-    declare -n traffic_prev=traffic_prev_${iface}
-    declare -n traffic_curr=traffic_curr_${iface}
-    declare -n traffic_delt=traffic_delt_${iface}
-    traffic_curr=(${data[@]:1:4} ${data[@]:9:4})
+    is_watched "$iface" || continue
+    vn=$(varname "$iface")
+    declare -n traffic_prev="traffic_prev_${vn}"
+    declare -n traffic_curr="traffic_curr_${vn}"
+    declare -n traffic_delt="traffic_delt_${vn}"
+    traffic_curr=("${data[@]:1:4}" "${data[@]:9:4}")
     #FIXME: tooltip is delayed one iteration wrt main display (but why?)
     #printf -v tooltip_hr_rx '%4s⇣' $(human_readable ${traffic_delt[0]})
     #printf -v tooltip_hr_tx '%4s⇡' $(human_readable ${traffic_delt[4]})
@@ -89,12 +104,15 @@ while snore ${isecs} ;do
       (( traffic_delt[i] = ( traffic_curr[i] - traffic_prev[i] ) / isecs ))
       (( traffic_delt_aggregate[i] += traffic_delt[i] ))
     done
-    traffic_prev=(${traffic_curr[@]})
-  done <<<"${proc_net_dev[@]}"
+    traffic_prev=("${traffic_curr[@]}")
+  done < <(printf '%s' "${proc_net_dev[@]}")
+
+  # First pass only primes the counters (deltas against 0 are bogus)
+  if (( first_sample )); then first_sample=0; continue; fi
 
   printf '{"text": "%4s⇣ %4s⇡", "tooltip": "%s",  "percentage": %d}\n'   \
-    $(human_readable ${traffic_delt_aggregate[0]})  \
-    $(human_readable ${traffic_delt_aggregate[4]})  \
+    "$(human_readable "${traffic_delt_aggregate[0]}")"  \
+    "$(human_readable "${traffic_delt_aggregate[4]}")"  \
     "${tooltip}"                                    \
     $(( ( traffic_delt_aggregate[0] + traffic_delt_aggregate[4] ) / rate_max ))
   #printf '{"text": "%5s⇣ %5s⇡", "alt": "%s", "tooltip": "%s", "class": "%s", "percentage": %d }\n' $(human_readable ${traffic_delt[0]}) $(human_readable ${traffic_delt[4]}) '_alt' '_tooltip' '_class' 0

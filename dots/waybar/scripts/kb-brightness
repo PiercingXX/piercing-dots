@@ -1,44 +1,48 @@
 #!/usr/bin/env bash
 
 iDIR="$HOME/.config/waybar/scripts/icons"
+DEV='*::kbd_backlight'
 
-# Get brightness
+# Percentage (brightnessctl -m: dev,class,raw,percent%,max)
+get_percent() {
+	brightnessctl -m -d "$DEV" | awk -F, '{gsub("%","",$4); print $4; exit}'
+}
+
 get_backlight() {
-	LIGHT=$(printf "%.0f\n" $(brightnessctl -d '*::kbd_backlight' i))
-	echo "${LIGHT}%"
+	echo "$(get_percent)%"
 }
 
 # Get icons
 get_icon() {
-	backlight="$(brightnessctl -d '*::kbd_backlight' g)"
-	current="${backlight%%%}"
-	if [[ ("$current" -ge "0") && ("$current" -le "1") ]]; then
+	local current
+	current=$(get_percent)
+	if (( current <= 33 )); then
 		icon="$iDIR/brightness-20.png"
-	elif [[ ("$current" -ge "1") && ("$current" -le "2") ]]; then
+	elif (( current <= 66 )); then
 		icon="$iDIR/brightness-60.png"
-	elif [[ ("$current" -ge "2") && ("$current" -le "3") ]]; then
+	else
 		icon="$iDIR/brightness-100.png"
 	fi
 }
 
 # Notify
 notify_user() {
-	notify-send -h string:x-canonical-private-synchronous:sys-notify -u low -i "$icon" "Keyboard Brightness : $(brightnessctl -d '*::kbd_backlight' g)"
+	notify-send -h string:x-canonical-private-synchronous:osd -u low -i "$icon" "Keyboard Brightness : $(get_percent)%"
 }
 
 # Increase brightness
 inc_backlight() {
-	brightnessctl -d *::kbd_backlight set 33%+ && get_icon && notify_user
+	brightnessctl -q -d "$DEV" set 33%+ && get_icon && notify_user
 }
 
 # Decrease brightness
 dec_backlight() {
-	brightnessctl -d *::kbd_backlight set 33%- && get_icon && notify_user
+	brightnessctl -q -d "$DEV" set 33%- && get_icon && notify_user
 }
 
 # Execute accordingly
 if [[ "$1" == "--get" ]]; then
-	brightnessctl -d '*::kbd_backlight' g
+	brightnessctl -d "$DEV" g
 elif [[ "$1" == "--inc" ]]; then
 	inc_backlight
 elif [[ "$1" == "--dec" ]]; then

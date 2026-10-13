@@ -1,14 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# GitHub.com/PiercingXX
+# Install the vendored Black-Minimalistic cursor theme for the current user.
+# Under sudo it installs for $SUDO_USER, not root.
 
 set -euo pipefail
 
 THEME_NAME="Black-Minimalistic"
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SOURCE_THEME_DIR="$REPO_ROOT/resources/cursors/$THEME_NAME"
+
+target_user="$(id -un)"
+if [ "$(id -u)" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    target_user="$SUDO_USER"
+fi
+TARGET_HOME="$(getent passwd "$target_user" | cut -d: -f6)"
+[ -n "$TARGET_HOME" ] || TARGET_HOME="$HOME"
+
 TARGETS=(
-    "$HOME/.icons/$THEME_NAME"
-    "$HOME/.local/share/icons/$THEME_NAME"
+    "$TARGET_HOME/.icons/$THEME_NAME"
+    "$TARGET_HOME/.local/share/icons/$THEME_NAME"
 )
 
 if [ ! -d "$SOURCE_THEME_DIR/cursors" ] || [ ! -f "$SOURCE_THEME_DIR/index.theme" ]; then
@@ -74,6 +85,13 @@ EOF
 install_theme_target() {
     local target_theme_dir="$1"
 
+    # Never rm -rf an icons root by accident
+    case "$target_theme_dir" in
+        */.icons/"$THEME_NAME"|*/.local/share/icons/"$THEME_NAME") ;;
+        *) echo "Refusing to replace unexpected path: $target_theme_dir" >&2; return 1 ;;
+    esac
+    [ -n "$THEME_NAME" ] || return 1
+
     mkdir -p "$(dirname "$target_theme_dir")"
     rm -rf "$target_theme_dir"
     cp -a "$SOURCE_THEME_DIR" "$target_theme_dir"
@@ -87,12 +105,12 @@ apply_flatpak_overrides() {
     fi
 
     # Let Flatpak apps read cursor themes from standard user icon locations.
-    flatpak --user override --filesystem="$HOME/.icons:ro" --filesystem="$HOME/.local/share/icons:ro" || true
+    flatpak --user override --filesystem="$TARGET_HOME/.icons:ro" --filesystem="$TARGET_HOME/.local/share/icons:ro" || true
 
     local app
     for app in com.discordapp.Discord dev.vencord.Vesktop; do
         if flatpak --user info "$app" >/dev/null 2>&1; then
-            flatpak --user override --filesystem="$HOME/.icons:ro" --filesystem="$HOME/.local/share/icons:ro" "$app" || true
+            flatpak --user override --filesystem="$TARGET_HOME/.icons:ro" --filesystem="$TARGET_HOME/.local/share/icons:ro" "$app" || true
         fi
     done
 }
@@ -101,6 +119,14 @@ for target in "${TARGETS[@]}"; do
     install_theme_target "$target"
 done
 
-apply_flatpak_overrides
+if [ "$(id -u)" -eq 0 ] && [ "$target_user" != root ]; then
+    group="$(id -gn "$target_user")"
+    for target in "${TARGETS[@]}"; do
+        chown -R "$target_user:$group" "$target" "$(dirname "$target")/default" 2>/dev/null || true
+    done
+else
+    # flatpak --user overrides must run as the target user
+    apply_flatpak_overrides
+fi
 
 echo "Installed cursor theme from vendored assets: $THEME_NAME"
