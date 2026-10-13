@@ -1,33 +1,68 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
+# Bluetooth Manager: bluetui (preferred), bluetuith, or bluetoothctl.
 
-# Bluetooth Manager using bluetuith
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck source=../lib/common.sh
+. "$SCRIPT_DIR/../lib/common.sh"
+detect_distro
 
-# Ensure bluetuith is installed
-if ! command -v bluetuith &>/dev/null; then
-    if command -v paru &>/dev/null; then
-        echo "bluetuith not found. Installing bluetuith with paru..."
-        paru --noconfirm -S bluetuith
-    elif command -v pacman &>/dev/null; then
-        sudo pacman -S --noconfirm bluetuith
-    elif command -v xbps-install &>/dev/null; then
-        sudo xbps-install -Sy bluetuith
+pick_tui() {
+    local t
+    for t in bluetui bluetuith bluetoothctl; do
+        command_exists "$t" && { echo "$t"; return 0; }
+    done
+    return 1
+}
+
+install_tui() {
+    case "$DISTRO" in
+        arch)
+            # bluetui is in extra; bluetuith is AUR-only
+            pkg_install bluetui && return 0
+            local helper
+            helper=$(aur_helper)
+            [ -n "$helper" ] && "$helper" -S --needed bluetuith && return 0
+            ;;
+        artix)  pkg_install bluez-utils ;;
+        void)   pkg_install bluetuith || pkg_install bluez ;;
+        debian) pkg_install bluez ;;
+        fedora) pkg_install bluez ;;
+        suse)   pkg_install bluez ;;
+        alpine) pkg_install bluez ;;
+    esac
+}
+
+tui=$(pick_tui)
+if [ -z "$tui" ]; then
+    warn "No Bluetooth TUI found (bluetui, bluetuith or bluetoothctl)."
+    if confirm "Install one now?"; then
+        install_tui
+        tui=$(pick_tui)
+    fi
+    [ -n "$tui" ] || die "No Bluetooth tool available. Install bluetui (Arch: extra) or bluez."
+fi
+
+# Service name differs by init: bluetooth (systemd/openrc), bluetoothd (runit)
+bt_service=bluetooth
+[ "$INIT" = runit ] && bt_service=bluetoothd
+if ! svc_is_active "$bt_service" && ! pgrep -x bluetoothd >/dev/null 2>&1; then
+    warn "The Bluetooth service ($bt_service) is not running."
+    if confirm "Start and enable it now?"; then
+        svc_enable_now "$bt_service" || warn "Could not start $bt_service."
     fi
 fi
-if ! command -v bluetuith &>/dev/null; then
-    echo "bluetuith is not installed and could not be installed automatically. Please install bluetuith."
-    exit 1
+
+# Soft-blocked adapters show up as "no controller" in every TUI
+if command_exists rfkill && rfkill list bluetooth 2>/dev/null | grep -q 'Soft blocked: yes'; then
+    warn "Bluetooth is soft-blocked (rfkill)."
+    if confirm "Unblock it?"; then
+        rfkill unblock bluetooth 2>/dev/null || sudo rfkill unblock bluetooth
+    fi
 fi
 
 clear
-# Launch bluetuith
-bluetuith
-
-# After exiting bluetuith, return to the settings menu
-SCRIPT_DIR="$(dirname "$0")"
-SETTINGS_MENU="$SCRIPT_DIR/settings-menu.sh"
-if [ -x "$SETTINGS_MENU" ]; then
-    "$SETTINGS_MENU"
-else
-    echo "Settings menu not found at $SETTINGS_MENU."
+if [ "$tui" = bluetoothctl ]; then
+    say "Opening bluetoothctl (try: power on, scan on, devices, pair <MAC>, connect <MAC>, exit)."
 fi
+"$tui"

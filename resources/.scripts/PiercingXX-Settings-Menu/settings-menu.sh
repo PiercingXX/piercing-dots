@@ -1,139 +1,134 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
+# PiercingXX Settings Menu. Every entry is a script next to this file.
 
-clear
-# Detect distribution
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    DISTRO=$ID
-else
-    echo "Cannot detect distribution!"
-    exit 1
-fi
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck source=../lib/common.sh
+. "$SCRIPT_DIR/../lib/common.sh"
+detect_distro
 
-# Check/install gum if missing
-if ! command -v gum &> /dev/null; then
-	echo "gum not found. Installing..."
-	if command -v pacman &> /dev/null; then
-		sudo pacman -S --noconfirm gum
-	elif command -v apt &> /dev/null; then
-		sudo apt update && sudo apt install -y gum
-	elif command -v dnf &> /dev/null; then
-		sudo dnf install -y gum
-	elif command -v xbps-install &> /dev/null; then
-		sudo xbps-install -Sy gum
-	else
-		echo "Please install gum manually."
-		exit 1
-	fi
+# Child scripts can tell they were launched from here (and skip their own
+# trailing "press Enter" when this menu already pauses for them).
+export PIERCINGXX_FROM_MENU=1
+
+# gum drives every submenu; install it if we can, otherwise fall back to select
+if ! command_exists gum; then
+    say "gum not found. Installing..."
+    pkg_install gum || warn "Could not install gum automatically (on Debian, see https://github.com/charmbracelet/gum#installation)."
 fi
 
 use_ascii_menu=0
 if [[ ${PIERCINGXX_ASCII_MENU:-0} == 1 ]] || [[ -t 1 && ${TERM:-} == "linux" ]]; then
-	use_ascii_menu=1
+    use_ascii_menu=1
 fi
+export PIERCINGXX_ASCII_MENU="$use_ascii_menu"
+
+# One table: icon | label | script | flags
+#   flags: pause = wait for Enter after the script returns
+#          arch  = only on Arch-based systems (reflector/pacman mirrors)
+MENU_TABLE=(
+    "🚀|Update System|update-system.sh|pause"
+    "📦|Software Manager|terminal-software-manager.sh|"
+    "🎤|Audio Devices|audio-input-manager.sh|"
+    "📶|WiFi Manager|wifi-manager.sh|"
+    "🔵|Bluetooth Manager|bluetooth-manager.sh|"
+    "🖼️|Change Wallpaper|change-wallpaper.sh|pause"
+    "⌨️|Keyboard Layout|keyboard-layout.sh|"
+    "🔋|Power & Night Light|power-manager.sh|"
+    "🧱|Firewall|firewall-manager.sh|"
+    "⚙️|Services|service-manager.sh|"
+    "📜|Logs|log-viewer.sh|"
+    "🖥️|Hardware Info|hardware-info.sh|"
+    "🗄️|Backup & Restore|backup-restore.sh|"
+    "👤|User Management|user-management.sh|"
+    "✨|Update PiercingXX Rice|update-piercingXX.sh|pause"
+    "🌐|Update Mirrors|update-mirrors.sh|pause,arch"
+    "🛡️|Virus Scan|virus-scan.sh|"
+    "🧹|Clean System|clean-system.sh|pause"
+)
 
 options=()
-actions=()
+scripts=()
+flags=()
+for row in "${MENU_TABLE[@]}"; do
+    IFS='|' read -r icon label script flag <<< "$row"
+    if [[ ",$flag," == *",arch,"* ]] && [ "$DISTRO" != arch ]; then
+        continue
+    fi
+    [ -f "$SCRIPT_DIR/$script" ] || continue
+    if [[ $use_ascii_menu -eq 1 ]]; then
+        options+=("> $label")
+    else
+        options+=("$icon $label")
+    fi
+    scripts+=("$script")
+    flags+=("$flag")
+done
+if [[ $use_ascii_menu -eq 1 ]]; then
+    quit_label="> Quit"
+else
+    quit_label="🚪 Quit"
+fi
+options+=("$quit_label")
 
-add_option() {
-	options+=("$1")
-	actions+=("$2")
+pick() {
+    if command_exists gum; then
+        printf "%s\n" "${options[@]}" | gum filter --header="$1" --placeholder="Search or select an option..."
+    else
+        local PS3="Choose: " opt
+        select opt in "${options[@]}"; do
+            [ -n "$opt" ] && { echo "$opt"; return 0; }
+        done
+        return 1
+    fi
 }
 
-if [[ $use_ascii_menu -eq 1 ]]; then
-	add_option "> Update System" "update_system"
-	add_option "> Terminal Software Manager" "terminal_software_manager"
-	add_option "> Audio Input Manager" "audio_input_manager"
-	add_option "> WiFi Manager" "wifi_manager"
-	add_option "> Bluetooth Manager" "bluetooth_manager"
-	add_option "> Change Wallpaper" "change_wallpaper"
-	add_option "> Backup & Restore" "backup_restore"
-	add_option "> User Management" "user_management"
-	add_option "> Update PiercingXX Rice" "update_piercingxx"
-	if [[ "$DISTRO" == "arch" ]]; then
-		add_option "> Update Mirrors" "update_mirrors"
-		add_option "> Virus Scan" "virus_scan"
-		add_option "> Clean System" "clean_system"
-		add_option "> Quit" "quit"
-	else
-		add_option "> Virus Scan" "virus_scan"
-		add_option "> Clean System" "clean_system"
-		add_option "> Quit" "quit"
-	fi
-else
-	add_option "🚀 Update System" "update_system"
-	add_option "📦 Terminal Software Manager" "terminal_software_manager"
-	add_option "🎤 Audio Input Manager" "audio_input_manager"
-	add_option "📶 WiFi Manager" "wifi_manager"
-	add_option "🔵 Bluetooth Manager" "bluetooth_manager"
-	add_option "🖼️ Change Wallpaper" "change_wallpaper"
-	add_option "🗄️ Backup & Restore" "backup_restore"
-	add_option "👤 User Management" "user_management"
-	add_option "✨ Update PiercingXX Rice" "update_piercingxx"
-	if [[ "$DISTRO" == "arch" ]]; then
-		add_option "🌐 Update Mirrors" "update_mirrors"
-	fi
-	add_option "🛡️ Virus Scan" "virus_scan"
-	add_option "🧹 Clean System" "clean_system"
-	add_option "🚪 Quit" "quit"
-fi
-
+header="PiercingXX - Settings Menu (type to search)"
+esc_count=0
 while true; do
-	# Build searchable menu with descriptions
-	menu_list=()
-	for opt in "${options[@]}"; do
-		menu_list+=("$opt")
-	done
-	selected=$(printf "%s\n" "${menu_list[@]}" | gum filter --header="PiercingXX - Settings Menu (type to search)" --placeholder="Search or select an option...")
-	action=""
-	for i in "${!options[@]}"; do
-		if [[ "${options[$i]}" == "$selected" ]]; then
-			action="${actions[$i]}"
-			break
-		fi
-	done
-	case "$action" in
-		update_system)
-			bash ~/.scripts/PiercingXX-Settings-Menu/update-system.sh
-			;;
-		terminal_software_manager)
-			bash ~/.scripts/PiercingXX-Settings-Menu/terminal-software-manager.sh
-			;;
-		update_mirrors)
-			bash ~/.scripts/PiercingXX-Settings-Menu/update-mirrors.sh
-			;;
-		update_piercingxx)
-			bash ~/.scripts/PiercingXX-Settings-Menu/update-piercingXX.sh
-			;;
-		change_wallpaper)
-			bash ~/.scripts/PiercingXX-Settings-Menu/change-wallpaper.sh
-			;;
-		wifi_manager)
-			bash ~/.scripts/PiercingXX-Settings-Menu/wifi-manager.sh
-			;;
-		bluetooth_manager)
-			bash ~/.scripts/PiercingXX-Settings-Menu/bluetooth-manager.sh
-			;;
-		user_management)
-			bash ~/.scripts/PiercingXX-Settings-Menu/user-management.sh
-			;;
-		backup_restore)
-			bash ~/.scripts/PiercingXX-Settings-Menu/backup-restore.sh
-			;;
-		audio_input_manager)
-			bash ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh
-			;;
-		virus_scan)
-			bash ~/.scripts/PiercingXX-Settings-Menu/virus-scan.sh
-			;;
-		clean_system)
-			bash ~/.scripts/PiercingXX-Settings-Menu/clean-system.sh
-			;;
-		quit|"")
-			clear
-			exit 0
-			;;
-	esac
-	echo
+    clear
+    selected=$(pick "$header")
+    rc=$?
+    # Ctrl-C quits; Esc twice in a row quits; one stray Esc just redraws
+    if [ $rc -eq 130 ]; then
+        clear
+        exit 0
+    fi
+    if [ -z "$selected" ]; then
+        esc_count=$((esc_count + 1))
+        if [ $esc_count -ge 2 ]; then
+            clear
+            exit 0
+        fi
+        header="PiercingXX - Settings Menu (Esc again to quit)"
+        continue
+    fi
+    esc_count=0
+    header="PiercingXX - Settings Menu (type to search)"
+
+    if [ "$selected" = "$quit_label" ]; then
+        clear
+        exit 0
+    fi
+
+    for i in "${!options[@]}"; do
+        [ "${options[$i]}" = "$selected" ] || continue
+        clear
+        if [[ ",${flags[$i]}," == *",pause,"* ]]; then
+            # This menu pauses afterwards, so the script skips its own final pause
+            PX_NO_PAUSE=1 bash "$SCRIPT_DIR/${scripts[$i]}"
+        else
+            bash "$SCRIPT_DIR/${scripts[$i]}"
+        fi
+        status=$?
+        if [ $status -ne 0 ] && [ $status -ne 130 ]; then
+            echo
+            warn "${scripts[$i]} exited with code $status."
+            pause
+        elif [[ ",${flags[$i]}," == *",pause,"* ]]; then
+            echo
+            pause "Press Enter to return to the menu..."
+        fi
+        break
+    done
 done

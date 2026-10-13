@@ -1,5 +1,15 @@
 #!/bin/sh
 # GitHub.com/PiercingXX
+#
+# Full system update: distro packages, AUR, firmware, flatpak, toolchains,
+# editor/shell plugins, then a self-update of ~/.scripts and ~/.bashrc.
+#
+# Env knobs:
+#   PX_NO_SELF_UPDATE=1   don't pull ~/.scripts / ~/.bashrc from GitHub
+#   PX_AUR_NOCONFIRM=1    upgrade AUR packages without review prompts
+#   PX_NO_SNAPSHOT=1      skip the pre-update timeshift/snapper snapshot
+#   PX_GITHUB_DIR=path    folder of git repos to fast-forward
+#   GITHUB_TOKEN=...      raises the GitHub API limit for the self-update
 
 # POSIX bootstrap: this script needs bash and curl, which postmarketOS/Alpine
 # don't ship by default. Install them (doas or sudo), then re-exec under bash.
@@ -23,130 +33,111 @@ if [ -z "${PX_BASH_REEXEC:-}" ]; then
     exit 1
 fi
 
-# Define colors
-yellow='\033[1;33m'
-green='\033[0;32m'
-blue='\033[0;34m'
+# ---------------------------------------------------------------------------
+# Everything below runs under bash. The body lives in main() and the last
+# line is `main "$@"; exit $?`, so bash has parsed the whole file before any
+# of it runs and the self-update can safely replace this file.
+# ---------------------------------------------------------------------------
 
-nc='\033[0m'
+SCRIPT_PATH=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "$0")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+GITHUB_REPO="Piercingxx/piercing-dots"
+GITHUB_BRANCH="main"
+RAW_BASE="https://raw.githubusercontent.com/$GITHUB_REPO/$GITHUB_BRANCH"
+
+# Shared helpers. An old ~/.scripts may predate lib/, so fetch it once if missing.
+PX_LIB="$SCRIPT_DIR/../lib/common.sh"
+if [ ! -r "$PX_LIB" ]; then
+    mkdir -p "$(dirname "$PX_LIB")"
+    if ! curl -fsSL "$RAW_BASE/resources/.scripts/lib/common.sh" -o "$PX_LIB"; then
+        echo "Missing $PX_LIB and could not download it." >&2
+        exit 1
+    fi
+fi
+# shellcheck disable=SC1090
+. "$PX_LIB"
 
 if [[ -d "$HOME/.cargo/bin" && ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
     PATH="$HOME/.cargo/bin:$PATH"
 fi
-
 # Make sure ~/.local/bin is on PATH (static jq fallback installs there, e.g. on FuriOS)
 if [[ -d "$HOME/.local/bin" && ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-
-# Add a safe clear that works even if TERM is unknown
-safe_clear() {
-    if command -v tput >/dev/null 2>&1 && [ -n "${TERM:-}" ] && [ "$TERM" != "dumb" ] && tput clear >/dev/null 2>&1; then
-        clear
-    else
-        printf '\033c'
-    fi
-}
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-service_is_active_any() {
-    local svc
-
-    if command_exists systemctl; then
-        for svc in "$@"; do
-            if systemctl is-active --quiet "$svc" 2>/dev/null; then
-                return 0
-            fi
-        done
-    fi
-
-    if command_exists sv; then
-        for svc in "$@"; do
-            if sv status "$svc" 2>/dev/null | grep -q '^run:'; then
-                return 0
-            fi
-        done
-    fi
-
-    return 1
-}
-
-npm_updates_use_system_prefix() {
-    local npm_prefix
-
-    npm_prefix=$(npm config get prefix 2>/dev/null || true)
-    [[ "$npm_prefix" == "/usr" || "$npm_prefix" == "/usr/local" || -z "$npm_prefix" || "$npm_prefix" == "undefined" ]]
-}
-
-fwupd_has_updatable_devices() {
-    local fwupd_output="$1"
-
-    if [[ -z "$fwupd_output" ]]; then
-        return 1
-    fi
-
-    if grep -q '^No updatable devices$' <<< "$fwupd_output"; then
-        return 1
-    fi
-
-    if grep -qE '(^[[:space:]]*• )|(^[[:space:]]*[0-9]+ device\(s\) can be updated$)' <<< "$fwupd_output"; then
-        return 0
-    fi
-
-    return 1
-}
-
-# Detect distro (used by update branches and helpers)
-detect_distro() {
-    if [ -r /etc/os-release ]; then
-        . /etc/os-release
-        DISTRO="${ID,,}"
-        DISTRO_LIKE="${ID_LIKE,,}"
-    else
-        DISTRO=""
-        DISTRO_LIKE=""
-    fi
-}
 detect_distro
 
-# Match derivatives via ID_LIKE too (e.g. FuriOS reports its own ID but is debian-like)
-is_debian_like() {
-    case "$DISTRO" in
-        debian|ubuntu|pop|linuxmint|mint|pureos|droidian|mobian|furios|ubuntutouch|raspbian) return 0 ;;
+INTERACTIVE=0
+[ -t 0 ] && INTERACTIVE=1
+
+# Step results for the end-of-run table
+STEP_NAMES=()
+STEP_STATUS=()
+REBOOT_REASONS=()
+UPGRADED_PKGS=()
+SKIP=3          # step return code: not applicable, don't list it
+SKIPPED=4       # step return code: deliberately skipped, list it
+
+PX_TMP_DIR=""
+SUDO_KEEPALIVE_PID=""
+LOG_FILE=""
+START_EPOCH=$(date +%s)
+
+# ---------------------------------------------------------------------------
+# Small helpers
+# ---------------------------------------------------------------------------
+
+record_step() {
+    STEP_NAMES+=("$1")
+    STEP_STATUS+=("$2")
+}
+
+# run_step "Label" func [args...]
+run_step() {
+    local label="$1" rc
+    shift
+    "$@"
+    rc=$?
+    case "$rc" in
+        0)        record_step "$label" ok ;;
+        "$SKIP")  ;;
+        "$SKIPPED") record_step "$label" skipped ;;
+        *)        record_step "$label" failed ;;
     esac
-    [[ " $DISTRO_LIKE " == *debian* || " $DISTRO_LIKE " == *ubuntu* ]]
+    return "$rc"
 }
 
-is_alpine_like() {
-    [[ "$DISTRO" == "alpine" || "$DISTRO" == "postmarketos" || " $DISTRO_LIKE " == *alpine* ]]
+# Run a command on the real terminal (pagers, editors, AUR review prompts)
+on_tty() {
+    "$@" </dev/tty >/dev/tty 2>/dev/tty
 }
 
-# Ubuntu Touch: system partition is read-only; system updates are OTA, not apt
-is_ubuntu_touch() {
-    [[ "$DISTRO" == "ubports" || "$DISTRO" == "ubuntutouch" ]] && return 0
-    grep -qi "ubuntu touch" /etc/os-release 2>/dev/null && return 0
-    command_exists system-image-cli && return 0
-    [ -d /etc/system-image ] && return 0
-    return 1
+# ask_yes "Question?" Y|N  -> non-interactive runs take the default
+ask_yes() {
+    local q="$1" def="${2:-N}" reply hint="[y/N]"
+    [ "$def" = Y ] && hint="[Y/n]"
+    if [ "$INTERACTIVE" -ne 1 ]; then
+        [ "$def" = Y ]
+        return
+    fi
+    read -r -p "$q $hint " reply </dev/tty
+    reply=${reply:-$def}
+    [[ "$reply" =~ ^[Yy] ]]
 }
 
-rootfs_is_readonly() {
-    awk '$2 == "/" {opts=$4} END {exit !(opts ~ /^ro$|^ro,|,ro,|,ro$)}' /proc/mounts 2>/dev/null
+cleanup() {
+    [ -n "$SUDO_KEEPALIVE_PID" ] && kill "$SUDO_KEEPALIVE_PID" 2>/dev/null
+    [ -n "$PX_TMP_DIR" ] && rm -rf "$PX_TMP_DIR"
 }
 
 # Reliable-ish internet check
 check_internet() {
-    local timeout=4
+    local timeout=4 url code body host
     if command_exists nm-online; then
         nm-online -q -t "$timeout" && return 0
     fi
     if command_exists networkctl; then
-        networkctl -q is-online --timeout="$timeout" && return 0
+        networkctl -q is-online --timeout="$timeout" 2>/dev/null && return 0
     fi
     local urls=(
         "https://connectivitycheck.gstatic.com/generate_204"
@@ -155,21 +146,18 @@ check_internet() {
         "http://www.msftconnecttest.com/connecttest.txt"
     )
     for url in "${urls[@]}"; do
-        local code
         code=$(curl -4 -fsS --max-time "$timeout" -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || true)
         if [[ "$code" == "204" ]]; then
             return 0
         fi
         if [[ "$code" == "200" && "$url" == *"msft"* ]]; then
-            local body
             body=$(curl -4 -fsS --max-time "$timeout" "$url" 2>/dev/null | tr -d '\r\n')
             if [[ "$body" == "Microsoft NCSI" || "$body" == "Microsoft Connect Test" ]]; then
                 return 0
             fi
         fi
     done
-    local hosts=(1.1.1.1 8.8.8.8 9.9.9.9)
-    for host in "${hosts[@]}"; do
+    for host in 1.1.1.1 8.8.8.8 9.9.9.9; do
         if ping -4 -c 1 -W 1 "$host" >/dev/null 2>&1; then
             return 0
         fi
@@ -177,12 +165,14 @@ check_internet() {
     return 1
 }
 
-# Require internet before continuing
-if ! check_internet; then
-    echo "Internet connectivity is required to continue."
-    exit 1
-fi
-
+# Ubuntu Touch: system partition is read-only; system updates are OTA, not apt
+is_ubuntu_touch() {
+    [[ "$DISTRO_ID" == "ubports" || "$DISTRO_ID" == "ubuntutouch" || "$DISTRO_ID" == "ubuntu-touch" ]] && return 0
+    grep -qi "ubuntu touch" /etc/os-release 2>/dev/null && return 0
+    command_exists system-image-cli && return 0
+    [ -d /etc/system-image ] && return 0
+    return 1
+}
 
 # Fallback for distros whose repos lack jq (e.g. FuriOS): official static binary, no build needed
 install_jq_static() {
@@ -199,7 +189,7 @@ install_jq_static() {
     dest_dir="$HOME/.local/bin"
     mkdir -p "$dest_dir"
     tmp_bin=$(mktemp)
-    echo -e "${yellow}jq not available from the package manager; downloading static jq binary (${arch})...${nc}"
+    say "jq not available from the package manager; downloading static jq binary (${arch})..."
     if curl -fsSL "$bin_url" -o "$tmp_bin" && chmod +x "$tmp_bin" && "$tmp_bin" --version >/dev/null 2>&1; then
         mv "$tmp_bin" "$dest_dir/jq"
         if [[ ":$PATH:" != *":$dest_dir:"* ]]; then
@@ -211,422 +201,968 @@ install_jq_static() {
     return 1
 }
 
+# jq is only needed for the scripts self-update; installs from the (already
+# refreshed) repos, never with `pacman -Sy`
 ensure_jq() {
-    if command_exists jq; then
+    command_exists jq && return 0
+    say "jq is required for the scripts self-update. Installing..."
+    [ "$PKG" = apt ] && sudo apt-get update -qq
+    if pkg_install jq >/dev/null 2>&1 && command_exists jq; then
         return 0
     fi
-    echo -e "${yellow}jq is required for script auto-update. Attempting to install...${nc}"
-    if [[ "$DISTRO" == "fedora" ]]; then
-        sudo dnf -y install jq && return 0
-    elif [[ "$DISTRO" == "arch" ]]; then
-        # Try install without refreshing DB first, then with -Sy as fallback
-        sudo pacman -S --needed --noconfirm jq && return 0 || sudo pacman -Sy --needed --noconfirm jq && return 0
-    elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" || "$DISTRO" == "droidian" || "$DISTRO" == "mobian" || "$DISTRO" == "ubuntutouch" || "$DISTRO" == "raspbian" ]]; then
-        sudo apt update && sudo apt -y install jq && return 0
-    elif [[ "$DISTRO" == "void" ]]; then
-        sudo xbps-install -Sy jq && return 0
-    elif is_alpine_like; then
-        sudo apk add jq && return 0
-    elif is_debian_like; then
-        sudo apt update && sudo apt -y install jq && return 0
-    fi
-    # Last resort (e.g. FuriOS, where the repos don't carry jq)
     install_jq_static && return 0
-    echo -e "${yellow}Could not auto-install jq on this distro; continuing without auto-update of ~/.scripts.${nc}"
+    warn "Could not install jq; skipping the ~/.scripts self-update."
     return 1
 }
 
-# postmarketOS ships doas instead of sudo; shim it so the rest of the script works unchanged
-if command_exists sudo; then
-    have_real_sudo=1
-else
-    have_real_sudo=0
-    if command_exists doas; then
-        sudo() { doas "$@"; }
-    fi
-fi
+# ---------------------------------------------------------------------------
+# Self-update: ~/.scripts and ~/.bashrc from GitHub (runs last)
+# ---------------------------------------------------------------------------
 
-if [ "$have_real_sudo" -eq 1 ]; then
-    # Ask for sudo password up front and keep sudo alive (doas has no -v/-n, so real sudo only)
-    sudo -v
-    # Keep-alive: update existing sudo time stamp until script finishes
-    ( while true; do sudo -n true; sleep 300; done ) &
-    sudo_keepalive_pid=$!
-    trap 'kill "$sudo_keepalive_pid" 2>/dev/null' EXIT
-fi
-
-
-# Ensure user can force shutdown and reboot without password
-# Drop-in under sudoers.d — never append raw lines to /etc/sudoers (easy to brick sudo).
-if [ "$have_real_sudo" -eq 1 ] && [ -d /etc/sudoers.d ] && ! rootfs_is_readonly; then
-    sudoers_dropin="/etc/sudoers.d/piercingxx-power"
-    tmp_sudoers="$(mktemp)"
-    {
-        echo "# Managed by PiercingXX update-system.sh"
-        for cmd in /sbin/shutdown /sbin/reboot /usr/sbin/shutdown /usr/sbin/reboot; do
-            [ -x "$cmd" ] || continue
-            echo "$USER ALL=NOPASSWD: $cmd"
-        done
-    } >"$tmp_sudoers"
-    if sudo visudo -cf "$tmp_sudoers" >/dev/null 2>&1; then
-        sudo install -m 0440 "$tmp_sudoers" "$sudoers_dropin"
-    else
-        echo "Warning: rejected invalid sudoers drop-in; left /etc/sudoers untouched." >&2
-    fi
-    rm -f "$tmp_sudoers"
-fi
-
-# Unified function to update all scripts in ~/.scripts from GitHub repo, recursively handling subfolders
-auto_update_scripts() {
-    local GITHUB_REPO="Piercingxx/piercing-dots"
-    local REMOTE_PATH="resources/.scripts"
-    local LOCAL_DIR="$HOME/.scripts"
-    local monitor_rel="${REMOTE_PATH}/Control-Scripts/launch-server-monitor.sh"
-    local running_script
-    running_script=$(readlink -f "${0}" 2>/dev/null || echo "${0}")
-
-    # Ensure local scripts directory exists
-    mkdir -p "$LOCAL_DIR"
-
-    # Recursively fetch all files and folders from the GitHub API
-    fetch_and_sync() {
-        local api_path="$1"
-        local local_path="$2"
-        local api_url="https://api.github.com/repos/$GITHUB_REPO/contents/$api_path"
-        local items
-        items=$(curl -s "$api_url")
-        echo "$items" | jq -c '.[]' | while read -r item; do
-            local type name path download_url
-            type=$(echo "$item" | jq -r '.type')
-            name=$(echo "$item" | jq -r '.name')
-            path=$(echo "$item" | jq -r '.path')
-            download_url=$(echo "$item" | jq -r '.download_url')
-            if [[ "$type" == "dir" ]]; then
-                mkdir -p "$local_path/$name"
-                fetch_and_sync "$path" "$local_path/$name"
-            elif [[ "$type" == "file" ]]; then
-                local tmp_file
-                tmp_file=$(mktemp)
-                if ! curl -fsSL "$download_url" -o "$tmp_file"; then
-                    echo -e "${yellow}Failed to download $path from GitHub.${nc}"
-                    rm -f "$tmp_file"
-                    continue
-                fi
-                
-                # Special handling for launch-server-monitor.sh to preserve user's REMOTE line
-                local tmp_compare="$tmp_file"
-                if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
-                    local saved_remote_line
-                    saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" || true)
-                    if [[ -n "$saved_remote_line" ]]; then
-                        # Apply the saved REMOTE line to the temp file for comparison
-                        tmp_compare=$(mktemp)
-                        awk -v saved="$saved_remote_line" 'BEGIN{replaced=0} {if(!replaced && $0 ~ /^REMOTE=/){print saved; replaced=1; next} {print}} END{if(!replaced && saved!="") print saved}' "$tmp_file" > "$tmp_compare"
-                    fi
-                fi
-                
-                # Compare using the potentially modified temp file
-                if [ ! -f "$local_path/$name" ] || ! cmp -s "$local_path/$name" "$tmp_compare"; then
-                    local target_file
-                    target_file="$local_path/$name"
-                    # Avoid overwriting the currently running script mid-execution.
-                    if [[ "$(readlink -f "$target_file" 2>/dev/null || echo "$target_file")" == "$running_script" ]]; then
-                        cp "$tmp_file" "${target_file}.upstream"
-                        chmod +x "${target_file}.upstream" 2>/dev/null || true
-                        echo -e "${yellow}Update available for running script; saved as:${nc} ${target_file}.upstream"
-                        echo -e "${yellow}Restart the script to apply it (or replace the file manually).${nc}"
-                        rm -f "$tmp_file"
-                        if [[ "$tmp_compare" != "$tmp_file" ]]; then
-                            rm -f "$tmp_compare"
-                        fi
-                        continue
-                    fi
-
-                    cp "$tmp_file" "$target_file"
-                    
-                    # Re-apply the saved REMOTE line to the installed file
-                    if [[ "$path" == "$monitor_rel" && -f "$local_path/$name" ]]; then
-                        local saved_remote_line
-                        saved_remote_line=$(grep -E '^REMOTE=' "$local_path/$name" 2>/dev/null || echo "REMOTE=\"dr3k@server-debian-ai\"")
-                        local tmp_preserve
-                        tmp_preserve=$(mktemp)
-                        awk -v saved="$saved_remote_line" 'BEGIN{replaced=0} {if(!replaced && $0 ~ /^REMOTE=/){print saved; replaced=1; next} {print}} END{if(!replaced && saved!="") print saved}' "$local_path/$name" > "$tmp_preserve" && mv "$tmp_preserve" "$local_path/$name"
-                    fi
-                    
-                    chmod +x "$local_path/$name"
-                    echo -e "${green}Updated $path${nc}"
-                fi
-                
-                # Clean up temp files
-                rm -f "$tmp_file"
-                if [[ "$tmp_compare" != "$tmp_file" ]]; then
-                    rm -f "$tmp_compare"
-                fi
-            fi
-        done
-    }
-
-    fetch_and_sync "$REMOTE_PATH" "$LOCAL_DIR"
-    echo -e "${green}All scripts checked and updated if needed!${nc}"
+prune_backups() {
+    local pattern="$1" keep="${2:-5}"
+    find "$PX_STATE_DIR/backups" -mindepth 1 -maxdepth 1 -type d -name "$pattern" -printf '%f\n' 2>/dev/null \
+        | sort -r | tail -n +$((keep + 1)) \
+        | while read -r old; do rm -rf "${PX_STATE_DIR:?}/backups/$old"; done
 }
 
+# Older launch-*.sh kept the host in a REMOTE= line; hosts now live in
+# ~/.config/piercingxx/remotes.conf. Carry a customized value over once.
+migrate_remote_line() {
+    local rel="$1" saved="$2" key value conf
+    [ -n "$saved" ] || return 0
+    case "$rel" in
+        Control-Scripts/launch-skippy-remote.sh) key="SKIPPY_HOST" ;;
+        Control-Scripts/launch-server-monitor.sh|Control-Scripts/launch-ollama-remote.sh) key="SERVER_HOST" ;;
+        *) return 0 ;;
+    esac
+    value=$(printf '%s' "${saved#REMOTE=}" | tr -d '"'"'")
+    [ -n "$value" ] || return 0
+    conf="${XDG_CONFIG_HOME:-$HOME/.config}/piercingxx/remotes.conf"
+    if [ -f "$conf" ] && grep -q "^$key=" "$conf"; then
+        return 0
+    fi
+    mkdir -p "$(dirname "$conf")"
+    printf '%s="%s"\n' "$key" "$value" >> "$conf"
+    say "Moved $key=$value from $rel into $conf"
+}
 
-# Update .bashrc from GitHub
-update_bashrc() {
-    local REMOTE_URL="https://raw.githubusercontent.com/Piercingxx/piercing-dots/main/resources/bash/.bashrc"
-    local TMP_FILE
-    TMP_FILE=$(mktemp)
-    if ! curl -fsSL "$REMOTE_URL" -o "$TMP_FILE"; then
-        echo -e "${yellow}Failed to download .bashrc from GitHub.${nc}"
-        rm -f "$TMP_FILE"
+sync_scripts() {
+    local backup="$1"
+    local prefix="resources/.scripts/"
+    local local_root="$HOME/.scripts"
+    local tree="$PX_TMP_DIR/tree.json"
+    local code
+
+    if [ -L "$local_root" ]; then
+        say "~/.scripts is a symlink (dev checkout); not overwriting it."
+        return "$SKIPPED"
+    fi
+
+    local -a auth=()
+    [ -n "${GITHUB_TOKEN:-}" ] && auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+    # One API call for the whole tree; files then come from raw.githubusercontent.com
+    code=$(curl -sS --max-time 30 -o "$tree" -w '%{http_code}' \
+        -H 'Accept: application/vnd.github+json' "${auth[@]}" \
+        "https://api.github.com/repos/$GITHUB_REPO/git/trees/$GITHUB_BRANCH?recursive=1" 2>/dev/null) || code="000"
+    case "$code" in
+        200) ;;
+        403|429)
+            warn "GitHub API rate limit reached; skipping the scripts self-update. (Set GITHUB_TOKEN to raise the limit.)"
+            return 1 ;;
+        *)
+            warn "GitHub API returned HTTP $code; skipping the scripts self-update."
+            return 1 ;;
+    esac
+    if ! jq -e '.tree | type == "array"' "$tree" >/dev/null 2>&1; then
+        warn "Unexpected GitHub API response; skipping the scripts self-update."
         return 1
     fi
-    if ! cmp -s "$HOME/.bashrc" "$TMP_FILE"; then
-        cp "$TMP_FILE" "$HOME/.bashrc"
-        echo -e "${green}.bashrc has been updated.${nc}"
+    [ "$(jq -r '.truncated' "$tree")" = true ] && warn "GitHub returned a truncated file tree; some scripts may be skipped."
+
+    mkdir -p "$local_root"
+    local updated=0 failed=0 path sha mode rel target new saved_remote
+    while IFS=$'\t' read -r path sha mode; do
+        rel="${path#"$prefix"}"
+        target="$local_root/$rel"
+
+        if [ -L "$target" ]; then
+            continue
+        fi
+        # Unchanged files: compare git blob hashes, no download needed
+        if [ -f "$target" ] && command_exists git \
+            && [ "$(git hash-object "$target" 2>/dev/null)" = "$sha" ]; then
+            rm -f "$target.upstream"
+            continue
+        fi
+
+        saved_remote=""
+        if [[ "$rel" == Control-Scripts/launch-*.sh && -f "$target" ]]; then
+            saved_remote=$(grep -m1 -E '^REMOTE=' "$target" || true)
+        fi
+
+        mkdir -p "$(dirname "$target")"
+        new="$target.px-new"
+        if ! curl -fsSL --max-time 30 "$RAW_BASE/$path" -o "$new"; then
+            warn "Failed to download $path"
+            rm -f "$new"
+            failed=$((failed + 1))
+            continue
+        fi
+        migrate_remote_line "$rel" "$saved_remote"
+
+        if [ -f "$target" ] && cmp -s "$target" "$new"; then
+            rm -f "$new"
+            continue
+        fi
+        if [ -f "$target" ]; then
+            mkdir -p "$backup/scripts/$(dirname "$rel")"
+            cp -a "$target" "$backup/scripts/$rel"
+        fi
+        if [ "$mode" = 100755 ] || [ "$(head -c2 "$new")" = '#!' ]; then
+            chmod 755 "$new"
+        else
+            chmod 644 "$new"
+        fi
+        # rename() is atomic and leaves the running copy's inode alone
+        mv -f "$new" "$target"
+        rm -f "$target.upstream"
+        echo -e "${green}Updated ~/.scripts/$rel${nc}"
+        updated=$((updated + 1))
+    done < <(jq -r --arg p "$prefix" \
+        '.tree[] | select(.type == "blob" and (.path | startswith($p))) | [.path, .sha, .mode] | @tsv' "$tree")
+
+    if [ "$updated" -gt 0 ]; then
+        ok "Updated $updated script(s). Previous versions: $backup/scripts"
+    else
+        ok "~/.scripts is already up to date."
     fi
-    rm -f "$TMP_FILE"
+    [ "$failed" -eq 0 ]
+}
+
+update_bashrc() {
+    local backup="$1" new
+    if [ -L "$HOME/.bashrc" ]; then
+        say "~/.bashrc is a symlink; not overwriting it."
+        return "$SKIPPED"
+    fi
+    new="$HOME/.bashrc.px-new"
+    if ! curl -fsSL --max-time 30 "$RAW_BASE/resources/bash/.bashrc" -o "$new"; then
+        warn "Failed to download .bashrc from GitHub."
+        rm -f "$new"
+        return 1
+    fi
+    if [ -f "$HOME/.bashrc" ] && cmp -s "$HOME/.bashrc" "$new"; then
+        rm -f "$new"
+        return 0
+    fi
+    if [ -f "$HOME/.bashrc" ]; then
+        mkdir -p "$backup"
+        cp -a "$HOME/.bashrc" "$backup/.bashrc"
+    fi
+    chmod 644 "$new"
+    mv -f "$new" "$HOME/.bashrc"
+    ok ".bashrc has been updated. Previous version: $backup/.bashrc"
+}
+
+self_update() {
+    if [ "${PX_NO_SELF_UPDATE:-0}" = 1 ]; then
+        say "PX_NO_SELF_UPDATE=1: leaving ~/.scripts and ~/.bashrc alone."
+        return "$SKIP"
+    fi
+    if ! ensure_jq; then
+        record_step "Scripts self-update" failed
+        return 1
+    fi
+    local backup
+    backup="$PX_STATE_DIR/backups/scripts-$(date +%Y%m%d-%H%M%S)"
+    run_step "Scripts self-update" sync_scripts "$backup"
+    run_step ".bashrc update" update_bashrc "$backup"
+    prune_backups 'scripts-*' 5
+}
+
+# ---------------------------------------------------------------------------
+# Snapshots and reboot detection (all distros)
+# ---------------------------------------------------------------------------
+
+pre_update_snapshot() {
+    [ "${PX_NO_SNAPSHOT:-0}" = 1 ] && return "$SKIP"
+    if is_arch_like && pacman -Qq snap-pac >/dev/null 2>&1; then
+        say "snap-pac will take pre/post snapshots automatically."
+        return 0
+    fi
+    if command_exists timeshift; then
+        say "Creating a timeshift snapshot before updating..."
+        sudo timeshift --create --comments "pre-update $(date +%F)" --tags O --scripted
+        return
+    fi
+    if command_exists snapper && sudo snapper -c root list >/dev/null 2>&1; then
+        say "Creating a snapper snapshot before updating..."
+        sudo snapper -c root create -d "pre-update $(date +%F)" -c number
+        return
+    fi
+    return "$SKIP"
+}
+
+check_reboot_needed() {
+    local kver pkg
+    kver=$(uname -r)
+    if [ ! -d "/usr/lib/modules/$kver" ] && [ ! -d "/lib/modules/$kver" ]; then
+        REBOOT_REASONS+=("running kernel $kver was replaced")
+    fi
+    if [ -f /var/run/reboot-required ]; then
+        REBOOT_REASONS+=("$(head -n1 /var/run/reboot-required.pkgs 2>/dev/null || echo "packages requested a reboot")")
+    fi
+    if [ "$DISTRO" = fedora ] && command_exists dnf; then
+        dnf needs-restarting -r >/dev/null 2>&1
+        [ $? -eq 1 ] && REBOOT_REASONS+=("dnf needs-restarting reports core updates")
+    fi
+    for pkg in "${UPGRADED_PKGS[@]}"; do
+        case "$pkg" in
+            linux|linux-lts|linux-zen|linux-hardened|linux-rt|linux-surface|linux-cachyos*|systemd|glibc|mesa|nvidia*|amd-ucode|intel-ucode)
+                REBOOT_REASONS+=("$pkg was upgraded") ;;
+        esac
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Arch / Artix
+# ---------------------------------------------------------------------------
+
+arch_check_db_lock() {
+    local lck=/var/lib/pacman/db.lck pm
+    [ -e "$lck" ] || return 0
+    for pm in pacman paru yay pamac pamac-daemon packagekitd; do
+        if pgrep -x "$pm" >/dev/null 2>&1; then
+            err "Another package manager ($pm) is running and holds the pacman lock. Let it finish, then try again."
+            return 1
+        fi
+    done
+    err "Found a stale pacman lock: $lck"
+    say "If you are sure no package manager is running, remove it with: sudo rm $lck"
+    return 1
+}
+
+# Show Arch news newer than the last run. Returns 2 if the user cancels.
+arch_news_check() {
+    [ "$DISTRO" = arch ] || return "$SKIP"
+    [ "$DISTRO_ID" = manjaro ] && return "$SKIP"
+
+    if command_exists informant; then
+        if informant check >/dev/null 2>&1; then
+            return 0
+        fi
+        warn "There is unread Arch Linux news."
+        if [ "$INTERACTIVE" -eq 1 ]; then
+            on_tty informant read
+            ask_yes "Continue with the upgrade?" Y || return 2
+        else
+            informant list --unread 2>/dev/null
+        fi
+        return 0
+    fi
+
+    local feed marker newest=0 shown=0 epoch date title link
+    marker="$PX_STATE_DIR/arch-news-seen"
+    feed=$(curl -fsS --max-time 10 https://archlinux.org/feeds/news/ 2>/dev/null) || {
+        warn "Could not fetch Arch news; check https://archlinux.org/news/ before big upgrades."
+        return 1
+    }
+    local seen
+    seen=$(cat "$marker" 2>/dev/null || echo $(( $(date +%s) - 14 * 86400 )))
+
+    while IFS=$'\t' read -r date title link; do
+        epoch=$(date -d "$date" +%s 2>/dev/null) || continue
+        [ "$epoch" -gt "$newest" ] && newest=$epoch
+        if [ "$epoch" -gt "$seen" ]; then
+            [ "$shown" -eq 0 ] && warn "Arch Linux news since your last update:"
+            printf '  %s  %s\n     %s\n' "$(date -d "@$epoch" +%F)" "$title" "$link"
+            shown=$((shown + 1))
+        fi
+    done < <(printf '%s' "$feed" | awk 'BEGIN{RS="</item>"} {
+            i = index($0, "<item>"); if (!i) next; s = substr($0, i)
+            t = ""; d = ""; l = ""
+            if (match(s, /<title>[^<]*<\/title>/)) t = substr(s, RSTART + 7, RLENGTH - 15)
+            if (match(s, /<pubDate>[^<]*<\/pubDate>/)) d = substr(s, RSTART + 9, RLENGTH - 19)
+            if (match(s, /<link>[^<]*<\/link>/)) l = substr(s, RSTART + 6, RLENGTH - 13)
+            gsub(/&amp;/, "\\&", t); gsub(/&lt;/, "<", t); gsub(/&gt;/, ">", t)
+            if (t != "" && d != "") print d "\t" t "\t" l
+        }')
+
+    if [ "$shown" -gt 0 ]; then
+        if [ "$INTERACTIVE" -eq 1 ]; then
+            ask_yes "Read the news above. Continue with the upgrade?" Y || return 2
+        else
+            return 0   # keep the marker so the news shows again interactively
+        fi
+    fi
+    if [ "$newest" -gt 0 ]; then
+        mkdir -p "$PX_STATE_DIR"
+        echo "$newest" > "$marker"
+    fi
     return 0
 }
 
+# Offer update-mirrors.sh when the mirrorlist is stale
+maybe_refresh_mirrors() {
+    [ "$DISTRO" = arch ] || return "$SKIP"
+    local ml=/etc/pacman.d/mirrorlist mirrors_script="$SCRIPT_DIR/update-mirrors.sh" age
+    [ -f "$ml" ] && [ -f "$mirrors_script" ] || return "$SKIP"
+    age=$(( ( $(date +%s) - $(stat -c %Y "$ml") ) / 86400 ))
+    [ "$age" -ge "${PX_MIRROR_MAX_AGE:-30}" ] || return "$SKIP"
+    if ask_yes "Your mirrorlist is ${age} days old. Refresh mirrors before upgrading?" N; then
+        on_tty env PX_NO_PAUSE=1 bash "$mirrors_script" --yes
+        return
+    fi
+    say "Tip: refresh mirrors from the settings menu (Update Mirrors)."
+    return "$SKIP"
+}
+
+arch_keyrings() {
+    if [ "$DISTRO" = artix ]; then
+        echo artix-keyring
+        pacman -Qq archlinux-keyring >/dev/null 2>&1 && echo archlinux-keyring
+    else
+        echo archlinux-keyring
+    fi
+}
+
+arch_log_has_keyring_error() {
+    grep -Eqi "unknown trust|signature from .* is invalid|invalid or corrupted package \(PGP signature\)|required key missing from keyring|could not be looked up remotely" "$1"
+}
+
+arch_log_needs_manual_conflict_resolution() {
+    grep -Eq "Inner conflicts found:|Conflicting packages will have to be confirmed manually|can not install conflicting packages with --noconfirm|unresolvable package conflicts detected" "$1"
+}
+
+# Lines look like: "npm: /usr/lib/node_modules/npm/... exists in filesystem" (gawk, Arch-only)
+arch_extract_conflict_paths() {
+    awk 'match($0, /^[^:]+: (\/[^ ]+) exists in filesystem$/, m) {print m[1]}' "$1" | sort -u
+}
+
+# Typical cause: files created by `npm -g` or other manual installs living under /usr.
+# Move *unowned* conflicting paths aside into a timestamped backup and retry.
+arch_fix_pacman_conflicting_files() {
+    local log_file="$1" p owner
+    local -a paths=()
+    while IFS= read -r p; do
+        [[ -n "$p" ]] && paths+=("$p")
+    done < <(arch_extract_conflict_paths "$log_file")
+    (( ${#paths[@]} > 0 )) || return 1
+
+    warn "Detected pacman file conflicts:"
+    printf ' - %s\n' "${paths[@]}"
+
+    if ! ask_yes "Move unowned conflicting files aside and retry the upgrade?" Y || [ "$INTERACTIVE" -ne 1 ]; then
+        echo "Tip: inspect ownership with: pacman -Qo <path>"
+        return 2
+    fi
+
+    local backup_root
+    backup_root="/var/lib/piercingxx/pacman-conflicts-$(date +%Y%m%d-%H%M%S)"
+    sudo mkdir -p "$backup_root"
+    local moved_any=0
+    for p in "${paths[@]}"; do
+        sudo test -e "$p" || continue
+        owner=$(pacman -Qo "$p" 2>&1 || true)
+        if grep -qi "No package owns" <<< "$owner"; then
+            sudo mkdir -p "$backup_root$(dirname "$p")"
+            sudo mv -f "$p" "$backup_root$(dirname "$p")/" && moved_any=1
+        else
+            warn "Skipping owned path: $p"
+            echo "  $owner"
+        fi
+    done
+    if (( moved_any == 1 )); then
+        ok "Moved unowned conflicting files to: $backup_root"
+        return 0
+    fi
+    warn "No unowned conflicting paths were moved."
+    return 2
+}
+
+arch_pacman_upgrade() {
+    local log_file="$1"
+    sudo pacman -Syu --noconfirm 2>&1 | tee "$log_file"
+    return "${PIPESTATUS[0]}"
+}
+
+arch_downgrade_hint() {
+    say "Older package versions are kept in /var/cache/pacman/pkg."
+    say "  Roll back one package: sudo pacman -U /var/cache/pacman/pkg/<name>-<oldver>-<arch>.pkg.tar.zst"
+    if command_exists downgrade; then
+        say "  Or pick a version interactively: sudo downgrade <name>"
+    fi
+}
+
+# Official-repo upgrade: non-interactive, with keyring/conflict repair
+arch_repo_upgrade() {
+    local log_file="$PX_TMP_DIR/pacman-upgrade.log"
+
+    arch_pacman_upgrade "$log_file" && return 0
+
+    if arch_log_has_keyring_error "$log_file"; then
+        warn "Package signature problem; refreshing the keyring first..."
+        # shellcheck disable=SC2046
+        if sudo pacman -Sy --needed --noconfirm $(arch_keyrings) && arch_pacman_upgrade "$log_file"; then
+            return 0
+        fi
+    fi
+
+    if arch_log_needs_manual_conflict_resolution "$log_file" && [ "$INTERACTIVE" -eq 1 ]; then
+        warn "The upgrade needs you to confirm a package conflict or replacement."
+        if ask_yes "Re-run the upgrade interactively now?" Y; then
+            on_tty sudo pacman -Syu && return 0
+        fi
+    fi
+
+    if grep -q "failed to commit transaction (conflicting files)" "$log_file"; then
+        warn "Upgrade failed due to conflicting files; attempting repair..."
+        if arch_fix_pacman_conflicting_files "$log_file" && arch_pacman_upgrade "$log_file"; then
+            return 0
+        fi
+    fi
+
+    local saved="$PX_STATE_DIR/logs/pacman-failed-$(date +%Y%m%d-%H%M%S).log"
+    cp "$log_file" "$saved" 2>/dev/null
+    err "System upgrade did not complete. pacman output: $saved"
+    arch_downgrade_hint
+    return 1
+}
+
+# paru links against libalpm; a pacman soname bump breaks it until rebuilt
+rebuild_paru_if_broken() {
+    command_exists paru || return "$SKIP"
+    local paru_err
+    paru_err=$(paru --version 2>&1 >/dev/null) && return "$SKIP"
+
+    local cooldown_file="$PX_STATE_DIR/paru-rebuild-skip" now last
+    if [ -f "$cooldown_file" ]; then
+        now=$(date +%s)
+        last=$(stat -c %Y "$cooldown_file" 2>/dev/null || echo 0)
+        if [ $((now - last)) -lt 86400 ]; then
+            warn "paru is broken; skipping rebuild (a rebuild failed in the last 24h)."
+            return 1
+        fi
+    fi
+    if ! command_exists git || ! command_exists makepkg; then
+        warn "paru is broken and git/makepkg are missing; cannot rebuild it."
+        return 1
+    fi
+
+    if grep -q "libalpm" <<< "$paru_err"; then
+        warn "paru is broken (libalpm ABI mismatch); rebuilding from the AUR..."
+    else
+        warn "paru is broken ($paru_err); rebuilding from the AUR..."
+    fi
+    sudo pacman -R --noconfirm paru-bin >/dev/null 2>&1 || true
+    local tmpdir
+    tmpdir=$(mktemp -d "$PX_TMP_DIR/paru.XXXXXX")
+    mkdir -p "$PX_STATE_DIR"
+    if git clone --quiet https://aur.archlinux.org/paru.git "$tmpdir/paru" \
+        && (cd "$tmpdir/paru" && makepkg -si --noconfirm); then
+        rm -f "$cooldown_file"
+        rm -rf "$tmpdir"
+        return 0
+    fi
+    touch "$cooldown_file"
+    rm -rf "$tmpdir"
+    warn "paru rebuild failed; AUR updates will be skipped."
+    return 1
+}
+
+# AUR upgrade: interactive by default so PKGBUILD changes can be reviewed
+arch_aur_upgrade() {
+    local helper pending
+    helper=$(aur_helper)
+    [ -n "$helper" ] || return "$SKIP"
+    if ! "$helper" --version >/dev/null 2>&1; then
+        warn "$helper is not working; skipping AUR updates."
+        return 1
+    fi
+    pending=$("$helper" -Qua 2>/dev/null | grep -vc '\[ignored\]')
+    if [ "${pending:-0}" -eq 0 ]; then
+        ok "AUR packages are up to date."
+        return 0
+    fi
+    if [ "${PX_AUR_NOCONFIRM:-0}" = 1 ]; then
+        say "Upgrading $pending AUR package(s) with $helper (no review: PX_AUR_NOCONFIRM=1)..."
+        "$helper" -Sua --noconfirm
+        return
+    fi
+    if [ "$INTERACTIVE" -eq 1 ]; then
+        say "Upgrading $pending AUR package(s) with $helper. Review PKGBUILD changes when asked."
+        on_tty "$helper" -Sua
+        return
+    fi
+    warn "Skipping $pending AUR update(s) in a non-interactive run. Run '$helper -Sua' or set PX_AUR_NOCONFIRM=1."
+    return "$SKIPPED"
+}
+
+arch_collect_upgraded() {
+    local start_line="$1" log=/var/log/pacman.log
+    [ -r "$log" ] || return 0
+    mapfile -t UPGRADED_PKGS < <(tail -n +"$((start_line + 1))" "$log" \
+        | awk '$2 == "[ALPM]" && ($3 == "upgraded" || $3 == "installed") {print $4}' | sort -u)
+}
+
+arch_bootloader_checks() {
+    local pkg img
+    if printf '%s\n' "${UPGRADED_PKGS[@]}" | grep -qx systemd \
+        && command_exists bootctl && sudo bootctl is-installed >/dev/null 2>&1; then
+        say "systemd was upgraded; updating systemd-boot..."
+        sudo bootctl update --graceful || return 1
+    fi
+    # A full /boot or an unmounted ESP silently leaves a stale initramfs behind
+    for pkg in "${UPGRADED_PKGS[@]}"; do
+        case "$pkg" in
+            linux|linux-*) ;;
+            *) continue ;;
+        esac
+        [[ "$pkg" == *-headers || "$pkg" == *-firmware* || "$pkg" == *-api-headers ]] && continue
+        img="/boot/initramfs-$pkg.img"
+        [ -f "$img" ] || continue
+        if [ "$(stat -c %Y "$img")" -lt "$START_EPOCH" ]; then
+            err "$pkg was upgraded but $img was not regenerated. Check that /boot is mounted and has space, then run: sudo mkinitcpio -P"
+            return 1
+        fi
+    done
+    return 0
+}
+
+arch_report_pacnew() {
+    local list
+    if command_exists pacdiff; then
+        list=$(pacdiff -o 2>/dev/null)
+    else
+        list=$(find /etc \( -name '*.pacnew' -o -name '*.pacsave' \) 2>/dev/null)
+    fi
+    [ -n "$list" ] || return 0
+    warn "Config files waiting to be merged:"
+    # shellcheck disable=SC2086
+    printf '  %s\n' $list
+    if command_exists pacdiff && ask_yes "Review them now with pacdiff?" N; then
+        on_tty sudo env DIFFPROG="${DIFFPROG:-nvim -d}" pacdiff
+    else
+        say "Merge later with: sudo DIFFPROG='nvim -d' pacdiff (pacman-contrib)"
+    fi
+    return 0
+}
+
+arch_post_checks() {
+    if command_exists paccache; then
+        sudo paccache -rk2 -q || true
+    fi
+    if command_exists arch-audit; then
+        local vulns
+        vulns=$(arch-audit -u 2>/dev/null)
+        if [ -n "$vulns" ]; then
+            warn "Installed packages with known vulnerabilities that have a fix available:"
+            printf '%s\n' "$vulns" | sed 's/^/  /'
+        fi
+    fi
+    local orphans
+    orphans=$(pacman -Qtdq 2>/dev/null | wc -l)
+    if [ "$orphans" -gt 0 ]; then
+        say "$orphans orphaned package(s) found; remove them with Clean System."
+    fi
+}
+
+arch_update() {
+    arch_check_db_lock || return 1
+
+    arch_news_check
+    if [ $? -eq 2 ]; then
+        say "Upgrade cancelled so you can read the news."
+        return 2
+    fi
+    run_step "Mirror refresh" maybe_refresh_mirrors
+    run_step "Pre-update snapshot" pre_update_snapshot
+
+    local paclog_start
+    paclog_start=$(wc -l < /var/log/pacman.log 2>/dev/null || echo 0)
+
+    if ! run_step "System packages (pacman)" arch_repo_upgrade; then
+        arch_collect_upgraded "$paclog_start"
+        return 1
+    fi
+    run_step "paru rebuild" rebuild_paru_if_broken
+    local aur_rc
+    run_step "AUR packages" arch_aur_upgrade
+    aur_rc=$?
+    if [ "$aur_rc" -ne 0 ] && [ "$aur_rc" -ne "$SKIP" ] && [ "$aur_rc" -ne "$SKIPPED" ]; then
+        arch_downgrade_hint
+    fi
+
+    arch_collect_upgraded "$paclog_start"
+    run_step "Bootloader / initramfs" arch_bootloader_checks
+    arch_report_pacnew
+    arch_post_checks
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Other distros
+# ---------------------------------------------------------------------------
+
+debian_fix_node_gyp_conflicts() {
+    say "Attempting node-gyp reinstall fix (Debian/Ubuntu)..."
+    sudo -E apt-get -y install --reinstall node-gyp npm || true
+    sudo -E apt-get -y install --reinstall nodejs npm || true
+}
+
+fedora_fix_node_gyp_conflicts() {
+    say "Attempting node-gyp reinstall fix (Fedora)..."
+    sudo dnf -y reinstall nodejs npm node-gyp || true
+    sudo dnf -y reinstall nodejs npm || true
+}
+
+debian_upgrade() {
+    export DEBIAN_FRONTEND=noninteractive
+    export APT_LISTCHANGES_FRONTEND=none
+    local -a dpkg_opts=(-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+    sudo -E apt-get update || return 1
+    sudo -E apt-get "${dpkg_opts[@]}" -y full-upgrade || {
+        sudo dpkg --configure -a || true
+        sudo -E apt-get "${dpkg_opts[@]}" -y --fix-broken install || true
+        sudo -E apt-get "${dpkg_opts[@]}" -y full-upgrade || return 1
+    }
+    sudo -E apt-get -y autoremove || true
+}
+
+fedora_upgrade() {
+    sudo dnf -y upgrade --refresh
+}
+
+# Retry once after the node-gyp/npm reinstall that usually unblocks these
+debian_upgrade_with_fix() {
+    debian_upgrade && return 0
+    warn "apt upgrade failed; attempting node-gyp fix..."
+    debian_fix_node_gyp_conflicts
+    debian_upgrade
+}
+
+fedora_upgrade_with_fix() {
+    fedora_upgrade && return 0
+    warn "dnf upgrade failed; attempting node-gyp fix..."
+    fedora_fix_node_gyp_conflicts
+    fedora_upgrade
+}
+
+suse_upgrade() {
+    sudo zypper -n refresh || return 1
+    case "$DISTRO_ID" in
+        opensuse-tumbleweed|opensuse-slowroll|opensuse-microos)
+            sudo zypper -n dup ;;
+        *)
+            sudo zypper -n update ;;
+    esac
+}
+
+void_upgrade() {
+    local -a yes=()
+    [ "$INTERACTIVE" -eq 1 ] || yes=(-y)
+    # xbps must be current before the rest of the system can update
+    sudo xbps-install -S -u "${yes[@]}" xbps || true
+    sudo xbps-install -Su "${yes[@]}" || return 1
+    sudo xbps-remove -Oo "${yes[@]}" || true
+}
+
+alpine_upgrade() {
+    sudo apk update || return 1
+    sudo apk upgrade || return 1
+}
+
+ubuntu_touch_upgrade() {
+    say "Ubuntu Touch detected: the system image is read-only and updates over-the-air."
+    if command_exists system-image-cli; then
+        say "Checking for an OTA system update (applied on next reboot)..."
+        sudo system-image-cli --progress dots
+    else
+        say "Use System Settings -> Updates for system updates."
+        return "$SKIPPED"
+    fi
+}
 
 # Keep Synology Drive client updated on Debian/Ubuntu by pulling the current installer
 update_synology_drive() {
-    if ! command_exists dpkg || ! command_exists apt; then
-        return
-    fi
+    command_exists dpkg && command_exists apt || return "$SKIP"
+    dpkg-query -W synology-drive-client >/dev/null 2>&1 || return "$SKIP"
     # Synology only publishes an x86_64 build; skip on ARM phones (FuriOS/Mobian/Droidian)
-    if [ "$(dpkg --print-architecture 2>/dev/null)" != "amd64" ]; then
-        return
-    fi
+    [ "$(dpkg --print-architecture 2>/dev/null)" = "amd64" ] || return "$SKIP"
     local version="4.0.1-17885"
     local build="${version##*-}"
     local base_url="https://global.download.synology.com/download/Utility/SynologyDriveClient/${version}/Ubuntu/Installer"
     local pkg="synology-drive-client-${build}.x86_64.deb"
-    local installed
+    local installed tmp_pkg
     installed=$(dpkg-query -W -f='${Version}' synology-drive-client 2>/dev/null || true)
-    if [ "$installed" = "$version" ]; then
-        return
-    fi
-    local tmp_pkg
-    tmp_pkg=$(mktemp)
+    [ "$installed" = "$version" ] && return 0
+    tmp_pkg=$(mktemp "$PX_TMP_DIR/synology.XXXXXX.deb")
     if curl -fsSL "${base_url}/${pkg}" -o "$tmp_pkg"; then
-        sudo dpkg -i "$tmp_pkg" || sudo apt --fix-broken install -y
+        sudo dpkg -i "$tmp_pkg" || sudo apt-get --fix-broken install -y
     else
-        echo -e "${yellow}Synology Drive download failed; keeping existing version.${nc}"
+        warn "Synology Drive download failed; keeping existing version."
+        return 1
     fi
-    rm -f "$tmp_pkg"
 }
 
+hypr_cmake_build() {
+    local name="$1" url="$2" tag="$3" tmp rc=0
+    tmp=$(mktemp -d "$PX_TMP_DIR/hypr.XXXXXX")
+    say "Building ${name} ${tag}..."
+    if git clone --quiet --depth 1 --recursive --branch "$tag" "$url" "$tmp/$name"; then
+        (cd "$tmp/$name" \
+            && cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/usr -S . -B build \
+            && cmake --build build --config Release -j"$(nproc 2>/dev/null || echo 2)" \
+            && sudo cmake --install build) || { warn "${name} build failed; leaving existing install."; rc=1; }
+    else
+        warn "Could not clone ${name} ${tag}."
+        rc=1
+    fi
+    rm -rf "$tmp"
+    return "$rc"
+}
 
-# Rebuild Hyprland stack on Debian/Ubuntu directly from upstream repos
+# Rebuild a source-built Hyprland stack on Debian/Ubuntu when the pin moves.
+# Pins match linux-mod modules/wm.sh (_wm_hyprland_debian_source_build); keep them in sync.
 update_hyprland_builds() {
-    if ! command_exists hyprland; then
-        return
+    [ "$DISTRO" = debian ] || return "$SKIP"
+    local bin
+    bin=$(command -v Hyprland || command -v hyprland) || return "$SKIP"
+    bin=$(readlink -f "$bin")
+    # Packaged Hyprland is handled by apt
+    dpkg -S "$bin" >/dev/null 2>&1 && return "$SKIP"
+
+    local hyprland_tag="v0.55.3"
+    if "$bin" --version 2>/dev/null | grep -q "${hyprland_tag#v}"; then
+        return "$SKIP"
     fi
-    case "$DISTRO" in
-        debian|ubuntu) ;;
-        *) return ;;
-    esac
-    if ! command_exists git || ! command_exists cmake; then
-        echo -e "${yellow}Git/CMake missing; skipping Hyprland rebuild.${nc}"
-        return
+    if ! command_exists git || ! command_exists cmake || ! command_exists meson; then
+        warn "git/cmake/meson missing; skipping Hyprland rebuild."
+        return 1
     fi
 
-    local workdir
-    workdir=$(mktemp -d) || return
-    trap 'rm -rf "$workdir"' RETURN
+    if command_exists clang++-19; then
+        export CC=clang-19 CXX=clang++-19
+    elif command_exists clang++-18; then
+        export CC=clang-18 CXX=clang++-18
+    elif command_exists g++-14; then
+        export CC=gcc-14 CXX=g++-14
+    fi
 
-    # Version pins — updated for compatibility and features
-    local hyprutils_version="v0.2.4"
-    local hyprlang_version="v0.6.7"
-    local hyprland_protocols_version="v0.7.0"
-    local hyprwayland_scanner_version="v0.4.5"
-    local hyprlock_version="v0.5.1"
-    local hypridle_version="v0.3.1"
-    local hyprgraphics_version="v0.2.0"
-    local hyprpaper_version="v0.7.6"
-    local aquamarine_version="v0.4.0"
-    local hyprcursor_version="v0.1.8"
-    local hyprland_version="v0.55.3"
+    local failed=0 tmp
+    hypr_cmake_build hyprwayland-scanner https://github.com/hyprwm/hyprwayland-scanner.git v0.4.6 || failed=1
+    hypr_cmake_build hyprutils           https://github.com/hyprwm/hyprutils.git           v0.13.1 || failed=1
+    hypr_cmake_build hyprlang            https://github.com/hyprwm/hyprlang.git            v0.6.7 || failed=1
+    hypr_cmake_build hyprcursor          https://github.com/hyprwm/hyprcursor.git          v0.1.11 || failed=1
+    hypr_cmake_build hyprgraphics        https://github.com/hyprwm/hyprgraphics.git        v0.5.1 || failed=1
+    hypr_cmake_build aquamarine          https://github.com/hyprwm/aquamarine.git          v0.9.3 || failed=1
 
-    local jobs
-    jobs=$(nproc 2>/dev/null || getconf _NPROCESSORS_CONF || echo 2)
+    tmp=$(mktemp -d "$PX_TMP_DIR/hypr.XXXXXX")
+    if git clone --quiet --depth 1 --branch v0.7.0 https://github.com/hyprwm/hyprland-protocols.git "$tmp/hyprland-protocols"; then
+        (cd "$tmp/hyprland-protocols" && meson setup build --prefix=/usr && sudo meson install -C build) \
+            || { warn "hyprland-protocols install failed."; failed=1; }
+    fi
+    rm -rf "$tmp"
 
-    build_cmake() {
-        local name=$1 repo=$2 ref=$3
-        echo -e "${yellow}Updating ${name} (${ref})...${nc}"
-        rm -rf "${workdir:?}/${name}" 2>/dev/null || true
-        if git clone --depth 1 --recursive -b "$ref" "$repo" "$workdir/${name}"; then
-            ( cd "$workdir/${name}" && \
-                cmake --no-warn-unused-cli -DCMAKE_BUILD_TYPE=Release -S . -B build && \
-                cmake --build build --config Release -j"$jobs" && \
-                sudo cmake --install build >/dev/null 2>&1 ) || {
-                echo -e "${yellow}${name} build failed; leaving existing install.${nc}"
-            }
-        else
-            echo -e "${yellow}${name} download failed; skipping.${nc}"
-        fi
-    }
+    tmp=$(mktemp -d "$PX_TMP_DIR/hypr.XXXXXX")
+    say "Building Hyprland ${hyprland_tag} (make all)..."
+    if git clone --quiet --depth 1 --recursive --branch "$hyprland_tag" https://github.com/hyprwm/Hyprland.git "$tmp/Hyprland"; then
+        (cd "$tmp/Hyprland" && make all && sudo make install) || { warn "Hyprland ${hyprland_tag} build failed."; failed=1; }
+    else
+        warn "Could not clone Hyprland ${hyprland_tag}."
+        failed=1
+    fi
+    rm -rf "$tmp"
 
-    build_protocols() {
-        echo -e "${yellow}Updating hyprland-protocols (${hyprland_protocols_version})...${nc}"
-        rm -rf "$workdir/hyprland-protocols" 2>/dev/null || true
-        if git clone --depth 1 --recursive -b "$hyprland_protocols_version" https://github.com/hyprwm/hyprland-protocols.git "$workdir/hyprland-protocols"; then
-            sudo mkdir -p /usr/share/wayland-protocols
-            sudo cp -r "$workdir/hyprland-protocols"/protocols/* /usr/share/wayland-protocols/ 2>/dev/null || true
-        else
-            echo -e "${yellow}hyprland-protocols download failed; skipping.${nc}"
-        fi
-    }
-
-    build_cmake "hyprutils" https://github.com/hyprwm/hyprutils.git "$hyprutils_version"
-    build_cmake "hyprlang" https://github.com/hyprwm/hyprlang.git "$hyprlang_version"
-    build_protocols
-    build_cmake "hyprwayland-scanner" https://github.com/hyprwm/hyprwayland-scanner.git "$hyprwayland_scanner_version"
-    build_cmake "hyprlock" https://github.com/hyprwm/hyprlock.git "$hyprlock_version"
-    build_cmake "hypridle" https://github.com/hyprwm/hypridle.git "$hypridle_version"
-    build_cmake "hyprgraphics" https://github.com/hyprwm/hyprgraphics.git "$hyprgraphics_version"
-    build_cmake "hyprpaper" https://github.com/hyprwm/hyprpaper.git "$hyprpaper_version"
-    build_cmake "aquamarine" https://github.com/hyprwm/aquamarine.git "$aquamarine_version"
-    build_cmake "hyprcursor" https://github.com/hyprwm/hyprcursor.git "$hyprcursor_version"
-    build_cmake "Hyprland" https://github.com/hyprwm/Hyprland.git "$hyprland_version"
+    hypr_cmake_build hyprlock  https://github.com/hyprwm/hyprlock.git  v0.5.1 || failed=1
+    hypr_cmake_build hypridle  https://github.com/hyprwm/hypridle.git  v0.3.1 || failed=1
+    hypr_cmake_build hyprpaper https://github.com/hyprwm/hyprpaper.git v0.7.6 || failed=1
+    hypr_cmake_build xdg-desktop-portal-hyprland https://github.com/hyprwm/xdg-desktop-portal-hyprland.git v1.3.9 || failed=1
+    sudo ldconfig
+    return "$failed"
 }
 
+# ---------------------------------------------------------------------------
+# Universal steps (every distro, each gated on the tool existing)
+# ---------------------------------------------------------------------------
 
-# Universal update logic
-universal_update() {
-# Update Neovim plugins (vim.pack — not Lazy.nvim)
-    if command_exists nvim; then
-        nvim --headless "+lua pcall(vim.pack.update)" "+quitall!" 2>/dev/null || true
+update_firmware() {
+    command_exists fwupdmgr || return "$SKIP"
+    rootfs_ro && return "$SKIP"
+    say "Checking firmware (fwupd)..."
+    # fwupd authorizes through polkit; no sudo, so its cache stays per-user
+    fwupdmgr refresh </dev/null >/dev/null 2>&1 || true
+    fwupdmgr get-updates --no-unreported-check </dev/null >/dev/null 2>&1
+    case $? in
+        0) fwupdmgr update -y --no-reboot-check || sudo fwupdmgr update -y --no-reboot-check ;;
+        2) ok "No firmware updates." ;;
+        *) return "$SKIP" ;;   # no supported devices / daemon unavailable
+    esac
+}
+
+rootfs_ro() {
+    awk '$2 == "/" {opts=$4} END {exit !(opts ~ /^ro$|^ro,|,ro,|,ro$)}' /proc/mounts 2>/dev/null
+}
+
+update_npm_globals() {
+    command_exists npm || return "$SKIP"
+    local prefix
+    prefix=$(npm config get prefix 2>/dev/null || true)
+    case "$prefix" in
+        /usr|""|undefined)
+            # Package-owned prefix: `npm -g` here collides with pacman/apt/dnf files
+            say "Skipping global npm update: npm prefix is $prefix (package-managed)."
+            say "Tip: npm config set prefix ~/.local for user-level global installs."
+            return "$SKIP" ;;
+        /usr/local)
+            say "Updating global npm packages (/usr/local)..."
+            sudo npm update -g --silent --no-progress ;;
+        *)
+            say "Updating global npm packages ($prefix)..."
+            npm update -g --silent --no-progress ;;
+    esac
+}
+
+update_cargo() {
+    command_exists cargo || return "$SKIP"
+    [ -n "$(cargo install --list 2>/dev/null)" ] || return "$SKIP"
+    say "Updating cargo-installed binaries..."
+    if ! cargo install-update --version >/dev/null 2>&1; then
+        cargo install cargo-update || return 1
     fi
-# Update fwupd
-    if command_exists fwupdmgr; then
-        local fwupd_updates_output
-        echo -e "${yellow}Updating firmware (fwupdmgr)...${nc}"
-        sudo fwupdmgr refresh 2>/dev/null || true
-        fwupd_updates_output=$(sudo fwupdmgr get-updates 2>&1 || true)
-        if [[ -n "$fwupd_updates_output" ]]; then
-            printf '%s\n' "$fwupd_updates_output"
-            if fwupd_has_updatable_devices "$fwupd_updates_output"; then
-                sudo fwupdmgr update -y || true
+    cargo install-update -a
+}
+
+update_rustup() {
+    command_exists rustup || return "$SKIP"
+    rustup toolchain list 2>/dev/null | grep -qv 'no installed toolchains' || return "$SKIP"
+    say "Updating Rust toolchains (rustup)..."
+    rustup update
+}
+
+update_pipx() {
+    command_exists pipx || return "$SKIP"
+    [ -n "$(pipx list --short 2>/dev/null)" ] || return "$SKIP"
+    say "Updating pipx apps..."
+    pipx upgrade-all
+}
+
+update_uv_tools() {
+    command_exists uv || return "$SKIP"
+    uv tool list 2>/dev/null | grep -q . || return "$SKIP"
+    uv tool list 2>/dev/null | grep -q 'No tools installed' && return "$SKIP"
+    say "Updating uv tools..."
+    uv tool upgrade --all
+}
+
+update_gh_extensions() {
+    command_exists gh || return "$SKIP"
+    [ -n "$(gh extension list 2>/dev/null)" ] || return "$SKIP"
+    say "Updating gh extensions..."
+    gh extension upgrade --all
+}
+
+update_flatpak() {
+    command_exists flatpak || return "$SKIP"
+    local rc=0
+    say "Updating flatpak (user)..."
+    flatpak update --user -y --noninteractive || rc=1
+    say "Updating flatpak (system)..."
+    sudo flatpak update -y --noninteractive || rc=1
+    # Unused runtimes are removed by Clean System, not here
+    return "$rc"
+}
+
+update_docker_images() {
+    command_exists docker || return "$SKIP"
+    docker info >/dev/null 2>&1 || return "$SKIP"
+    local -a images
+    mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>' | sort -u)
+    [ ${#images[@]} -gt 0 ] || return "$SKIP"
+    say "Pulling ${#images[@]} Docker image(s)..."
+    local img
+    for img in "${images[@]}"; do
+        echo "  • ${img}"
+        # Locally built images have no registry copy; that's fine
+        docker pull --quiet "$img" >/dev/null 2>&1 || echo "    (not pulled)"
+    done
+    say "Unused images and stopped containers are cleaned from Clean System."
+    return 0
+}
+
+update_yazi() {
+    command_exists ya || return "$SKIP"
+    local cfg="$HOME/.config/yazi/package.toml" rc=0
+    say "Updating yazi plugins..."
+    if [ -f "$cfg" ]; then
+        sed -i -e 's/system-clipboard\.yazi/system-clipboard-yazi/g' "$cfg" || true
+    fi
+    ya pkg upgrade || rc=1
+    if [ -f "$cfg" ]; then
+        local -a desired installed
+        local plugin
+        mapfile -t desired < <(grep '^use = ' "$cfg" | sed -E 's/use = "(.*)"/\1/' | sort)
+        mapfile -t installed < <(ya pkg list 2>/dev/null | awk '{print $1}' | sort)
+        for plugin in "${desired[@]}"; do
+            if ! printf '%s\n' "${installed[@]}" | grep -qx "$plugin"; then
+                say "Adding missing yazi plugin: $plugin"
+                ya pkg add "$plugin" || rc=1
             fi
-        fi
-    fi
-# Update Synology Drive (Debian/Ubuntu installs)
-    update_synology_drive
-    echo -e "${yellow}Be Patient...${nc}"
-# Update npm
-    if command_exists npm; then
-        if [[ "$DISTRO" == "arch" || "$DISTRO" == "void" ]] || is_alpine_like; then
-            # On package-managed distros, global npm updates under /usr often create package-manager file conflicts.
-            if npm_updates_use_system_prefix; then
-                echo -e "${yellow}Skipping global npm update on $DISTRO because npm is using a system prefix.${nc}"
-                echo -e "${yellow}Tip: set npm prefix to a user dir (e.g. ~/.local) for global installs.${nc}"
-            else
-                npm update -g --silent --no-progress || true
-            fi
-        else
-            sudo npm update -g --silent --no-progress || true
-        fi
-    fi
-# Update cargo
-    if command_exists cargo; then
-        echo -e "${yellow}Updating cargo...${nc}"
-        if cargo install-update --version >/dev/null 2>&1; then
-            cargo install-update -a
-        else
-            cargo install cargo-update
-            cargo install-update -a
-        fi
-    fi
-# Update flatpak (user and system)
-    if command_exists flatpak; then
-        echo -e "${yellow}Updating flatpak (user)...${nc}"
-        flatpak update --user -y || true
-        flatpak uninstall --unused --user -y || true
-        echo -e "${yellow}Updating flatpak (system)...${nc}"
-        sudo flatpak update -y || true
-        sudo flatpak uninstall --unused -y || true
-    fi
-# Update Docker images
-    if command_exists docker; then
-        echo -e "${yellow}Updating Docker images...${nc}"
-        # Images/containers only — never wipe volumes unless explicitly requested.
-        docker system prune -af
-        mapfile -t images < <(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
-        echo -e "${yellow}Updating ${#images[@]} Docker image(s)...${nc}"
-        for img in "${images[@]}"; do
-            echo -e "  • ${img}"
-            docker pull "$img" 2>/dev/null
         done
     fi
-# Update yazi && its plugins
-    if command_exists yazi; then
-        echo -e "${yellow}Updating yazi...${nc}"
-        if command_exists ya; then
-            YAZI_CONFIG_DIR="$HOME/.config/yazi"
-            YAZI_CONFIG="$YAZI_CONFIG_DIR/package.toml"
-            # Fix common package.toml issues before upgrade
-            if [ -f "$YAZI_CONFIG" ]; then
-                sed -i -e 's/system-clipboard\.yazi/system-clipboard-yazi/g' "$YAZI_CONFIG" || true
-            fi
-            # Skip upgrade if legacy header exists to avoid parse abort
-            if [ -f "$YAZI_CONFIG" ] && grep -q '^\[\[plugin\.deps\]\]' "$YAZI_CONFIG"; then
-                echo -e "${yellow}Yazi package.toml has legacy [[plugin.deps]]; skipping 'ya pkg upgrade'.${nc}"
-            else
-                ya pkg upgrade || true
-            fi
-            if [ -f "$YAZI_CONFIG" ]; then
-                mapfile -t desired_plugins < <(grep '^use = ' "$YAZI_CONFIG" | sed -E "s/use = \"(.*)\"/\1/" | sort)
-                mapfile -t installed_plugins < <(ya pkg list | awk '{print $1}' | sort)
-                for plugin in "${desired_plugins[@]}"; do
-                    if ! printf '%s\n' "${installed_plugins[@]}" | grep -qx "$plugin"; then
-                        echo -e "${yellow}Adding missing yazi plugin: $plugin${nc}"
-                        ya pkg add "$plugin" || true
-                    fi
-                done
-            fi
-        fi
-    fi
-# Update pip
-    if command_exists pip; then
-        echo -e "${yellow}Updating system pip...${nc}"
-        sudo pip install --upgrade pip --break-system-packages 2>/dev/null || true
-    elif command_exists pip3; then
-        echo -e "${yellow}Updating system pip3...${nc}"
-        sudo pip3 install --upgrade pip --break-system-packages 2>/dev/null || true
-    fi
-# Update Homebrew (brew)
-    if command_exists brew; then
-        echo -e "${yellow}Updating Homebrew (brew)...${nc}"
-        brew update && brew upgrade
-    fi
-# Update ClamAV virus definitions
-    if command_exists freshclam; then
-        echo -e "${yellow}Updating ClamAV virus definitions...${nc}"
-        # Check active service managers to avoid freshclam lock conflicts.
-        if service_is_active_any clamav-freshclam.service clamav-freshclam freshclam; then
-            echo -e "${yellow}ClamAV freshclam service is running; skipping manual update.${nc}"
-        else
-            sudo freshclam || true
-        fi
-    fi
-# Update Hyprland if running
-    if pgrep -x "Hyprland" > /dev/null; then
-        echo -e "${yellow}Updating Hyprland packages...${nc}"
-        hyprpm update
-        hyprpm reload
-    fi
+    return "$rc"
 }
 
-# Function to git pull all repos in /media/Working-Storage/GitHub
-git_pull_all_github_repos() {
-    if ! command_exists git; then
+update_nvim_plugins() {
+    command_exists nvim || return "$SKIP"
+    [ -d "${XDG_CONFIG_HOME:-$HOME/.config}/nvim" ] || return "$SKIP"
+    say "Updating Neovim plugins (vim.pack)..."
+    # force=true applies updates directly instead of opening the review buffer
+    nvim --headless \
+        "+lua if vim.pack and vim.pack.update then local ok, e = pcall(vim.pack.update, nil, { force = true }); if not ok then io.stderr:write(tostring(e) .. '\n'); vim.cmd('cquit 1') end end" \
+        "+qa" 2>&1
+}
+
+update_brew() {
+    command_exists brew || return "$SKIP"
+    say "Updating Homebrew..."
+    brew update && brew upgrade
+}
+
+update_clamav() {
+    command_exists freshclam || return "$SKIP"
+    local vs="$SCRIPT_DIR/virus-scan.sh"
+    if [ -f "$vs" ] && grep -q -- '--update-db' "$vs"; then
+        bash "$vs" --update-db
         return
     fi
-    # Allow override, then fall back to common locations
-    local base_dir="${PX_GITHUB_DIR:-/media/Working-Storage/GitHub}"
+    if svc_is_active clamav-freshclam || svc_is_active freshclam; then
+        say "The freshclam service keeps ClamAV definitions current; skipping."
+        return 0
+    fi
+    say "Updating ClamAV virus definitions..."
+    sudo freshclam
+}
+
+update_hyprpm() {
+    pgrep -x Hyprland >/dev/null 2>&1 || return "$SKIP"
+    command_exists hyprpm || return "$SKIP"
+    hyprpm list 2>/dev/null | grep -q . || return "$SKIP"
+    say "Updating Hyprland plugins (hyprpm)..."
+    hyprpm update && hyprpm reload -n
+}
+
+update_snap() {
+    command_exists snap || return "$SKIP"
+    sudo snap refresh
+}
+
+# Fast-forward every clean repo in the GitHub folder
+git_pull_all_github_repos() {
+    command_exists git || return "$SKIP"
+    local base_dir="${PX_GITHUB_DIR:-$PX_WORK_ROOT/GitHub}" alt repo name
     if [ ! -d "$base_dir" ]; then
         for alt in "$HOME/GitHub" "$HOME/Projects" "$HOME/Workspace" "$HOME/src"; do
             if [ -d "$alt" ]; then
@@ -635,424 +1171,188 @@ git_pull_all_github_repos() {
             fi
         done
     fi
-    if [ ! -d "$base_dir" ]; then
-        # Only show warning if running interactively
-        if [ -t 1 ]; then
-            echo -e "${yellow}GitHub directory not found. Set PX_GITHUB_DIR to override.${nc}"
-        fi
-        return
-    fi
-    echo -e "${blue}Updating all GitHub repositories in $base_dir...${nc}"
+    [ -d "$base_dir" ] || return "$SKIP"
+
+    say "Updating git repositories in $base_dir..."
+    local -a updated=() dirty=() failed=() noupstream=()
     for repo in "$base_dir"/*; do
-        if [ -d "$repo/.git" ]; then
-            echo -e "${green}Updating $(basename "$repo")...${nc}"
-            (cd "$repo" && git pull --ff-only)
-        fi
-    done
-    echo -e "${green}All GitHub repositories updated!${nc}"
-}
-
-
-echo -e "${green}Starting system update...${nc}\n"
-    ensure_jq
-    update_bashrc
-    auto_update_scripts
-    git_pull_all_github_repos
-
-# Handle common Arch file conflict fixes
-arch_fix_node_gyp_conflicts() {
-    local pm="$1"
-    echo -e "${yellow}Attempting node-gyp overwrite fix...${nc}"
-    case "$pm" in
-        paru|yay)
-            "$pm" -S --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*' node-gyp || true
-            ;;
-        pacman)
-            sudo pacman -S --noconfirm --overwrite '/usr/lib/node_modules/node-gyp/node_modules/*' node-gyp || true
-            ;;
-    esac
-}
-
-# Handle Arch pacman-style "failed to commit transaction (conflicting files)" issues.
-# Typical cause: files created by `npm -g` or other manual installs living under /usr.
-# Strategy: detect the conflicting paths from the upgrade log, then *move* unowned
-# paths aside into a timestamped backup dir and retry the upgrade.
-arch_extract_conflict_paths() {
-    local log_file="$1"
-    # Output: one absolute path per line
-    # Lines look like: "npm: /usr/lib/node_modules/npm/... exists in filesystem"
-    awk 'match($0, /^[^:]+: (\/[^ ]+) exists in filesystem$/, m) {print m[1]}' "$log_file" | sort -u
-}
-
-arch_fix_pacman_conflicting_files() {
-    local log_file="$1"
-    local -a paths=()
-    local p
-    while IFS= read -r p; do
-        [[ -n "$p" ]] && paths+=("$p")
-    done < <(arch_extract_conflict_paths "$log_file")
-
-    if (( ${#paths[@]} == 0 )); then
-        return 1
-    fi
-
-    echo -e "${yellow}Detected pacman file conflicts:${nc}"
-    for p in "${paths[@]}"; do
-        echo " - $p"
-    done
-
-    if [ ! -t 0 ]; then
-        echo -e "${yellow}Non-interactive shell detected; not modifying filesystem automatically.${nc}"
-        echo "Tip: inspect ownership with: sudo pacman -Qo <path>"
-        return 2
-    fi
-
-    local reply
-    read -r -p "Move unowned conflicting files aside and retry upgrade? [Y/n] " reply
-    reply=${reply:-Y}
-    if [[ ! "$reply" =~ ^[Yy]$ ]]; then
-        return 2
-    fi
-
-    local backup_root="/var/tmp/pacman-conflicts-$(date +%Y%m%d-%H%M%S)"
-    sudo mkdir -p "$backup_root"
-
-    local moved_any=0
-    for p in "${paths[@]}"; do
-        if ! sudo test -e "$p"; then
+        [ -d "$repo/.git" ] || continue
+        name=$(basename "$repo")
+        if ! git -C "$repo" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+            noupstream+=("$name")
             continue
         fi
-
-        local owner
-        owner=$(sudo pacman -Qo "$p" 2>&1 || true)
-        if echo "$owner" | grep -qi "No package owns"; then
-            local dest_dir="$backup_root$(dirname "$p")"
-            sudo mkdir -p "$dest_dir"
-            sudo mv -f "$p" "$dest_dir/" && moved_any=1
+        if [ -n "$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+            dirty+=("$name")
+            continue
+        fi
+        if GIT_TERMINAL_PROMPT=0 git -C "$repo" pull --ff-only --quiet 2>/dev/null; then
+            updated+=("$name")
         else
-            echo -e "${yellow}Skipping owned path:${nc} $p"
-            echo "  $owner"
+            failed+=("$name")
         fi
     done
-
-    if (( moved_any == 1 )); then
-        echo -e "${green}Moved unowned conflicting files to:${nc} $backup_root"
-        return 0
-    fi
-
-    echo -e "${yellow}No unowned conflicting paths were moved.${nc}"
-    return 2
+    ok "  ${#updated[@]} repo(s) up to date."
+    [ ${#dirty[@]} -gt 0 ] && warn "  Skipped (local changes): ${dirty[*]}"
+    [ ${#noupstream[@]} -gt 0 ] && say "  No upstream branch: ${noupstream[*]}"
+    [ ${#failed[@]} -gt 0 ] && warn "  Could not fast-forward: ${failed[*]}"
+    [ ${#failed[@]} -eq 0 ]
 }
 
-arch_run_upgrade_capture_log() {
-    local pm="$1"
-    local log_file="$2"
-
-    # Ensure we can capture a failing exit code even with a tee pipeline.
-    set -o pipefail
-
-    case "$pm" in
-        paru|yay)
-            "$pm" -Syu --noconfirm 2>&1 | tee "$log_file"
-            return ${PIPESTATUS[0]}
-            ;;
-        pacman)
-            sudo pacman -Syu --noconfirm 2>&1 | tee "$log_file"
-            return ${PIPESTATUS[0]}
-            ;;
-        *)
-            echo "Unknown package manager: $pm" >&2
-            return 2
-            ;;
-    esac
+universal_steps() {
+    run_step "Firmware (fwupd)" update_firmware
+    run_step "Flatpak" update_flatpak
+    run_step "Snap" update_snap
+    run_step "Synology Drive" update_synology_drive
+    run_step "Hyprland source build" update_hyprland_builds
+    run_step "npm globals" update_npm_globals
+    run_step "Cargo binaries" update_cargo
+    run_step "Rust toolchains" update_rustup
+    run_step "pipx apps" update_pipx
+    run_step "uv tools" update_uv_tools
+    run_step "gh extensions" update_gh_extensions
+    run_step "Homebrew" update_brew
+    run_step "Docker images" update_docker_images
+    run_step "Yazi plugins" update_yazi
+    run_step "Neovim plugins" update_nvim_plugins
+    run_step "ClamAV definitions" update_clamav
+    run_step "Hyprland plugins" update_hyprpm
+    run_step "Git repositories" git_pull_all_github_repos
 }
 
-arch_log_needs_manual_conflict_resolution() {
-    local log_file="$1"
-    # paru/yay can detect "inner conflicts" (often AUR packages) and refuse to proceed with --noconfirm.
-    grep -Eq "Inner conflicts found:|Conflicting packages will have to be confirmed manually|can not install conflicting packages with --noconfirm" "$log_file"
-}
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
 
-arch_run_upgrade_interactive_capture_log() {
-    local pm="$1"
-    local log_file="$2"
-
-    set -o pipefail
-
-    case "$pm" in
-        paru|yay)
-            "$pm" -Syu 2>&1 | tee "$log_file"
-            return ${PIPESTATUS[0]}
-            ;;
-        pacman)
-            sudo pacman -Syu 2>&1 | tee "$log_file"
-            return ${PIPESTATUS[0]}
-            ;;
-        *)
-            echo "Unknown package manager: $pm" >&2
-            return 2
-            ;;
-    esac
-}
-
-arch_upgrade_with_conflict_repair() {
-    local pm="$1"
-    local log_file
-    log_file=$(mktemp)
-
-    if arch_run_upgrade_capture_log "$pm" "$log_file"; then
-        rm -f "$log_file"
-        return 0
-    fi
-
-    # Handle package conflicts that require manual confirmation (e.g. mutually-exclusive AUR packages).
-    if arch_log_needs_manual_conflict_resolution "$log_file"; then
-        echo -e "${yellow}Upgrade requires manual conflict resolution (cannot proceed with --noconfirm).${nc}"
-        if [ ! -t 0 ]; then
-            echo -e "${yellow}Non-interactive shell detected; cannot resolve package conflicts automatically.${nc}"
-            echo -e "${yellow}Last upgrade log saved at:${nc} $log_file"
-            return 1
-        fi
-
-        local reply
-        read -r -p "Re-run upgrade interactively now (no --noconfirm)? [Y/n] " reply
-        reply=${reply:-Y}
-        if [[ "$reply" =~ ^[Yy]$ ]]; then
-            if arch_run_upgrade_interactive_capture_log "$pm" "$log_file"; then
-                rm -f "$log_file"
-                return 0
-            fi
-        fi
-        # If interactive run did not succeed, keep going into other repair paths and finally return failure.
-    fi
-
-    if grep -q "failed to commit transaction (conflicting files)" "$log_file"; then
-        echo -e "${yellow}Upgrade failed due to conflicting files; attempting automatic repair...${nc}"
-
-        if arch_fix_pacman_conflicting_files "$log_file"; then
-            # Retry full upgrade after moving conflicts aside
-            if arch_run_upgrade_capture_log "$pm" "$log_file"; then
-                rm -f "$log_file"
-                return 0
-            fi
-        fi
-
-        # Fallback: try legacy npm/node-gyp overwrite tricks (best-effort)
-        echo -e "${yellow}Still failing; attempting npm/node-gyp overwrite fallback...${nc}"
-        case "$pm" in
-            paru|yay)
-                "$pm" -S --noconfirm --overwrite '/usr/lib/node_modules/npm/*' npm || true
-                "$pm" -S --noconfirm --overwrite '/usr/lib/node_modules/eslint/*' eslint || true
-                ;;
-            pacman)
-                sudo pacman -S --noconfirm --overwrite '/usr/lib/node_modules/npm/*' npm || true
-                sudo pacman -S --noconfirm --overwrite '/usr/lib/node_modules/eslint/*' eslint || true
-                ;;
+print_summary() {
+    local i mark failures=0
+    echo
+    echo -e "${blue}Update summary${nc}"
+    for i in "${!STEP_NAMES[@]}"; do
+        case "${STEP_STATUS[$i]}" in
+            ok)      mark="${green}ok${nc}" ;;
+            skipped) mark="${yellow}skipped${nc}" ;;
+            *)       mark="${red}FAILED${nc}"; failures=$((failures + 1)) ;;
         esac
-        arch_fix_node_gyp_conflicts "$pm"
+        printf '  %-28s %b\n' "${STEP_NAMES[$i]}" "$mark"
+    done
+    if [ ${#REBOOT_REASONS[@]} -gt 0 ]; then
+        echo
+        warn "Reboot recommended:"
+        printf '  - %s\n' "${REBOOT_REASONS[@]}" | sort -u
+    fi
+    echo
+    say "Full log: $LOG_FILE"
+    return "$failures"
+}
 
-        arch_run_upgrade_capture_log "$pm" "$log_file" || true
+notify_result() {
+    local core_rc="$1" failures="$2" summary body urgency=normal
+    if [ "$core_rc" -ne 0 ]; then
+        summary="System update failed"
+        body="The package upgrade did not complete. Log: $LOG_FILE"
+        urgency=critical
+    elif [ "$failures" -gt 0 ]; then
+        summary="System update finished with problems"
+        body="$failures step(s) failed. Log: $LOG_FILE"
+    else
+        summary="System update complete"
+        body="Everything is up to date."
+    fi
+    if [ ${#REBOOT_REASONS[@]} -gt 0 ]; then
+        body="$body Reboot recommended."
+    fi
+    notify_replace system-update "$urgency" 10000 software-update-available "$summary" "$body"
+}
 
-        # If we now hit manual package conflicts, offer an interactive run.
-        if arch_log_needs_manual_conflict_resolution "$log_file"; then
-            echo -e "${yellow}Upgrade now requires manual conflict resolution.${nc}"
-            if [ -t 0 ]; then
-                local reply
-                read -r -p "Re-run upgrade interactively now (no --noconfirm)? [Y/n] " reply
-                reply=${reply:-Y}
-                if [[ "$reply" =~ ^[Yy]$ ]]; then
-                    if arch_run_upgrade_interactive_capture_log "$pm" "$log_file"; then
-                        rm -f "$log_file"
-                        return 0
-                    fi
-                fi
-            fi
-        fi
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+main() {
+    PX_TMP_DIR=$(mktemp -d)
+    trap cleanup EXIT
+    trap 'exit 130' INT TERM
+
+    # Persistent log (ANSI colors stripped in the file)
+    mkdir -p "$PX_STATE_DIR/logs"
+    LOG_FILE="$PX_STATE_DIR/logs/update-$(date +%Y%m%d-%H%M%S).log"
+    exec > >(tee >(sed -u 's/\x1b\[[0-9;?]*[A-Za-z]//g' >> "$LOG_FILE")) 2>&1
+    find "$PX_STATE_DIR/logs" -name 'update-*.log' -mtime +30 -delete 2>/dev/null
+
+    # One update at a time (update-notify.sh also checks this lock)
+    if ! single_instance update-system; then
+        err "Another system update is already running."
+        exit 1
     fi
 
-    echo -e "${yellow}System upgrade did not complete successfully.${nc}"
-    echo -e "${yellow}Last upgrade log saved at:${nc} $log_file"
-    return 1
-}
+    if ! check_internet; then
+        err "Internet connectivity is required to continue."
+        exit 1
+    fi
 
-debian_fix_node_gyp_conflicts() {
-    echo -e "${yellow}Attempting node-gyp reinstall fix (Debian/Ubuntu)...${nc}"
-    export DEBIAN_FRONTEND=noninteractive
-    export APT_LISTCHANGES_FRONTEND=none
-    sudo -E apt update || true
-    sudo -E apt -y install --reinstall node-gyp npm || true
-    sudo -E apt -y install --reinstall nodejs npm || true
-}
+    # postmarketOS ships doas instead of sudo; shim it so the rest of the script works unchanged
+    local have_real_sudo=0
+    if command_exists sudo; then
+        have_real_sudo=1
+    elif command_exists doas; then
+        sudo() { doas "$@"; }
+    fi
+    if [ "$have_real_sudo" -eq 1 ]; then
+        sudo -v || { err "sudo authentication failed."; exit 1; }
+        # Keep-alive (doas has no -v/-n). Drop the lock fd and log pipe so a
+        # lingering sleep can't hold either after we exit.
+        ( exec 9>&- >/dev/null 2>&1
+          while kill -0 "$$" 2>/dev/null; do sudo -n true; sleep 60; done ) &
+        SUDO_KEEPALIVE_PID=$!
+    fi
 
-fedora_fix_node_gyp_conflicts() {
-    echo -e "${yellow}Attempting node-gyp reinstall fix (Fedora)...${nc}"
-    sudo dnf -y reinstall nodejs npm node-gyp || true
-    sudo dnf -y reinstall nodejs npm || true
-}
+    echo -e "${green}Starting system update (${DISTRO_ID:-$DISTRO})...${nc}\n"
 
-debian_upgrade() {
-    export DEBIAN_FRONTEND=noninteractive
-    export APT_LISTCHANGES_FRONTEND=none
-    sudo -E apt update && sudo -E apt upgrade -y || true
-    sudo -E apt full-upgrade -y || return 1
-    sudo -E apt install -f || true
-    sudo dpkg --configure -a || true
-    sudo -E apt --fix-broken install -y || true
-    sudo -E apt autoremove -y || true
-    sudo -E apt update && sudo -E apt upgrade -y || true
-}
-
-fedora_upgrade() {
-    sudo dnf -y upgrade || return 1
-}
-
-void_upgrade() {
-    sudo xbps-install -Su || return 1
-    sudo xbps-remove -Oo || true
-}
-
-alpine_upgrade() {
-    sudo apk update || return 1
-    sudo apk upgrade || return 1
-}
-
-if [[ "$DISTRO" == "arch" ]]; then
-    # Check and rebuild paru if it has library dependency issues
-    rebuild_paru_if_broken() {
-        local cooldown_file="/var/tmp/paru-rebuild-skip"
-        local cooldown_secs=86400
-
-        # Skip if paru already works
-        if command_exists paru && paru --version >/dev/null 2>&1; then
-            return
-        fi
-
-        # Detect libalpm ABI mismatch to trigger rebuild immediately
-        if command_exists paru; then
-            local paru_err
-            paru_err=$(paru --version >/dev/null 2>&1 || true)
-            if echo "$paru_err" | grep -q "libalpm.so"; then
-                echo -e "${yellow}paru is broken (libalpm ABI mismatch); rebuilding from AUR...${nc}"
-            fi
-        fi
-
-        # Respect cooldown after a failed rebuild to avoid repeated breakage during upstream churn
-        if [ -f "$cooldown_file" ]; then
-            local now last
-            now=$(date +%s)
-            last=$(stat -c %Y "$cooldown_file" 2>/dev/null || echo 0)
-            if [ $((now - last)) -lt $cooldown_secs ]; then
-                echo -e "${yellow}Skipping paru rebuild (cooldown from previous failure).${nc}"
-                return
-            fi
-        fi
-
-        # Require build tooling
-        if ! command_exists git || ! command_exists makepkg; then
-            echo -e "${yellow}Skipping paru rebuild (missing git/makepkg).${nc}"
-            return
-        fi
-
-        echo -e "${yellow}paru appears broken (library mismatch); rebuilding from AUR...${nc}"
-        sudo pacman -R --noconfirm paru-bin >/dev/null 2>&1 || true
-        local tmpdir
-        tmpdir=$(mktemp -d)
-        if git clone https://aur.archlinux.org/paru.git "$tmpdir/paru" 2>/dev/null; then
-            if (cd "$tmpdir/paru" && makepkg -si --noconfirm); then
-                rm -f "$cooldown_file"
-            else
-                echo -e "${yellow}paru rebuild failed; continuing with pacman only.${nc}"
-                touch "$cooldown_file"
-            fi
-        else
-            echo -e "${yellow}Failed to clone paru from AUR; continuing with pacman only.${nc}"
-            touch "$cooldown_file"
-        fi
-        rm -rf "$tmpdir"
-    }
-
-    rebuild_paru_if_broken
-
-    # Prefer paru, then yay, then pacman
-    if command_exists paru && paru --version >/dev/null 2>&1; then
-        if arch_upgrade_with_conflict_repair "paru"; then
-            universal_update
-        else
-            echo -e "${yellow}Arch upgrade failed; skipping remaining update steps.${nc}"
-            exit 1
-        fi
-    elif command_exists yay; then
-        if arch_upgrade_with_conflict_repair "yay"; then
-            universal_update
-        else
-            echo -e "${yellow}Arch upgrade failed; skipping remaining update steps.${nc}"
-            exit 1
+    local core_rc=0
+    if is_arch_like; then
+        arch_update
+        core_rc=$?
+        if [ "$core_rc" -eq 2 ]; then
+            print_summary >/dev/null
+            exit 0
         fi
     else
-        if arch_upgrade_with_conflict_repair "pacman"; then
-            universal_update
+        run_step "Pre-update snapshot" pre_update_snapshot
+        if is_ubuntu_touch; then
+            run_step "System image (OTA)" ubuntu_touch_upgrade
         else
-            echo -e "${yellow}Arch upgrade failed; skipping remaining update steps.${nc}"
-            exit 1
+            case "$DISTRO" in
+                debian) run_step "System packages (apt)" debian_upgrade_with_fix || core_rc=1 ;;
+                fedora) run_step "System packages (dnf)" fedora_upgrade_with_fix || core_rc=1 ;;
+                suse)   run_step "System packages (zypper)" suse_upgrade || core_rc=1 ;;
+                void)   run_step "System packages (xbps)" void_upgrade || core_rc=1 ;;
+                alpine) run_step "System packages (apk)" alpine_upgrade || core_rc=1 ;;
+                *)
+                    warn "Unrecognized distro '${DISTRO_ID}'; skipped the system package upgrade."
+                    record_step "System packages" skipped ;;
+            esac
         fi
     fi
-elif [[ "$DISTRO" == "fedora" ]]; then
-    fedora_upgrade || {
-        echo -e "${yellow}dnf upgrade failed; attempting node-gyp fix...${nc}"
-        fedora_fix_node_gyp_conflicts
-        fedora_upgrade || true
-    }
-    universal_update
-elif is_ubuntu_touch; then
-    echo -e "${yellow}Ubuntu Touch detected: the system image is read-only and updates over-the-air.${nc}"
-    if command_exists system-image-cli; then
-        echo -e "${yellow}Checking for an OTA system update (applied on next reboot)...${nc}"
-        sudo system-image-cli --progress dots || true
-    else
-        echo -e "${yellow}Use System Settings -> Updates for system updates.${nc}"
-    fi
-    universal_update
-elif [[ "$DISTRO" == "debian" || "$DISTRO" == "ubuntu" || "$DISTRO" == "pop" || "$DISTRO" == "linuxmint" || "$DISTRO" == "mint" || "$DISTRO" == "pureos" || "$DISTRO" == "droidian" || "$DISTRO" == "mobian" || "$DISTRO" == "ubuntutouch" || "$DISTRO" == "raspbian" ]]; then
-    debian_upgrade || {
-        echo -e "${yellow}apt upgrade failed; attempting node-gyp fix...${nc}"
-        debian_fix_node_gyp_conflicts
-        debian_upgrade || true
-    }
-    universal_update
-    update_hyprland_builds
-    if command_exists snap; then
-        sudo snap refresh
-    fi
-elif [[ "$DISTRO" == "void" ]]; then
-    void_upgrade || {
-        echo -e "${yellow}xbps upgrade failed; skipping remaining update steps.${nc}"
-        exit 1
-    }
-    universal_update
-elif is_alpine_like; then
-    # postmarketOS / Alpine
-    alpine_upgrade || {
-        echo -e "${yellow}apk upgrade failed; skipping remaining update steps.${nc}"
-        exit 1
-    }
-    universal_update
-elif is_debian_like; then
-    # Debian derivatives with their own ID (e.g. FuriOS)
-    debian_upgrade || {
-        echo -e "${yellow}apt upgrade failed; attempting node-gyp fix...${nc}"
-        debian_fix_node_gyp_conflicts
-        debian_upgrade || true
-    }
-    universal_update
-else
-    echo -e "${yellow}Unrecognized distro '${DISTRO}'; skipped system package upgrade.${nc}"
-fi
 
-if command_exists notify-send; then
-    notify-send "System Update" "System update completed successfully!"
-fi
-echo -e "${green}System Updated Successfully!${nc}"
-if [ -n "${sudo_keepalive_pid:-}" ]; then
-    kill "$sudo_keepalive_pid" 2>/dev/null
-fi
-exit 0
+    if [ "$core_rc" -eq 0 ]; then
+        universal_steps
+        self_update
+    else
+        warn "Skipping the remaining steps because the package upgrade failed."
+    fi
+
+    check_reboot_needed
+    local failures
+    print_summary
+    failures=$?
+    notify_result "$core_rc" "$failures"
+
+    if [ "$core_rc" -ne 0 ]; then
+        return 1
+    fi
+    ok "System update finished."
+    return 0
+}
+
+main "$@"; exit $?

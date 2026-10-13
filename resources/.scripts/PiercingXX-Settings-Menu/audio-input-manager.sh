@@ -1,220 +1,150 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
-# Audio Input/Output Manager for PipeWire
+# Audio Input/Output Manager for PipeWire (WirePlumber).
+#   audio-input-manager.sh                 interactive menu
+#   audio-input-manager.sh --toggle-output cycle the default output (keybind)
+#
+# Devices are read from `pw-dump` (stable JSON) instead of parsing `wpctl status`.
+# Outputs whose description matches PIERCINGXX_AUDIO_SKIP (extended regex) are
+# hidden; the default hides S/PDIF "Digital Stereo (IEC958)" outputs. Set
+# PIERCINGXX_AUDIO_SKIP="" to show everything.
 
-set -e
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+# shellcheck source=../lib/common.sh
+. "$SCRIPT_DIR/../lib/common.sh"
+
+AUDIO_SKIP="${PIERCINGXX_AUDIO_SKIP-IEC958}"
 
 notify_error() {
-    local body="$1"
-    if command -v notify-send &>/dev/null; then
-        notify-send -u normal -a Audio "Audio Output Toggle Failed" "$body"
-    else
-        echo "$body" >&2
+    if command_exists notify-send; then
+        notify-send -u normal -a Audio "Audio" "$1"
     fi
+    echo "$1" >&2
 }
 
 play_switch_chime() {
-    local test_wav="/usr/share/sounds/alsa/Front_Center.wav"
-    local test_oga="/usr/share/sounds/freedesktop/stereo/audio-volume-change.oga"
-
-    if command -v pw-play &>/dev/null; then
-        if [[ -f "$test_wav" ]]; then
-            pw-play "$test_wav" >/dev/null 2>&1 &
-        elif [[ -f "$test_oga" ]]; then
-            pw-play "$test_oga" >/dev/null 2>&1 &
+    local f
+    for f in /usr/share/sounds/freedesktop/stereo/audio-volume-change.oga /usr/share/sounds/alsa/Front_Center.wav; do
+        [ -f "$f" ] || continue
+        if command_exists pw-play; then
+            pw-play "$f" >/dev/null 2>&1 &
+        elif command_exists paplay; then
+            paplay "$f" >/dev/null 2>&1 &
         fi
-    elif command -v paplay &>/dev/null; then
-        if [[ -f "$test_wav" ]]; then
-            paplay "$test_wav" >/dev/null 2>&1 &
-        elif [[ -f "$test_oga" ]]; then
-            paplay "$test_oga" >/dev/null 2>&1 &
-        fi
-    fi
+        return
+    done
 }
 
-# Detect if PipeWire is available
-if ! command -v wpctl &>/dev/null; then
-    notify_error "wpctl not found. This script requires PipeWire."
-    exit 1
-fi
+command_exists wpctl || { notify_error "wpctl not found. This script requires PipeWire + WirePlumber."; exit 1; }
+command_exists pw-dump || { notify_error "pw-dump not found (part of pipewire)."; exit 1; }
+command_exists jq || { notify_error "jq not found."; exit 1; }
+wpctl status >/dev/null 2>&1 || { notify_error "PipeWire is not running or not reachable in this session."; exit 1; }
 
-if ! wpctl status &>/dev/null; then
-    notify_error "PipeWire is not running or not reachable in this session."
-    exit 1
-fi
+# list_nodes Audio/Sink|Audio/Source -> "id<TAB>description" lines
+list_nodes() {
+    local class="$1"
+    pw-dump 2>/dev/null | jq -r --arg c "$class" '
+        .[] | select(.type == "PipeWire:Interface:Node")
+            | select(.info.props["media.class"] == $c)
+            | select((.info.props["node.virtual"] // false) != true)
+            | select(.info.props["node.link-group"] == null)
+            | "\(.id)\t\(.info.props["node.description"] // .info.props["node.nick"] // .info.props["node.name"])"' \
+    | { if [ -n "$AUDIO_SKIP" ] && [ "$class" = "Audio/Sink" ]; then grep -Ev "$AUDIO_SKIP"; else cat; fi; }
+}
 
-# Handle --toggle-output flag for keybinds
-if [[ "$1" == "--toggle-output" ]]; then
-    # Get all sinks, filtering out the unwanted one
-    mapfile -t sink_data < <(wpctl status | awk '/Audio/,/Video/' | awk '/Sinks:/,/Sources:/' | grep -E '^\s+│\s+.*[0-9]+\.')
-    
-    sinks=()
-    current_idx=-1
-    
-    for line in "${sink_data[@]}"; do
-        # Skip the unwanted Family 17h device
-        if [[ "$line" == *"Family 17h/19h"*"HD Audio Controller Digital Stereo (IEC958)"* ]]; then
-            continue
-        fi
-        
-        # Extract ID
-        id=$(echo "$line" | grep -oE '[0-9]+\.' | head -1 | tr -d '.')
-        
-        if [[ -n "$id" ]]; then
-            sinks+=("$id")
-            # Check if this is the current default (has asterisk)
-            if [[ "$line" =~ \*.*${id}\. ]]; then
-                current_idx=$((${#sinks[@]} - 1))
-            fi
+# default_id @DEFAULT_AUDIO_SINK@|@DEFAULT_AUDIO_SOURCE@
+default_id() {
+    wpctl inspect "$1" 2>/dev/null | head -n 1 | grep -oE 'id [0-9]+' | grep -oE '[0-9]+'
+}
+
+# Older WirePlumber (< 0.5, e.g. Debian stable) doesn't always move running
+# streams when the default changes; nudge them over with pactl if it exists.
+move_streams() {
+    local id="$1" node_name
+    command_exists pactl || return 0
+    node_name=$(pw-dump 2>/dev/null | jq -r --argjson i "$id" '.[] | select(.id == $i) | .info.props["node.name"] // empty')
+    [ -n "$node_name" ] || return 0
+    pactl list short sink-inputs 2>/dev/null | awk '{print $1}' | while read -r stream_id; do
+        pactl move-sink-input "$stream_id" "$node_name" 2>/dev/null || true
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Keybind mode: cycle outputs
+# ---------------------------------------------------------------------------
+if [[ "${1:-}" == "--toggle-output" ]]; then
+    mapfile -t sinks < <(list_nodes "Audio/Sink")
+    [ ${#sinks[@]} -gt 0 ] || { notify_error "No audio output devices found."; exit 1; }
+
+    current=$(default_id @DEFAULT_AUDIO_SINK@)
+    next_idx=0
+    for i in "${!sinks[@]}"; do
+        if [ "${sinks[$i]%%$'\t'*}" = "$current" ]; then
+            next_idx=$(( (i + 1) % ${#sinks[@]} ))
+            break
         fi
     done
-    
-    if [[ ${#sinks[@]} -eq 0 ]]; then
-        notify_error "No audio output devices found."
-        exit 1
-    fi
-    
-    # Calculate next index
-    if [[ $current_idx -eq -1 ]]; then
-        next_idx=0
-    else
-        next_idx=$(( (current_idx + 1) % ${#sinks[@]} ))
-    fi
-    
-    next_sink="${sinks[$next_idx]}"
-    wpctl set-default "$next_sink"
-    
-    # Get the actual sink name (node.name) for pactl compatibility
-    node_name=$(wpctl inspect "$next_sink" | grep 'node.name' | head -1 | sed 's/.*node.name = "\(.*\)".*/\1/')
-    
-    if [[ -n "$node_name" ]]; then
-        # Move all existing playback streams to the new sink
-        pactl list short sink-inputs | awk '{print $1}' | while read -r stream_id; do
-            pactl move-sink-input "$stream_id" "$node_name" 2>/dev/null || true
-        done
-    fi
-    
-    # Get the human-readable name for notification
-    sink_name_full=$(wpctl status | grep -E "^\s+│\s+\*?\s*${next_sink}\." | sed -E 's/.*[0-9]+\.\s+//' | sed 's/\s*\[vol:.*$//')
-    
-    if command -v notify-send &>/dev/null; then
-        notify-send "Audio Output Switched" "$sink_name_full"
-    else
-        echo "Switched to: $sink_name_full"
-    fi
+    next_id="${sinks[$next_idx]%%$'\t'*}"
+    next_name="${sinks[$next_idx]#*$'\t'}"
 
+    wpctl set-default "$next_id" || { notify_error "Could not switch to $next_name."; exit 1; }
+    move_streams "$next_id"
+    if command_exists notify-send; then
+        notify_replace audio-output low 2000 audio-speakers "Audio Output Switched" "$next_name"
+    else
+        echo "Switched to: $next_name"
+    fi
     play_switch_chime
     exit 0
 fi
 
-# Interactive menu mode
-if ! command -v gum &>/dev/null; then
-    echo "Error: gum is required for interactive mode. Install it or use --toggle-output flag." >&2
-    exit 1
+# ---------------------------------------------------------------------------
+# Interactive menu
+# ---------------------------------------------------------------------------
+command_exists gum || { echo "gum is required for interactive mode (or use --toggle-output)." >&2; exit 1; }
+
+if [[ "${PIERCINGXX_ASCII_MENU:-0}" == 1 ]]; then
+    out_label="Output (Speakers/Headset)"; in_label="Microphone (Input)"
+else
+    out_label="🔈 Output (Speakers/Headset)"; in_label="🎤 Microphone (Input)"
 fi
 
-clear
+# choose_device CLASS DEFAULT_ALIAS KIND
+choose_device() {
+    local class="$1" alias="$2" kind="$3" current line id name pick
+    local -a nodes labels
+    mapfile -t nodes < <(list_nodes "$class")
+    [ ${#nodes[@]} -gt 0 ] || { err "No audio $kind devices found."; return 1; }
+    current=$(default_id "$alias")
 
-choice=$(printf "🔈 Output (Speakers/Headset)\n🎤 Microphone (Input)" | gum choose --header="Select device type to manage:")
+    for line in "${nodes[@]}"; do
+        id="${line%%$'\t'*}"; name="${line#*$'\t'}"
+        if [ "$id" = "$current" ]; then
+            labels+=("$name  [current]  #$id")
+        else
+            labels+=("$name  #$id")
+        fi
+    done
 
-if [[ "$choice" == "🎤 Microphone (Input)" ]]; then
-    clear
-    echo "🎤 Available audio input devices:"
-    echo ""
-    
-    # Get sources from wpctl
-    mapfile -t source_data < <(wpctl status | awk '/Audio/,/Video/' | awk '/Sources:/,/Filters:/' | grep -E '^\s+│\s+.*[0-9]+\.')
-    
-    source_ids=()
-    source_names=()
-    
-    for line in "${source_data[@]}"; do
-        id=$(echo "$line" | grep -oE '[0-9]+\.' | head -1 | tr -d '.')
-        name=$(echo "$line" | sed -E 's/.*[0-9]+\.\s+//' | sed 's/\s*\[vol:.*$//')
-        
-        if [[ -n "$id" ]]; then
-            source_ids+=("$id")
-            source_names+=("$name")
-        fi
-    done
-    
-    if [[ ${#source_ids[@]} -eq 0 ]]; then
-        echo "No audio input devices found."
-        exit 1
-    fi
-    
-    # Display sources
-    for i in "${!source_ids[@]}"; do
-        current=""
-        # Check if this is the current default
-        if wpctl status | grep -E "^\s+│\s+\*\s+${source_ids[$i]}\." &>/dev/null; then
-            current="[CURRENT] "
-        fi
-        printf "  %2d. %s%s (ID: %s)\n" $((i+1)) "$current" "${source_names[$i]}" "${source_ids[$i]}"
-    done
-    
-    echo ""
-    read -p "Enter the number of the input device to set as default: " num
-    
-    if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -ge 1 ] && [ "$num" -le ${#source_ids[@]} ]; then
-        selected_id="${source_ids[$((num-1))]}"
-        wpctl set-default "$selected_id"
-        echo "✓ Set default input to: ${source_names[$((num-1))]}"
+    pick=$(printf '%s\n' "${labels[@]}" | gum choose --header "Set default $kind device") || return 0
+    [ -n "$pick" ] || return 0
+    id="${pick##*#}"
+    if wpctl set-default "$id"; then
+        [ "$class" = "Audio/Sink" ] && move_streams "$id"
+        ok "Default $kind set to: ${pick%%  *}"
     else
-        echo "✗ Invalid selection."
-        exit 1
+        err "Could not set default $kind."
+        return 1
     fi
-    
-elif [[ "$choice" == "🔈 Output (Speakers/Headset)" ]]; then
+}
+
+while true; do
     clear
-    echo "🔈 Available audio output devices:"
-    echo ""
-    
-    # Get sinks from wpctl
-    mapfile -t sink_data < <(wpctl status | awk '/Audio/,/Video/' | awk '/Sinks:/,/Sources:/' | grep -E '^\s+│\s+.*[0-9]+\.')
-    
-    sink_ids=()
-    sink_names=()
-    
-    for line in "${sink_data[@]}"; do
-        # Skip the unwanted Family 17h device
-        if [[ "$line" == *"Family 17h/19h"*"HD Audio Controller Digital Stereo (IEC958)"* ]]; then
-            continue
-        fi
-        
-        id=$(echo "$line" | grep -oE '[0-9]+\.' | head -1 | tr -d '.')
-        name=$(echo "$line" | sed -E 's/.*[0-9]+\.\s+//' | sed 's/\s*\[vol:.*$//')
-        
-        if [[ -n "$id" ]]; then
-            sink_ids+=("$id")
-            sink_names+=("$name")
-        fi
-    done
-    
-    if [[ ${#sink_ids[@]} -eq 0 ]]; then
-        echo "No audio output devices found."
-        exit 1
-    fi
-    
-    # Display sinks
-    for i in "${!sink_ids[@]}"; do
-        current=""
-        # Check if this is the current default
-        if wpctl status | grep -E "^\s+│\s+\*\s+${sink_ids[$i]}\." &>/dev/null; then
-            current="[CURRENT] "
-        fi
-        printf "  %2d. %s%s (ID: %s)\n" $((i+1)) "$current" "${sink_names[$i]}" "${sink_ids[$i]}"
-    done
-    
-    echo ""
-    read -p "Enter the number of the output device to set as default: " num
-    
-    if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -ge 1 ] && [ "$num" -le ${#sink_ids[@]} ]; then
-        selected_id="${sink_ids[$((num-1))]}"
-        wpctl set-default "$selected_id"
-        echo "✓ Set default output to: ${sink_names[$((num-1))]}"
-    else
-        echo "✗ Invalid selection."
-        exit 1
-    fi
-fi
+    choice=$(printf '%s\n' "$out_label" "$in_label" "Back" | gum choose --header="Select device type to manage:")
+    case "$choice" in
+        "$out_label") choose_device "Audio/Sink" @DEFAULT_AUDIO_SINK@ output ;;
+        "$in_label")  choose_device "Audio/Source" @DEFAULT_AUDIO_SOURCE@ input ;;
+        *) exit 0 ;;
+    esac
+    pause
+done
