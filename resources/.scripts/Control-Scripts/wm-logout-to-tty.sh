@@ -19,6 +19,8 @@ die() {
 }
 
 target_vt="${1:-1}"
+# $USER can be unset when launched from a keybind under set -u
+current_user="$(id -un)"
 
 if [[ ! "$target_vt" =~ ^[0-9]+$ ]]; then
     die "TTY must be a number (got: $target_vt)."
@@ -33,7 +35,7 @@ find_user_tty_session() {
         class="$(loginctl show-session "$sid" -p Class --value 2>/dev/null || true)"
         tty="$(loginctl show-session "$sid" -p TTY --value 2>/dev/null || true)"
 
-        if [[ "$name" == "$USER" ]] && [[ "$type" == "tty" ]] && [[ "$class" == "user" ]] && [[ "$tty" == "tty$target_vt" ]]; then
+        if [[ "$name" == "$current_user" ]] && [[ "$type" == "tty" ]] && [[ "$class" == "user" ]] && [[ "$tty" == "tty$target_vt" ]]; then
             printf '%s\n' "$sid"
             return 0
         fi

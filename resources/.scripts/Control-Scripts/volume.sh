@@ -1,126 +1,83 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# Output volume keys with an on-screen bubble.
+# Usage: volume.sh inc|dec|mute|get
+# wpctl (PipeWire/WirePlumber) first, pactl as fallback; capped at 100%.
+# Hotkey script: never installs packages, just tells you what's missing.
 
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
 
-# Function to get the current volume as a number
-get_current_volume() {
-    pactl get-sink-volume @DEFAULT_SINK@ | grep -oP '\d+%' | head -1 | tr -d '%'
-}
+STEP=5
 
-# Check command line arguments
-if [[ "$#" != 1 || ! ("$1" == "inc" || "$1" == "dec" || "$1" == "mute" ) ]]; then
-    printf "Usage: $0 [inc|dec|mute]\n"
-    exit 1
-fi
-
-
-# Function to detect distro and install packages
-install_if_missing() {
-    pkg="$1"
-    bin="$2"
-    if command -v "$bin" &> /dev/null; then
-        return
-    fi
-    # Detect distro
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        case "$ID" in
-            arch|manjaro)
-                sudo pacman -Sy --noconfirm "$pkg"
-                ;;
-            ubuntu|debian|pop)
-                sudo apt-get update && sudo apt-get install -y "$pkg"
-                ;;
-            fedora)
-                sudo dnf install -y "$pkg"
-                ;;
-            opensuse*)
-                sudo zypper install -y "$pkg"
-                ;;
-            *)
-                echo "Unsupported distro. Please install $pkg manually."
-                exit 1
-                ;;
-        esac
-    else
-        echo "/etc/os-release not found. Please install $pkg manually."
-        exit 1
-    fi
-}
-
-# Ensure pactl and notify-send are installed (distro-correct package names)
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-fi
-case "${ID:-}" in
-    arch|manjaro|endeavouros|cachyos)
-        install_if_missing "libpulse" "pactl"
-        install_if_missing "libnotify" "notify-send"
-        ;;
-    ubuntu|debian|pop|linuxmint)
-        install_if_missing "pulseaudio-utils" "pactl"
-        install_if_missing "libnotify-bin" "notify-send"
-        ;;
-    fedora)
-        install_if_missing "pulseaudio-utils" "pactl"
-        install_if_missing "libnotify" "notify-send"
-        ;;
-    *)
-        install_if_missing "pulseaudio-utils" "pactl"
-        install_if_missing "libnotify-bin" "notify-send"
-        ;;
+case "${1:-}" in
+    inc|dec|mute|get) ;;
+    *) printf 'Usage: %s [inc|dec|mute|get]\n' "$(basename "$0")" >&2; exit 1 ;;
 esac
 
-NOTIFY_ID=99970
-QUICK_TIMEOUT=1100
-
-if command -v dunstify &>/dev/null; then
-    NOTIFY_BIN="dunstify"
-elif command -v notify-send &>/dev/null; then
-    NOTIFY_BIN="notify-send"
-    notify-send --help 2>&1 | grep -q -- '--replace-id' && NOTIFY_REPLACE=true || NOTIFY_REPLACE=false
+if command_exists wpctl; then
+    BACKEND=wpctl
+elif command_exists pactl; then
+    BACKEND=pactl
 else
-    echo "No notification backend found (need dunstify or notify-send)." >&2
+    notify_replace volume normal 3000 dialog-error "Volume" "Install wireplumber (wpctl) or pulseaudio-utils (pactl)."
     exit 1
 fi
 
-notify_volume() {
-    local summary="$1" body="$2" icon="$3"
-    if [[ "$NOTIFY_BIN" == "dunstify" ]]; then
-        dunstify -r "$NOTIFY_ID" -u low -t "$QUICK_TIMEOUT" -a Volume -i "$icon" "$summary" "$body"
-    elif [[ "${NOTIFY_REPLACE:-false}" == true ]]; then
-        notify-send --replace-id="$NOTIFY_ID" -u low -t "$QUICK_TIMEOUT" -a Volume -i "$icon" "$summary" "$body"
+# Prints "<percent> <yes|no>" (muted)
+get_state() {
+    if [ "$BACKEND" = wpctl ]; then
+        wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null \
+            | awk '{printf "%d %s\n", $2 * 100 + 0.5, (/MUTED/ ? "yes" : "no")}'
     else
-        notify-send -u low -t "$QUICK_TIMEOUT" -a Volume -i "$icon" -h "string:x-dunst-stack-tag:volume-notify" "$summary" "$body"
+        local vol mute
+        vol=$(pactl get-sink-volume @DEFAULT_SINK@ | grep -oE '[0-9]+%' | head -1 | tr -d '%')
+        mute=$(pactl get-sink-mute @DEFAULT_SINK@ | awk '{print $2}')
+        echo "${vol:-0} ${mute:-no}"
     fi
 }
 
-# Perform volume adjustment
-if [[ "$1" == "inc" ]]; then
-    pactl set-sink-volume @DEFAULT_SINK@ +5%
-elif [[ "$1" == "dec" ]]; then
-    pactl set-sink-volume @DEFAULT_SINK@ -5%
-elif [[ "$1" == "mute" ]]; then
-    pactl set-sink-mute @DEFAULT_SINK@ toggle
-    muted=$(pactl get-sink-mute @DEFAULT_SINK@ | grep -q yes && echo "Muted" || echo "Unmuted")
-    icon="audio-volume-muted"
-    notify_volume "Volume $muted" "" "$icon"
+case "$1" in
+    inc)
+        if [ "$BACKEND" = wpctl ]; then
+            wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+            wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ "${STEP}%+"
+        else
+            pactl set-sink-mute @DEFAULT_SINK@ 0
+            read -r cur _ < <(get_state)
+            if (( cur + STEP >= 100 )); then
+                pactl set-sink-volume @DEFAULT_SINK@ 100%
+            else
+                pactl set-sink-volume @DEFAULT_SINK@ "+${STEP}%"
+            fi
+        fi ;;
+    dec)
+        if [ "$BACKEND" = wpctl ]; then
+            wpctl set-volume @DEFAULT_AUDIO_SINK@ "${STEP}%-"
+        else
+            pactl set-sink-volume @DEFAULT_SINK@ "-${STEP}%"
+        fi ;;
+    mute)
+        if [ "$BACKEND" = wpctl ]; then
+            wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+        else
+            pactl set-sink-mute @DEFAULT_SINK@ toggle
+        fi ;;
+esac
+
+read -r volume muted < <(get_state)
+volume=${volume:-0}
+
+if [ "$1" = get ]; then
+    echo "$volume $muted"
     exit 0
 fi
 
-# Show notification with current volume as a bar
-volume=$(get_current_volume)
-# Build a bar (10 blocks max)
-blocks=$((volume / 10))
-bar=""
-for ((i=0;i<10;i++)); do
-    if (( i < blocks )); then
-        bar+="█"
-    else
-        bar+="─"
-    fi
-done
+if [ "$muted" = yes ]; then
+    osd audio-volume-muted "Volume muted" 0
+    exit 0
+fi
 
-# Choose icon based on volume
 if (( volume == 0 )); then
     icon="audio-volume-muted"
 elif (( volume < 30 )); then
@@ -131,4 +88,4 @@ else
     icon="audio-volume-high"
 fi
 
-notify_volume "Volume ${volume}%" "$bar" "$icon"
+osd "$icon" "Volume ${volume}%" "$volume"

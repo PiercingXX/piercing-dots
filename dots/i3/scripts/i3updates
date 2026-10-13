@@ -1,20 +1,8 @@
 #!/bin/bash
-
-set -e
-
-if command -v checkupdates >/dev/null 2>&1; then
-    checkupdates 2>/dev/null | wc -l
-    exit 0
+# GitHub.com/PiercingXX
+# i3blocks: number of pending updates (repo + AUR on Arch).
+counter="$HOME/.scripts/Control-Scripts/update-count.sh"
+if [ -x "$counter" ]; then
+    exec "$counter" --total
 fi
-
-if command -v apt >/dev/null 2>&1; then
-    apt list --upgradable 2>/dev/null | tail -n +2 | sed '/^$/d' | wc -l
-    exit 0
-fi
-
-if command -v dnf >/dev/null 2>&1; then
-    dnf check-update -q 2>/dev/null | awk 'BEGIN{count=0} /^[A-Za-z0-9._-]+\s+/ {count++} END{print count}'
-    exit 0
-fi
-
 echo 0

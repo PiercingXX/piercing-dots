@@ -105,11 +105,13 @@
     // Skippy desk seat (GTK4 has no working SNI under this bar)
     "custom/skippy": {
         "exec": "~/.scripts/Control-Scripts/skippy-desk.sh status",
-        "interval": 5,
+        // Slow poll; clicks refresh the module right away via signal 9
+        "interval": 30,
+        "signal": 9,
         "return-type": "json",
         "format": "{}",
-        "on-click": "~/.scripts/Control-Scripts/skippy-desk.sh show",
-        "on-click-right": "~/.scripts/Control-Scripts/skippy-desk.sh quit",
+        "on-click": "~/.scripts/Control-Scripts/skippy-desk.sh show & sleep 2; pkill -RTMIN+9 waybar",
+        "on-click-right": "~/.scripts/Control-Scripts/skippy-desk.sh quit; pkill -RTMIN+9 waybar",
         "tooltip": true
     },
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# App launcher: ulauncher when installed, else fuzzel (Wayland) / rofi (X11).
 
 launch_ulauncher() {
     # If Ulauncher is already running, toggle it exactly once.
@@ -11,7 +13,7 @@ launch_ulauncher() {
 
     # If not running yet, start it and return without a second toggle.
     if command -v ulauncher >/dev/null 2>&1; then
-        ulauncher >/dev/null 2>&1 &
+        setsid -f ulauncher >/dev/null 2>&1
         return 0
     fi
 

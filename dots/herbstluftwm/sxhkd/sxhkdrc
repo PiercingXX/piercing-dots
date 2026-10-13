@@ -127,7 +127,7 @@ XF86AudioMute
     ~/.scripts/Control-Scripts/volume.sh mute
 
 XF86AudioMicMute
-    pactl set-source-mute @DEFAULT_SOURCE@ toggle
+    ~/.scripts/Control-Scripts/mic-toggle-notify.sh
 
 # Audio Output Manager (Super + o)
 super + o

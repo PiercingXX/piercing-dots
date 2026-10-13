@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Start a desktop session via greetd (display-manager.service).
-# Automatically repairs common greetd misconfigurations before starting.
-# Supports: Arch, Fedora, Debian, Void, FreeBSD
+# GitHub.com/PiercingXX
+# Repair greetd + tuigreet and start it (display-manager.service), from a TTY.
+#
+# This is a system repair tool, not just a session launcher. With sudo it may:
+#   - install greetd / tuigreet and create the `greeter` user
+#   - rewrite /etc/greetd/config.toml (adds the [terminal] section)
+#   - delete /etc/systemd/system/greetd.service.d (conflicting drop-ins)
+#   - point display-manager.service at greetd
+#   - disable getty@tty1 (agetty-tty1 on runit) so greetd owns tty1
+#   - enable and start greetd
+# It asks before changing anything; pass --yes to skip the prompt.
+#
+# Usage: start-session.sh [--yes] [--force-any-tty]
+# Supports: Arch (+ derivatives), Artix/Void (runit), Fedora, Debian, FreeBSD
 
 GREETD_CONFIG=/etc/greetd/config.toml
 GREETD_DROPIN_DIR=/etc/systemd/system/greetd.service.d
@@ -34,11 +45,13 @@ ok() {
 
 detect_distro() {
     if [[ -f /etc/os-release ]]; then
-        source /etc/os-release
-        case "$ID" in
-            arch|manjaro) echo "arch" ;;
+        # Subshell keeps os-release variables out of this script
+        local id
+        id="$(. /etc/os-release && printf '%s' "${ID:-}")"
+        case "$id" in
+            arch|artix|manjaro|endeavouros|cachyos|garuda) echo "arch" ;;
             fedora|rhel|centos) echo "fedora" ;;
-            debian|ubuntu|pop|mint) echo "debian" ;;
+            debian|ubuntu|pop|mint|linuxmint) echo "debian" ;;
             void) echo "void" ;;
             freebsd) echo "freebsd" ;;
             *) echo "unknown" ;;
@@ -75,7 +88,8 @@ service_exists() {
 
     case "$INIT_SYSTEM" in
         systemd)
-            [[ -f "$GREETD_SERVICE" ]] || systemctl list-unit-files "$service_name.service" >/dev/null 2>&1
+            # list-unit-files exits 0 even with no match; check the output
+            systemctl list-unit-files --no-legend "$service_name.service" 2>/dev/null | grep -q "^$service_name\.service"
             ;;
         runit)
             [[ -d "/etc/sv/$service_name" ]]
@@ -205,7 +219,7 @@ install_package() {
     
     case "$distro" in
         arch)
-            sudo pacman -S --noconfirm "$pkg" 2>/dev/null || return 1
+            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || return 1
             ;;
         fedora)
             sudo dnf install -y "$pkg" 2>/dev/null || \
@@ -278,13 +292,28 @@ if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
     die "A graphical session is already active. Run from a text TTY."
 fi
 
-for cmd in sudo; do
-    command -v "$cmd" >/dev/null 2>&1 || die "Missing required command: $cmd"
+command -v sudo >/dev/null 2>&1 || die "Missing required command: sudo"
+
+assume_yes=0
+force_any_tty=0
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y)        assume_yes=1 ;;
+        --force-any-tty) force_any_tty=1 ;;
+        -h|--help)       sed -n '4,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)               die "Unknown option: $arg (try --help)" ;;
+    esac
 done
 
 tty_path="$(tty 2>/dev/null || true)"
-if [[ "${1:-}" != "--force-any-tty" && "$tty_path" != /dev/tty* ]]; then
+if [[ $force_any_tty -eq 0 && "$tty_path" != /dev/tty* ]]; then
     die "No real TTY detected. Run from a text console or pass --force-any-tty."
+fi
+
+if [[ $assume_yes -eq 0 ]]; then
+    sed -n '7,13p' "$0" | sed 's/^# \{0,1\}//' >&2
+    read -r -p "Check and repair greetd, then start it? [y/N] " answer
+    [[ "$answer" =~ ^[Yy]$ ]] || die "Aborted; nothing changed."
 fi
 
 DISTRO=$(detect_distro)

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Skippy desk seat — waybar module + Hyprland autostart.
-# Not launch-skippy-remote.sh (that SSHs to skippy-debian-5090).
+# Not launch-skippy-remote.sh (that SSHs to the Skippy box).
+# SKIPPY_PROC_PATTERN overrides how the running app is detected.
+
+PROC_PATTERN="${SKIPPY_PROC_PATTERN:-/share/skippy-remote/skippy-remote.py}"
 
 desk_bin() {
     if [ -n "${SKIPPY_REMOTE:-}" ] && [ -x "${SKIPPY_REMOTE}" ]; then
@@ -15,7 +18,7 @@ desk_bin() {
 }
 
 running() {
-    pgrep -f '/share/skippy-remote/skippy-remote.py' >/dev/null 2>&1
+    pgrep -f "$PROC_PATTERN" >/dev/null 2>&1
 }
 
 cmd="${1:-status}"
@@ -39,11 +42,12 @@ case "$cmd" in
         ;;
     autostart)
         [ -n "$bin" ] || exit 0
+        # Give the bar/tray a moment to come up so the app can dock to it
         sleep 2
         exec "$bin"
         ;;
     quit)
-        pkill -f '/share/skippy-remote/skippy-remote.py' >/dev/null 2>&1 || true
+        pkill -f "$PROC_PATTERN" >/dev/null 2>&1 || true
         ;;
     *)
         echo "usage: $0 {status|show|autostart|quit}" >&2

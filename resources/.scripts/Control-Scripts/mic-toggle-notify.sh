@@ -1,40 +1,24 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
-# Toggle microphone mute and show notification.
+# Toggle microphone mute and show the shared on-screen bubble.
+# Bound to XF86AudioMicMute in the WM configs.
 
-NOTIFY_ID=99982
-QUICK_TIMEOUT=1100
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
 
-if ! command -v pactl &>/dev/null; then
-    echo "mic-toggle-notify: pactl not found." >&2
+if command_exists wpctl; then
+    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+    muted=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -q MUTED && echo yes || echo no)
+elif command_exists pactl; then
+    pactl set-source-mute @DEFAULT_SOURCE@ toggle
+    muted=$(pactl get-source-mute @DEFAULT_SOURCE@ | grep -q yes && echo yes || echo no)
+else
+    notify_replace mic normal 3000 dialog-error "Microphone" "Install wireplumber (wpctl) or pulseaudio-utils (pactl)."
     exit 1
 fi
 
-if command -v dunstify &>/dev/null; then
-    NOTIFY_BIN="dunstify"
-elif command -v notify-send &>/dev/null; then
-    NOTIFY_BIN="notify-send"
-    notify-send --help 2>&1 | grep -q -- '--replace-id' && NOTIFY_REPLACE=true || NOTIFY_REPLACE=false
+if [ "$muted" = yes ]; then
+    osd microphone-sensitivity-muted "Microphone muted" 0
 else
-    echo "mic-toggle-notify: need dunstify or notify-send." >&2
-    exit 1
-fi
-
-notify() {
-    local summary="$1" body="$2" icon="$3" urgency="$4"
-    if [[ "$NOTIFY_BIN" == "dunstify" ]]; then
-        dunstify -r "$NOTIFY_ID" -u "$urgency" -t "$QUICK_TIMEOUT" -i "$icon" "$summary" "$body"
-    elif [[ "${NOTIFY_REPLACE:-false}" == true ]]; then
-        notify-send --replace-id="$NOTIFY_ID" -u "$urgency" -t "$QUICK_TIMEOUT" -i "$icon" "$summary" "$body"
-    else
-        notify-send -u "$urgency" -t "$QUICK_TIMEOUT" -i "$icon" -h "string:x-dunst-stack-tag:mic-toggle" "$summary" "$body"
-    fi
-}
-
-pactl set-source-mute @DEFAULT_SOURCE@ toggle
-
-if pactl get-source-mute @DEFAULT_SOURCE@ | grep -q 'yes'; then
-    notify "Microphone muted" "Input disabled" "microphone-sensitivity-muted" "low"
-else
-    notify "Microphone unmuted" "Input enabled" "audio-input-microphone" "low"
+    osd audio-input-microphone "Microphone on" 100
 fi

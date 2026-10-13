@@ -1,6 +1,9 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# Emoji picker: fuzzel-emoji / rofimoji when installed, else a built-in list.
 
-set -e
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
 
 load_emoji_list() {
     local emoji_file=""
@@ -56,29 +59,19 @@ load_emoji_list() {
 EOF
 }
 
-if [ -n "$WAYLAND_DISPLAY" ] && command -v fuzzel-emoji >/dev/null 2>&1; then
+if is_wayland && command_exists fuzzel-emoji; then
     exec fuzzel-emoji
 fi
 
-if command -v rofimoji >/dev/null 2>&1; then
+if command_exists rofimoji; then
     exec rofimoji
 fi
 
 emoji_list="$(load_emoji_list)"
 
-if command -v rofi >/dev/null 2>&1; then
-    choice="$(printf '%s\n' "$emoji_list" | rofi -dmenu -i -p Emoji)"
-elif command -v fuzzel >/dev/null 2>&1; then
-    choice="$(printf '%s\n' "$emoji_list" | fuzzel --dmenu)"
-else
-    exit 1
-fi
+choice="$(printf '%s\n' "$emoji_list" | menu_select Emoji)" || exit 0
 
 emoji="${choice%% *}"
 [ -n "$emoji" ] || exit 0
 
-if command -v xclip >/dev/null 2>&1; then
-    printf '%s' "$emoji" | xclip -selection clipboard
-elif command -v wl-copy >/dev/null 2>&1; then
-    printf '%s' "$emoji" | wl-copy
-fi
+printf '%s' "$emoji" | clip_copy

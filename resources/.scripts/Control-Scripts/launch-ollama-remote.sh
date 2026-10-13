@@ -1,44 +1,19 @@
-#!/usr/bin/env bash
+#!/bin/bash
+# GitHub.com/PiercingXX
+# Run an Ollama model in tmux on the server.
+# Usage: launch-ollama-remote.sh [--skippy|--gpt|--gemma] [--host NAME]
 
-REMOTE="piercingxx@server-debian-ai"
-SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=20 -o ServerAliveCountMax=2"
-
-# Default model
-MODEL="skippy"
-
-# Parse flags
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    -skippy|--skippy)
-      MODEL="skippy-v2"
-      shift
-      ;;
-    -gpt|--gpt)
-      MODEL="gpt-oss:20b"
-      shift
-      ;;
-    -gemma|--gemma)
-      MODEL="gemma3:27b-it-qat"
-      shift
-      ;;
-    *)
-      echo "Unknown option: $1"
-      echo "Usage: $0 [-skippy|--skippy] [-gpt|--gpt] [-gemma|--gemma]"
-      exit 1
-      ;;
-  esac
+model="skippy"
+args=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -skippy|--skippy) model="skippy-v2" ;;
+        -gpt|--gpt)       model="gpt-oss:20b" ;;
+        -gemma|--gemma)   model="gemma3:27b-it-qat" ;;
+        *)                args+=("$1") ;;
+    esac
+    shift
 done
 
-# Collect password
-read -s -p "SSH password for $REMOTE: " SSHPASS
-echo
-export SSHPASS
-
-# SSH directly and run tmux commands
-sshpass -e ssh $SSH_OPTS -t $REMOTE "
-  tmux kill-session -t ollama 2>/dev/null || true
-  tmux new-session -d -s ollama -c ~
-  tmux send-keys -t ollama 'export PATH=/usr/local/sbin:/usr/local/bin:\$PATH' Enter
-  tmux send-keys -t ollama 'ollama run $MODEL' Enter
-  tmux attach -t ollama
-"
+exec bash "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/remote-session.sh" \
+    --host server --layout ollama --model "$model" "${args[@]}"

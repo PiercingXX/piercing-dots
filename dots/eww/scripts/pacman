@@ -1,16 +1,13 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# eww deflisten: {"packages": N, "updates": N, ...} every 10 minutes.
+counter="$HOME/.scripts/Control-Scripts/update-count.sh"
 
 while true; do
-  pkgs="$(yay -Q | wc -l)"
-
-  updates_arch=$(checkupdates 2>/dev/null | wc -l)
-  updates_arch=${updates_arch:-0}
-
-  updates_aur=$(yay -Qum 2>/dev/null | wc -l)
-  updates_aur=${updates_aur:-0}
-
-  updates=$((updates_arch + updates_aur))
-
-  echo '{"packages": '$pkgs', "updates": '$updates'}'
-  sleep 600
+    if [ -x "$counter" ]; then
+        "$counter" --json
+    else
+        echo '{"packages": 0, "updates": 0}'
+    fi
+    sleep 600
 done

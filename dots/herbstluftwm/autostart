@@ -57,8 +57,15 @@ hc use 1
 pkill -x sxhkd >/dev/null 2>&1 || true
 sxhkd -c "$HOME/.config/herbstluftwm/sxhkd/sxhkdrc" &
 
-pkill -f workspace-notify-herbst.sh >/dev/null 2>&1 || true
-bash "$HOME/.config/herbstluftwm/scripts/workspace-notify-herbst.sh" >/dev/null 2>&1 &
+# Restart the workspace bubble daemon so it follows the reloaded config
+pkill -f 'workspace-notify.sh --wm herbstluftwm' >/dev/null 2>&1 || true
+bash "$HOME/.scripts/Control-Scripts/workspace-notify.sh" --wm herbstluftwm >/dev/null 2>&1 &
+
+# Status notifications (single-instance daemons; safe on reload)
+for d in battery-notify.sh network-notify.sh bluetooth-notify.sh; do
+	bash "$HOME/.scripts/Control-Scripts/$d" >/dev/null 2>&1 &
+done
+bash "$HOME/.scripts/Control-Scripts/wm-clipboard-daemon.sh" >/dev/null 2>&1 &
 
 pkill -x picom >/dev/null 2>&1 || true
 picom -b --experimental-backends &

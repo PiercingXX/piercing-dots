@@ -24,3 +24,9 @@ fi
 if [ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ]; then
 	/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 fi
+
+# Status notifications (single-instance daemons; safe on reload)
+for d in battery-notify.sh network-notify.sh bluetooth-notify.sh; do
+	bash "$HOME/.scripts/Control-Scripts/$d" >/dev/null 2>&1 &
+done
+bash "$HOME/.scripts/Control-Scripts/wm-clipboard-daemon.sh" >/dev/null 2>&1 &

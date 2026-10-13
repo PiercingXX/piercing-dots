@@ -53,7 +53,7 @@ hl.bind(ctrlMod .. " + ALT + Delete", hl.dsp.exec_cmd([[kitty flatpak run io.mis
 hl.bind(ctrlMod .. " + ALT + SHIFT + K", hl.dsp.exec_cmd([[sudo shutdown -h now]]))
 
 -- Show Keybinds
-hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd([[xdg-open "/home/$USER/.scripts/Control-Scripts/keybinds.html"]]))
+hl.bind(mainMod .. " + slash", hl.dsp.exec_cmd([[xdg-open "$HOME/.scripts/Control-Scripts/keybinds.html"]]))
 
 -- Self Hosted AI
 hl.bind(mainMod .. " + A", hl.dsp.exec_cmd([[kitty ~/.scripts/Control-Scripts/launch-skippy-remote.sh]]))
@@ -127,13 +127,13 @@ hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"), { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true })
 hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd([[~/.scripts/Control-Scripts/volume.sh inc]]), { locked = true, repeating = true })
 hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd([[~/.scripts/Control-Scripts/volume.sh dec]]), { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd([[pactl set-source-mute @DEFAULT_SOURCE@ toggle]]), { locked = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd([[~/.scripts/Control-Scripts/mic-toggle-notify.sh]]), { locked = true })
 hl.bind("XF86AudioMute", hl.dsp.exec_cmd([[~/.scripts/Control-Scripts/volume.sh mute]]), { locked = true })
 
 -- Audio Output/Input Manager
-hl.bind(mainMod .. " + O", hl.dsp.exec_cmd([[bash -lc '~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output']]))
-hl.bind(mainMod .. " + P", hl.dsp.exec_cmd([[bash -lc '~/.scripts/Control-Scripts/notify-time.sh']]))
-hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd([[bash -lc '~/.scripts/Control-Scripts/notify-calendar.sh']]))
+hl.bind(mainMod .. " + O", hl.dsp.exec_cmd([[bash ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output]]))
+hl.bind(mainMod .. " + P", hl.dsp.exec_cmd([[bash ~/.scripts/Control-Scripts/notify-time.sh]]))
+hl.bind(mainMod .. " + SHIFT + P", hl.dsp.exec_cmd([[bash ~/.scripts/Control-Scripts/notify-calendar.sh]]))
 
 -- Brightness control
 hl.bind("code:232", hl.dsp.exec_cmd([[~/.scripts/Control-Scripts/brightness.sh dec]]))

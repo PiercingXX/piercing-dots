@@ -1,4 +1,7 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# Toggle the top bar (waybar on Wayland, polybar or waybar on X11).
+# --startup restores the last on/off state at login.
 
 set -e
 
@@ -52,18 +55,20 @@ start_bar() {
     local target="$1"
 
     if [ "$target" = "waybar" ] && command -v waybar >/dev/null 2>&1; then
-        waybar >/dev/null 2>&1 &
+        setsid -f waybar >"$STATE_DIR/topbar/waybar.log" 2>&1
         write_state on waybar
         return 0
     fi
 
-    if [ "$target" = "polybar" ] && command -v polybar >/dev/null 2>&1; then
+    # polybar is X11-only
+    if [ "$target" = "polybar" ] && [ "$(session_kind)" = "x11" ] && command -v polybar >/dev/null 2>&1; then
+        local log="$STATE_DIR/topbar/polybar.log"
         if command -v launchpolybar >/dev/null 2>&1; then
-            launchpolybar >/dev/null 2>&1 &
+            setsid -f launchpolybar >"$log" 2>&1
         elif [ -f "$HOME/.config/herbstluftwm/polybar.ini" ]; then
-            polybar -q main -c "$HOME/.config/herbstluftwm/polybar.ini" >/dev/null 2>&1 &
+            setsid -f polybar -q main -c "$HOME/.config/herbstluftwm/polybar.ini" >"$log" 2>&1
         else
-            polybar main >/dev/null 2>&1 &
+            setsid -f polybar main >"$log" 2>&1
         fi
         write_state on polybar
         return 0
@@ -78,10 +83,6 @@ default_bar() {
     if [ "$kind" = "wayland" ]; then
         if command -v waybar >/dev/null 2>&1; then
             echo "waybar"
-            return
-        fi
-        if command -v polybar >/dev/null 2>&1; then
-            echo "polybar"
             return
         fi
         echo ""
@@ -103,7 +104,7 @@ preferred_bar() {
     local kind
     kind="$(session_kind)"
 
-    if [ "$kind" = "wayland" ] && [ -n "$LAST_BAR_WAYLAND" ]; then
+    if [ "$kind" = "wayland" ] && [ "$LAST_BAR_WAYLAND" = "waybar" ]; then
         echo "$LAST_BAR_WAYLAND"
         return
     fi
@@ -113,7 +114,7 @@ preferred_bar() {
         return
     fi
 
-    if [ -n "$LAST_BAR" ]; then
+    if [ -n "$LAST_BAR" ] && { [ "$kind" = "x11" ] || [ "$LAST_BAR" != "polybar" ]; }; then
         echo "$LAST_BAR"
         return
     fi

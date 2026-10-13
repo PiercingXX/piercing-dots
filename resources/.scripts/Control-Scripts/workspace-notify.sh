@@ -1,133 +1,71 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
-# Hyprland workspace switch notification daemon.
-# Listens to the Hyprland IPC event socket and fires a 1-second
-# dunstify notification whenever the active workspace changes.
-# Shows current workspace number and all occupied workspaces.
+# Workspace switch notification daemon for every WM in the rice.
+# Shows the current workspace and all occupied ones, e.g. "Open: 1 [2] 4".
+#   Hyprland      event socket (socket2)
+#   Sway / i3     swaymsg / i3-msg subscribe
+#   herbstluftwm  herbstclient --idle
+#   awesome       one-shot (rc.lua calls it on tag change): --once
+# Usage: workspace-notify.sh [--wm NAME] [--once]
 
-NOTIFY_ID=99991
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
+
 QUICK_TIMEOUT=1100
-
-# --- Ensure required tools are available ---
-for tool in jq hyprctl; do
-    if ! command -v "$tool" &>/dev/null; then
-        echo "workspace-notify: $tool not found." >&2
-        exit 1
-    fi
+WM=""
+ONCE=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --wm)   WM="${2:-}"; shift ;;
+        --wm=*) WM="${1#--wm=}" ;;
+        --once) ONCE=1 ;;
+    esac
+    shift
 done
+[ -n "$WM" ] || WM=$(detect_wm)
 
-# Notification backend: dunstify (replace-ID support) > notify-send
-if command -v dunstify &>/dev/null; then
-    NOTIFY_BIN="dunstify"
-elif command -v notify-send &>/dev/null; then
-    NOTIFY_BIN="notify-send"
-    # notify-send >=0.8 supports --replace-id; detect it
-    notify-send --help 2>&1 | grep -q -- '--replace-id' && NOTIFY_REPLACE=true || NOTIFY_REPLACE=false
-else
-    echo "workspace-notify: need dunstify or notify-send for notifications." >&2
-    exit 1
-fi
+notify_ws() {
+    notify_replace workspace low "$QUICK_TIMEOUT" "" "Workspace $1" "${2:+Open: $2}"
+}
 
-# notify <replace_id> <urgency> <timeout_ms> <summary> <body>
-notify() {
-    local rid="$1" urgency="$2" timeout="$3" summary="$4" body="$5"
-    if [[ "$NOTIFY_BIN" == "dunstify" ]]; then
-        dunstify -r "$rid" -u "$urgency" -t "$timeout" "$summary" "$body"
-    elif [[ "${NOTIFY_REPLACE:-false}" == true ]]; then
-        notify-send --replace-id="$rid" -u "$urgency" -t "$timeout" "$summary" "$body"
-    else
-        # dunst stack-tag: replaces any notification with the same tag
-        notify-send -u "$urgency" -t "$timeout" \
-            -h "string:x-dunst-stack-tag:workspace-notify" \
-            "$summary" "$body"
+# "1 2 4" + current 2 -> "1 [2] 4" (current added if it has no windows)
+format_list() {
+    local current="$1"; shift
+    local ws parts=()
+    while IFS= read -r ws; do
+        [ -n "$ws" ] || continue
+        if [[ "$ws" == "$current" ]]; then parts+=("[$ws]"); else parts+=("$ws"); fi
+    done < <(printf '%s\n' "$current" "$@" | sort -uV)
+    printf '%s' "${parts[*]}"
+}
+
+swaync_follow() {
+    [ -n "$1" ] && command_exists swaync-client || return 0
+    swaync-client --change-noti-monitor "$1" -sw >/dev/null 2>&1 || true
+    swaync-client --change-cc-monitor "$1" -sw >/dev/null 2>&1 || true
+}
+
+# ---------------------------------------------------------------------------
+# Hyprland
+# ---------------------------------------------------------------------------
+hypr_notify() {
+    local current="$1" occupied
+    if [ -z "$current" ]; then
+        current=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id') || return 0
     fi
+    mapfile -t occupied < <(hyprctl workspaces -j 2>/dev/null \
+        | jq -r '[.[] | select(.windows > 0 and .id > 0) | .id] | sort | .[]')
+    notify_ws "$current" "$(format_list "$current" "${occupied[@]}")"
 }
 
-# Keep swaync popups/control center on the currently focused monitor.
-update_swaync_monitor() {
-    command -v swaync-client &>/dev/null || return 0
-
-    local focused_monitor
-    focused_monitor=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused==true) | .name' | head -n1)
-    [[ -n "$focused_monitor" && "$focused_monitor" != "null" ]] || return 0
-
-    swaync-client --change-noti-monitor "$focused_monitor" -sw >/dev/null 2>&1 || true
-    swaync-client --change-cc-monitor "$focused_monitor" -sw >/dev/null 2>&1 || true
-}
-
-# Determine best available IPC reader: socat > nc (unix) > python3
-if command -v socat &>/dev/null; then
-    IPC_CMD="socat"
-elif command -v nc &>/dev/null && nc -h 2>&1 | grep -q -- '-U\|unix'; then
-    IPC_CMD="nc"
-elif command -v python3 &>/dev/null; then
-    IPC_CMD="python3"
-else
-    echo "workspace-notify: need socat, nc (-U), or python3 for Hyprland IPC." >&2
-    exit 1
-fi
-
-# --- Resolve Hyprland event socket ---
-get_socket() {
-    local runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-    local sig="${HYPRLAND_INSTANCE_SIGNATURE}"
-    if [ -z "$sig" ]; then
-        echo "workspace-notify: HYPRLAND_INSTANCE_SIGNATURE not set." >&2
-        exit 1
-    fi
-    echo "${runtime}/hypr/${sig}/.socket2.sock"
-}
-
-# --- Build and send the workspace notification ---
-notify_workspace() {
-    local current_id
-    current_id=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id') || return
-
-    # Collect IDs of workspaces that have at least one window
-    local occupied_ids
-    mapfile -t occupied_ids < <(
-        hyprctl workspaces -j 2>/dev/null \
-        | jq -r '[.[] | select(.windows > 0) | .id] | sort | .[]'
-    )
-
-    # Build display string: [N] for current, plain N for others
-    local parts=()
-    for ws_id in "${occupied_ids[@]}"; do
-        if [[ "$ws_id" == "$current_id" ]]; then
-            parts+=("[${ws_id}]")
-        else
-            parts+=("${ws_id}")
-        fi
-    done
-
-    # If current workspace has no windows it won't appear above; add it
-    local found=false
-    for ws_id in "${occupied_ids[@]}"; do
-        [[ "$ws_id" == "$current_id" ]] && found=true && break
-    done
-    [[ "$found" == false ]] && parts+=("[${current_id}]")
-
-    # Sort and join
-    local body
-    body=$(printf '%s\n' "${parts[@]}" \
-        | sort -t'[' -k1,1 -V \
-        | tr '\n' ' ' \
-        | sed 's/[[:space:]]*$//')
-
-    notify "$NOTIFY_ID" low "$QUICK_TIMEOUT" "Workspace ${current_id}" "Open: ${body}"
-}
-
-# --- Main event loop ---
-socket=$(get_socket)
-
-# Initialize swaync to current focused output on daemon startup.
-update_swaync_monitor
-
-ipc_stream() {
-    case "$IPC_CMD" in
-        socat)   socat -U - "UNIX-CONNECT:${socket}" 2>/dev/null ;;
-        nc)      nc -U "${socket}" 2>/dev/null ;;
-        python3) python3 - "${socket}" 2>/dev/null <<'PYEOF'
+hypr_stream() {
+    local socket="$1"
+    if command_exists socat; then
+        socat -U - "UNIX-CONNECT:${socket}" 2>/dev/null
+    elif command_exists nc && nc -h 2>&1 | grep -q -- '-U'; then
+        nc -U "${socket}" 2>/dev/null
+    elif command_exists python3; then
+        python3 - "${socket}" 2>/dev/null <<'PYEOF'
 import socket as _s, sys
 s = _s.socket(_s.AF_UNIX, _s.SOCK_STREAM)
 s.connect(sys.argv[1])
@@ -137,16 +75,108 @@ while True:
     sys.stdout.buffer.write(data)
     sys.stdout.buffer.flush()
 PYEOF
-        ;;
-    esac
+    else
+        echo "workspace-notify: need socat, nc (-U), or python3 for Hyprland IPC." >&2
+        return 1
+    fi
 }
 
-ipc_stream | while IFS= read -r line; do
-    event="${line%%>>*}"
-    case "$event" in
-        workspace|focusedmon)
-            update_swaync_monitor
-            notify_workspace
-            ;;
-    esac
-done
+run_hyprland() {
+    command_exists hyprctl && command_exists jq || { echo "workspace-notify: need hyprctl and jq." >&2; exit 1; }
+    if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        echo "workspace-notify: HYPRLAND_INSTANCE_SIGNATURE not set." >&2
+        exit 1
+    fi
+    if [ "$ONCE" -eq 1 ]; then hypr_notify ""; return; fi
+
+    local socket="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.socket2.sock"
+    swaync_follow "$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name' | head -n1)"
+
+    local line event data
+    hypr_stream "$socket" | while IFS= read -r line; do
+        event="${line%%>>*}"
+        data="${line#*>>}"
+        case "$event" in
+            workspacev2)                       # ID,NAME
+                hypr_notify "${data%%,*}" ;;
+            focusedmonv2)                      # MONNAME,WORKSPACEID
+                swaync_follow "${data%%,*}"
+                hypr_notify "${data##*,}" ;;
+        esac
+    done
+}
+
+# ---------------------------------------------------------------------------
+# Sway / i3 (same IPC protocol)
+# ---------------------------------------------------------------------------
+sway_notify() {
+    local msg="$1" current occupied
+    current=$($msg -t get_workspaces -r 2>/dev/null | jq -r '.[] | select(.focused==true) | .name' | head -n1)
+    [[ -n "$current" && "$current" != "null" ]] || return 0
+    mapfile -t occupied < <($msg -t get_tree -r 2>/dev/null \
+        | jq -r '.. | objects
+            | select(.type? == "workspace")
+            | select((((.nodes // []) | length) + ((.floating_nodes // []) | length)) > 0)
+            | .name' \
+        | awk 'NF && !/^__/' | sort -u)
+    notify_ws "$current" "$(format_list "$current" "${occupied[@]}")"
+}
+
+run_sway_like() {
+    local msg="$1"
+    command_exists "$msg" && command_exists jq || exit 0
+    sway_notify "$msg"
+    [ "$ONCE" -eq 1 ] && return
+    $msg -t subscribe -m '["workspace","output"]' 2>/dev/null | while IFS= read -r _; do
+        if [ "$msg" = swaymsg ]; then
+            swaync_follow "$(swaymsg -t get_outputs -r 2>/dev/null | jq -r '.[] | select(.focused==true) | .name' | head -n1)"
+        fi
+        sway_notify "$msg"
+    done
+}
+
+# ---------------------------------------------------------------------------
+# herbstluftwm
+# ---------------------------------------------------------------------------
+herbst_notify() {
+    local current tag prefix occupied=()
+    current=$(herbstclient attr tags.focus.name 2>/dev/null) || return 0
+    [ -n "$current" ] || return 0
+    for tag in $(herbstclient tag_status 2>/dev/null); do
+        prefix="${tag:0:1}"
+        case "$prefix" in
+            '#'|':'|'+'|'-'|'%') occupied+=("${tag:1}") ;;
+        esac
+    done
+    notify_ws "$current" "$(format_list "$current" "${occupied[@]}")"
+}
+
+run_herbst() {
+    command_exists herbstclient || exit 0
+    herbst_notify
+    [ "$ONCE" -eq 1 ] && return
+    herbstclient --idle 'focus_changed|tag_changed' 2>/dev/null | while IFS= read -r _; do
+        herbst_notify
+    done
+}
+
+# ---------------------------------------------------------------------------
+# awesome (no event stream outside lua; rc.lua calls us with --once)
+# ---------------------------------------------------------------------------
+run_awesome() {
+    command_exists awesome-client || exit 0
+    local current
+    current=$(awesome-client 'local awful=require("awful"); local s=awful.screen.focused(); local t=s and s.selected_tag; if t and t.name then return t.name end' 2>/dev/null \
+        | sed -n 's/^[[:space:]]*string "\(.*\)"$/\1/p')
+    [ -n "$current" ] || return 0
+    notify_ws "$current" ""
+}
+
+case "$WM" in
+    hyprland) [ "$ONCE" -eq 1 ] || single_instance workspace-notify || exit 0; run_hyprland ;;
+    sway)     [ "$ONCE" -eq 1 ] || single_instance workspace-notify || exit 0; run_sway_like swaymsg ;;
+    i3)       [ "$ONCE" -eq 1 ] || single_instance workspace-notify || exit 0; run_sway_like i3-msg ;;
+    herbstluftwm) [ "$ONCE" -eq 1 ] || single_instance workspace-notify || exit 0; run_herbst ;;
+    awesome)  run_awesome ;;
+    *)        exit 0 ;;  # qtile/dwm/bspwm: no supported event source
+esac

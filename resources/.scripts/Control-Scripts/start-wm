@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# GitHub.com/PiercingXX
+# Start a window manager from a text TTY.
+# Usage: start-wm NAME [--x11|--wayland] [WM args...]
+#   NAME: i3 awesome bspwm herbstluftwm (herbst) dwm qtile sway
+# The start-<name> scripts next to this one are thin wrappers for it.
+#
+# D-Bus: on systemd the user bus already exists, so the session joins it and
+# exports its environment (DISPLAY, XDG_*) to systemd --user and D-Bus
+# activation, so portals/keyring/pipewire see the same session. Without
+# systemd (Artix/Void/Alpine) a private bus is started with dbus-run-session.
+set -euo pipefail
+
+name="${1:-}"
+[ -n "$name" ] || { echo "Usage: start-wm NAME [--x11|--wayland] [args...]" >&2; exit 2; }
+shift
+
+die() {
+    printf '[start-%s] %s\n' "$name" "$*" >&2
+    exit 1
+}
+
+# name -> backend, binary, session name
+case "$name" in
+    i3)                  backend=x11;     bin=i3;           session=i3 ;;
+    awesome)             backend=x11;     bin=awesome;      session=awesome ;;
+    bspwm)               backend=x11;     bin=bspwm;        session=bspwm ;;
+    herbst|herbstluftwm) backend=x11;     bin=herbstluftwm; session=herbstluftwm ;;
+    dwm)                 backend=x11;     bin=dwm;          session=dwm ;;
+    qtile)               backend=wayland; bin=qtile;        session=qtile ;;
+    sway)                backend=wayland; bin=sway;         session=sway ;;
+    *) die "Unknown window manager: $name" ;;
+esac
+
+# Only qtile can run on both backends
+case "${1:-}" in
+    --x11)     [ "$name" = qtile ] || die "--x11 only applies to qtile"; backend=x11; shift ;;
+    --wayland) [ "$name" = qtile ] || die "--wayland only applies to qtile"; backend=wayland; shift ;;
+esac
+
+if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
+    die "A graphical session is already active. Run from a text TTY."
+fi
+
+tty_path="$(tty 2>/dev/null || true)"
+[[ "$tty_path" == /dev/tty* ]] || die "No real TTY detected. Run from a text console."
+
+command -v "$bin" >/dev/null 2>&1 || die "Missing required command: $bin"
+
+export DESKTOP_SESSION="$session"
+export XDG_CURRENT_DESKTOP="$session"
+export XDG_SESSION_DESKTOP="$session"
+export XDG_SESSION_TYPE="$backend"
+export XDG_SESSION_CLASS=user
+
+# Join the systemd user bus when it exists; otherwise make a private one
+bus_prefix=()
+if [ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus" ] && [ -d /run/systemd/system ]; then
+    export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/bus}"
+    use_systemd=1
+else
+    command -v dbus-run-session >/dev/null 2>&1 || die "Missing required command: dbus-run-session"
+    bus_prefix=(dbus-run-session)
+    use_systemd=0
+fi
+
+# ---------------------------------------------------------------------------
+# Wayland: the compositor configs import WAYLAND_DISPLAY themselves
+# ---------------------------------------------------------------------------
+if [ "$backend" = wayland ]; then
+    if [ "$name" = qtile ]; then
+        exec "${bus_prefix[@]}" qtile start -b wayland "$@"
+    fi
+    exec "${bus_prefix[@]}" "$bin" "$@"
+fi
+
+# ---------------------------------------------------------------------------
+# X11 via startx
+# ---------------------------------------------------------------------------
+command -v startx >/dev/null 2>&1 || die "Missing required command: startx"
+
+vt_num="${XDG_VTNR:-}"
+if [[ -z "$vt_num" && "$tty_path" =~ ^/dev/tty([0-9]+)$ ]]; then
+    vt_num="${BASH_REMATCH[1]}"
+fi
+
+case "$name" in
+    qtile) wm_cmd=("$(command -v qtile)" start "$@") ;;
+    dwm)   wm_cmd=(/bin/sh -c 'if [ -x "$HOME/.config/dwm/autostart.sh" ]; then "$HOME/.config/dwm/autostart.sh"; fi; exec dwm') ;;
+    *)     wm_cmd=("$(command -v "$bin")" "$@") ;;
+esac
+
+# Runs inside X: push the now-known DISPLAY/XAUTHORITY to D-Bus activation
+# (and systemd --user) before handing over to the WM.
+env_vars="DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE DESKTOP_SESSION"
+client_args=(/bin/sh -c '
+    vars="$1"; systemd="$2"; shift 2
+    if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+        if [ "$systemd" = 1 ]; then
+            dbus-update-activation-environment --systemd $vars 2>/dev/null || true
+        else
+            dbus-update-activation-environment $vars 2>/dev/null || true
+        fi
+    elif [ "$systemd" = 1 ]; then
+        systemctl --user import-environment $vars 2>/dev/null || true
+    fi
+    exec "$@"
+' start-wm "$env_vars" "$use_systemd" "${wm_cmd[@]}")
+
+server_args=(-keeptty)
+[[ -n "$vt_num" ]] && server_args+=("vt${vt_num}")
+
+exec "${bus_prefix[@]}" startx "${client_args[@]}" -- "${server_args[@]}"

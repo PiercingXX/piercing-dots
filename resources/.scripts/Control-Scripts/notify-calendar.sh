@@ -1,23 +1,20 @@
 #!/bin/bash
+# GitHub.com/PiercingXX
+# Show this month's calendar in a notification.
 
-NOTIFY_ID=99987
-STATE_TIMEOUT=6000
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
+
 MONTH_TITLE="$(date '+%B %Y')"
 
-if command -v cal &>/dev/null; then
+if command_exists cal; then
     CAL_BODY="$(cal)"
 else
     CAL_BODY="Calendar utility not found"
 fi
 
-if command -v dunstify &>/dev/null; then
-    dunstify -r "$NOTIFY_ID" -u low -t "$STATE_TIMEOUT" "$MONTH_TITLE" "$CAL_BODY"
-elif command -v notify-send &>/dev/null; then
-    if notify-send --help 2>&1 | grep -q -- '--replace-id'; then
-        notify-send --replace-id="$NOTIFY_ID" -u low -t "$STATE_TIMEOUT" "$MONTH_TITLE" "$CAL_BODY"
-    else
-        notify-send -u low -t "$STATE_TIMEOUT" -h "string:x-dunst-stack-tag:calendar-notify" "$MONTH_TITLE" "$CAL_BODY"
-    fi
+if command_exists notify-send; then
+    notify_replace calendar low 6000 x-office-calendar "$MONTH_TITLE" "$CAL_BODY"
 else
     printf '%s\n%s\n' "$MONTH_TITLE" "$CAL_BODY"
 fi

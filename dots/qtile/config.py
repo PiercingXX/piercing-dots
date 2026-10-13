@@ -78,7 +78,7 @@ keys = [
     Key([], "XF86AudioRaiseVolume", lazy.spawn("~/.scripts/Control-Scripts/volume.sh inc"), desc="Volume up"),
     Key([], "XF86AudioLowerVolume", lazy.spawn("~/.scripts/Control-Scripts/volume.sh dec"), desc="Volume down"),
     Key([], "XF86AudioMute", lazy.spawn("~/.scripts/Control-Scripts/volume.sh mute"), desc="Mute"),
-    Key([], "XF86AudioMicMute", lazy.spawn("pactl set-source-mute @DEFAULT_SOURCE@ toggle"), desc="Mic mute"),
+    Key([], "XF86AudioMicMute", lazy.spawn("bash -c ~/.scripts/Control-Scripts/mic-toggle-notify.sh"), desc="Mic mute"),
     Key([], "XF86MonBrightnessDown", lazy.spawn("~/.scripts/Control-Scripts/brightness.sh dec"), desc="Brightness down"),
     Key([], "XF86MonBrightnessUp", lazy.spawn("~/.scripts/Control-Scripts/brightness.sh inc"), desc="Brightness up"),
 ]
@@ -173,6 +173,8 @@ wmname = "LG3D"
 @hook.subscribe.startup
 def autostart() -> None:
     startup_commands = [
+        # Session env to D-Bus activation / systemd --user (WAYLAND_DISPLAY or DISPLAY)
+        "bash -c 'vars=\"WAYLAND_DISPLAY DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE\"; if [ -d /run/systemd/system ]; then dbus-update-activation-environment --systemd $vars; else dbus-update-activation-environment $vars; fi'",
         "xsetroot -cursor_name left_ptr",
     "bash -lc 'command -v libinput-gestures >/dev/null && (pgrep -x libinput-gestures || libinput-gestures -d)'",
         "bash -lc '[ -x ~/.config/hypr/hyprland/scripts/SynoDrive.sh ] && ~/.config/hypr/hyprland/scripts/SynoDrive.sh'",

@@ -35,8 +35,9 @@ fi']])
 done']])
     hl.exec_cmd([[hypridle]])
     hl.exec_cmd([[dbus-update-activation-environment --all]])
-    hl.exec_cmd([[sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP]])
-    hl.exec_cmd([[hyprpm reload]])
+    -- Hand the session env (incl. HYPRLAND_INSTANCE_SIGNATURE so user units can use hyprctl) to systemd --user
+    hl.exec_cmd([[bash -c 'sleep 1; vars="WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE"; if [ -d /run/systemd/system ]; then dbus-update-activation-environment --systemd $vars; else dbus-update-activation-environment $vars; fi']])
+    hl.exec_cmd([[bash -c 'command -v hyprpm >/dev/null && hyprpm reload']])
 
     hl.exec_cmd([=[bash -lc 'preferred=$(pactl list short sinks 2>/dev/null | awk "{print \$2}" | grep -i "SteelSeries_Arctis_Nova_Pro_Wireless" | head -n1); if [[ -n "$preferred" ]]; then pactl set-default-sink "$preferred"; wpctl set-default "$preferred" 2>/dev/null || true; pactl list short sink-inputs 2>/dev/null | awk "{print \$1}" | while read -r id; do pactl move-sink-input "$id" "$preferred" 2>/dev/null || true; done; else default_sink=$(pactl get-default-sink 2>/dev/null || true); if [[ "$default_sink" == *"iec958"* ]]; then candidate=$(pactl list short sinks 2>/dev/null | awk "{print \$2}" | grep -E "usb|hdmi|analog" | grep -v "iec958" | head -n1); [[ -n "$candidate" ]] && pactl set-default-sink "$candidate"; fi; fi']]=])
     hl.exec_cmd([[bash -lc 'command -v easyeffects >/dev/null && easyeffects --gapplication-service']])

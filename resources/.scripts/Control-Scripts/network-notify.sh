@@ -1,43 +1,35 @@
 #!/bin/bash
 # GitHub.com/PiercingXX
-# Network status notification daemon for Hyprland.
+# Network status notification daemon (any WM; needs NetworkManager).
 
-NOTIFY_ID=99980
-POLL_INTERVAL=5
+# shellcheck disable=SC1091
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/common.sh"
+
+POLL_INTERVAL=30   # safety re-check; nmcli monitor delivers changes instantly
 STATE_TIMEOUT=2200
 
-if ! command -v nmcli &>/dev/null; then
+if ! command_exists nmcli; then
     echo "network-notify: nmcli not found." >&2
     exit 1
 fi
 
-if command -v dunstify &>/dev/null; then
-    NOTIFY_BIN="dunstify"
-elif command -v notify-send &>/dev/null; then
-    NOTIFY_BIN="notify-send"
-    notify-send --help 2>&1 | grep -q -- '--replace-id' && NOTIFY_REPLACE=true || NOTIFY_REPLACE=false
-else
-    echo "network-notify: need dunstify or notify-send." >&2
-    exit 1
-fi
+single_instance network-notify || exit 0
 
 notify() {
     local summary="$1" body="$2" icon="$3" urgency="$4"
-    if [[ "$NOTIFY_BIN" == "dunstify" ]]; then
-        dunstify -r "$NOTIFY_ID" -u "$urgency" -t "$STATE_TIMEOUT" -i "$icon" "$summary" "$body"
-    elif [[ "${NOTIFY_REPLACE:-false}" == true ]]; then
-        notify-send --replace-id="$NOTIFY_ID" -u "$urgency" -t "$STATE_TIMEOUT" -i "$icon" "$summary" "$body"
-    else
-        notify-send -u "$urgency" -t "$STATE_TIMEOUT" -i "$icon" -h "string:x-dunst-stack-tag:network-notify" "$summary" "$body"
-    fi
+    notify_replace network "$urgency" "$STATE_TIMEOUT" "$icon" "$summary" "$body"
 }
 
+# Fields are joined with a unit separator (\x1f) so SSIDs containing '|' or ':' survive
+SEP=$'\x1f'
 snapshot_state() {
     local state wifi_ssid eth_dev
     state=$(nmcli -t -f STATE general 2>/dev/null)
-    wifi_ssid=$(nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | awk -F: '$1=="yes" {print $2; exit}')
+    # -t escapes ':' inside values as '\:'; split on unescaped ':' only
+    wifi_ssid=$(nmcli -t -f ACTIVE,SSID dev wifi list --rescan no 2>/dev/null \
+        | sed -n 's/^yes://p' | head -n 1 | sed 's/\\:/:/g')
     eth_dev=$(nmcli -t -f DEVICE,TYPE,STATE dev status 2>/dev/null | awk -F: '$2=="ethernet" && $3=="connected" {print $1; exit}')
-    printf '%s|%s|%s\n' "$state" "$wifi_ssid" "$eth_dev"
+    printf '%s%s%s%s%s\n' "$state" "$SEP" "$wifi_ssid" "$SEP" "$eth_dev"
 }
 
 build_message() {
@@ -60,19 +52,19 @@ build_message() {
     fi
 
     case "$state" in
-        connected|connected*)
+        connected*)
             SUMMARY="Network - Connected"
             BODY="Connection active"
             ICON="network-transmit-receive"
             URGENCY="low"
             ;;
-        connecting|connecting*)
+        connecting*)
             SUMMARY="Network - Connecting"
             BODY="Trying to establish a connection"
             ICON="network-idle"
             URGENCY="low"
             ;;
-        disconnected|disconnected*)
+        disconnected*)
             SUMMARY="Network - Disconnected"
             BODY="No active network connection"
             ICON="network-offline"
@@ -87,15 +79,23 @@ build_message() {
     esac
 }
 
+check_network() {
+    local current state wifi_ssid eth_dev
+    current="$(snapshot_state)"
+    [[ "$current" == "$last" ]] && return 0
+    IFS="$SEP" read -r state wifi_ssid eth_dev <<< "$current"
+    build_message "$state" "$wifi_ssid" "$eth_dev"
+    notify "$SUMMARY" "$BODY" "$ICON" "$URGENCY"
+    last="$current"
+}
+
 last="$(snapshot_state)"
 
 while true; do
-    current="$(snapshot_state)"
-    if [[ "$current" != "$last" ]]; then
-        IFS='|' read -r state wifi_ssid eth_dev <<< "$current"
-        build_message "$state" "$wifi_ssid" "$eth_dev"
-        notify "$SUMMARY" "$BODY" "$ICON" "$URGENCY"
-        last="$current"
-    fi
-    sleep "$POLL_INTERVAL"
+    # nmcli monitor prints a line on every state change; read -t keeps a slow
+    # periodic re-check in case the monitor stream stalls.
+    while IFS= read -r -t "$POLL_INTERVAL" _ || [ $? -gt 128 ]; do
+        check_network
+    done < <(nmcli monitor 2>/dev/null)
+    sleep 5
 done

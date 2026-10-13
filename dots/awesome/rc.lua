@@ -236,6 +236,11 @@ awful.spawn.with_shell("pgrep -x pipewire-pulse >/dev/null 2>&1 || (command -v p
 awful.spawn.with_shell("touchpad_dev=$(xinput list --name-only | grep -i touchpad | head -n1 || true); if [ -n \"$touchpad_dev\" ]; then xinput set-prop \"$touchpad_dev\" \"libinput Natural Scrolling Enabled\" 1 2>/dev/null || true; xinput set-prop \"$touchpad_dev\" \"libinput Tapping Enabled\" 1 2>/dev/null || true; xinput set-prop \"$touchpad_dev\" \"libinput Click Method Enabled\" 0 1 2>/dev/null || true; fi")
 awful.spawn.once("command -v libinput-gestures >/dev/null && (pgrep -f 'libinput-gestures' || libinput-gestures)")
 
+-- Status notification daemons (single-instance, safe across awesome restarts)
+for _, daemon in ipairs({ "battery-notify.sh", "network-notify.sh", "bluetooth-notify.sh" }) do
+  awful.spawn.with_shell("bash ~/.scripts/Control-Scripts/" .. daemon)
+end
+
 local function notify_workspace_change()
   awful.spawn.with_shell("bash ~/.config/awesome/scripts/workspace-notify-awesome.sh")
 end
@@ -275,15 +280,17 @@ globalkeys = gears.table.join(
               {description = "focus the previous screen", group = "screen"}),
 
     -- Media / brightness (with notifications)
-    awful.key({ }, "XF86AudioRaiseVolume", function () awful.spawn("~/.scripts/Control-Scripts/volume.sh inc") end,
+    awful.key({ }, "XF86AudioRaiseVolume", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/volume.sh inc") end,
           {description = "volume up", group = "media"}),
-    awful.key({ }, "XF86AudioLowerVolume", function () awful.spawn("~/.scripts/Control-Scripts/volume.sh dec") end,
+    awful.key({ }, "XF86AudioLowerVolume", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/volume.sh dec") end,
           {description = "volume down", group = "media"}),
-    awful.key({ }, "XF86AudioMute", function () awful.spawn("~/.scripts/Control-Scripts/volume.sh mute") end,
+    awful.key({ }, "XF86AudioMute", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/volume.sh mute") end,
           {description = "mute", group = "media"}),
-    awful.key({ }, "XF86MonBrightnessUp", function () awful.spawn("~/.scripts/Control-Scripts/brightness.sh inc") end,
+    awful.key({ }, "XF86AudioMicMute", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/mic-toggle-notify.sh") end,
+          {description = "mute microphone", group = "media"}),
+    awful.key({ }, "XF86MonBrightnessUp", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/brightness.sh inc") end,
           {description = "brightness up", group = "media"}),
-    awful.key({ }, "XF86MonBrightnessDown", function () awful.spawn("~/.scripts/Control-Scripts/brightness.sh dec") end,
+    awful.key({ }, "XF86MonBrightnessDown", function () awful.spawn.with_shell("~/.scripts/Control-Scripts/brightness.sh dec") end,
           {description = "brightness down", group = "media"}),
 
     -- Standard program
@@ -323,10 +330,10 @@ globalkeys = gears.table.join(
                 {description = "open OpenCode Desktop", group = "launcher"}),
 
     -- Script Keybinds
-          awful.key({ modkey }, "m", function () awful.spawn.with_shell("kitty ~/.scripts/maintenance.sh") end, {description = "Open maintenance script", group = "scripts"}),
-          awful.key({ modkey }, "n", function () awful.spawn.with_shell("kitty ~/.scripts/open_daily_note.sh") end, {description = "Open daily note to edit", group = "scripts"}),
-          awful.key({ modkey, "Shift" }, "n", function () awful.spawn.with_shell("kitty ~/.scripts/open_daily_note.sh --view") end, {description = "Open daily note to view only", group = "scripts"}),
-          awful.key({ modkey }, "i", function () awful.spawn.with_shell("kitty ~/.scripts/inventory.sh") end, {description = "Open inventory script", group = "scripts"})
+          awful.key({ modkey }, "m", function () awful.spawn.with_shell("kitty ~/.scripts/PiercingXX-Settings-Menu/settings-menu.sh") end, {description = "Open PiercingXX settings menu", group = "scripts"}),
+          awful.key({ modkey }, "n", function () awful.spawn.with_shell("kitty ~/.scripts/Note-Scripts/open_daily_note.sh --split") end, {description = "Open daily note to edit", group = "scripts"}),
+          awful.key({ modkey, "Shift" }, "n", function () awful.spawn.with_shell("kitty ~/.scripts/Note-Scripts/open_daily_note.sh --view") end, {description = "Open daily note to view only", group = "scripts"}),
+          awful.key({ modkey }, "i", function () awful.spawn.with_shell("kitty ~/.scripts/Note-Scripts/inventory.sh") end, {description = "Open inventory script", group = "scripts"})
 
 )
 

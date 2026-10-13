@@ -41,8 +41,8 @@ output * adaptive_sync on
 #------------------------#
 # Environment Variables  #
 #------------------------#
-exec systemctl --user import-environment DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
-exec dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP
+# systemd --user gets the session env; on non-systemd inits only D-Bus activation does
+exec sh -c 'vars="DISPLAY WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_TYPE"; if [ -d /run/systemd/system ]; then systemctl --user import-environment $vars; dbus-update-activation-environment --systemd $vars; else dbus-update-activation-environment $vars; fi'
 
 #------------------------#
 # Autostart Applications #
@@ -54,27 +54,28 @@ exec ~/.config/hypr/hyprland/scripts/SynoDrive.sh
 exec bash ~/.scripts/Control-Scripts/toggle-topbar.sh --startup
 exec nm-applet
 exec xdg-user-dirs-update
-exec_always sh -lc 'pkill -x swaybg >/dev/null 2>&1 || true; img=$(find "$HOME/Pictures/backgrounds" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) 2>/dev/null | shuf -n1); [ -n "$img" ] && swaybg -i "$img" -m fill'
+# Wallpaper: ~/.config/wall.png (set by change-wallpaper.sh), else a random background
+exec_always sh -c 'pkill -x swaybg >/dev/null 2>&1 || true; img="$HOME/.config/wall.png"; if [ ! -f "$img" ]; then img=$(find "$HOME/Pictures/backgrounds" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.webp" \) 2>/dev/null | shuf -n1); fi; [ -n "$img" ] && swaybg -i "$img" -m fill'
 # Keep Sway native bindgesture handling in charge of 3/4-finger gestures.
 # libinput-gestures can conflict with Sway's gesture bindings.
 
 # Core components (authentication, lock screen, notification daemon)
 exec bash -lc 'if command -v swaync >/dev/null 2>&1; then pgrep -x swaync >/dev/null || swaync; elif command -v dunst >/dev/null 2>&1; then pgrep -x dunst >/dev/null || dunst; fi'
-exec bash ~/.config/sway/scripts/workspace-notify-sway.sh
+exec bash ~/.scripts/Control-Scripts/workspace-notify.sh
+exec bash ~/.scripts/Control-Scripts/battery-notify.sh
+exec bash ~/.scripts/Control-Scripts/network-notify.sh
+exec bash ~/.scripts/Control-Scripts/bluetooth-notify.sh
 exec gnome-keyring-daemon --start --components=secrets
 exec systemctl --user start plasma-polkit-agent
 exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 exec dbus-update-activation-environment --all
-exec sleep 1 && dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 
 # Audio
 exec bash ~/.config/sway/scripts/audio-session.sh
 exec easyeffects --gapplication-service
 
-# Clipboard: history
-exec wl-paste --watch cliphist store &
-exec wl-paste --type text --watch cliphist store
-exec wl-paste --type image --watch cliphist store
+# Clipboard: history (one text + one image watcher, single instance)
+exec bash ~/.scripts/Control-Scripts/wm-clipboard-daemon.sh
 
 # Docker
 exec systemctl --user start docker-desktop
@@ -232,7 +233,7 @@ bindsym $mainMod+p exec ~/.scripts/Control-Scripts/notify-time.sh
 bindsym $mainMod+Shift+p exec ~/.scripts/Control-Scripts/notify-calendar.sh
 
 # Show Keybinds
-bindsym $mainMod+slash exec xdg-open "/home/$USER/.scripts/Control-Scripts/keybinds.html"
+bindsym $mainMod+slash exec xdg-open "$HOME/.scripts/Control-Scripts/keybinds.html"
 
 # Local AI
 bindsym $mainMod+a exec $terminal ~/.scripts/Control-Scripts/launch-skippy-remote.sh
@@ -344,7 +345,7 @@ bindsym Shift+Ctrl+Right resize grow width 5 px or 5 ppt
 bindsym XF86AudioRaiseVolume exec ~/.scripts/Control-Scripts/volume.sh inc
 bindsym XF86AudioLowerVolume exec ~/.scripts/Control-Scripts/volume.sh dec
 bindsym XF86AudioMute exec ~/.scripts/Control-Scripts/volume.sh mute
-bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+bindsym XF86AudioMicMute exec ~/.scripts/Control-Scripts/mic-toggle-notify.sh
 bindsym XF86MonBrightnessUp exec ~/.scripts/Control-Scripts/brightness.sh inc
 bindsym XF86MonBrightnessDown exec ~/.scripts/Control-Scripts/brightness.sh dec
 bindsym XF86AudioPlay exec playerctl play-pause

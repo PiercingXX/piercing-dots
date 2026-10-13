@@ -9,6 +9,11 @@ hsetroot -cover ~/.config/wall.png &
 flameshot &
 (fcitx5 -d || fcitx -d) &
 launchpolybar &
+
+# Status notifications + clipboard history (single-instance daemons)
+for d in battery-notify.sh network-notify.sh bluetooth-notify.sh wm-clipboard-daemon.sh; do
+	bash "$HOME/.scripts/Control-Scripts/$d" >/dev/null 2>&1 &
+done
 bspc rule -r "*"
 
 pkill -x bspswallow >/dev/null 2>&1 || true

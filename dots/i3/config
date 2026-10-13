@@ -75,6 +75,7 @@ exec --no-startup-id nm-applet
 exec --no-startup-id gnome-keyring-daemon --start --components=secrets
 exec --no-startup-id /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
 exec --no-startup-id dbus-update-activation-environment --all
+exec --no-startup-id sh -c 'vars="DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE I3SOCK"; if [ -d /run/systemd/system ]; then dbus-update-activation-environment --systemd $vars; fi'
 
 # Compositor
 exec --no-startup-id picom -b
@@ -84,7 +85,12 @@ exec --no-startup-id easyeffects --gapplication-service
 
 # Clipboard: history
 exec --no-startup-id bash ~/.scripts/Control-Scripts/wm-clipboard-daemon.sh
-exec --no-startup-id bash ~/.config/i3/scripts/workspace-notify-i3.sh
+
+# Status notifications (workspace, battery, network, bluetooth)
+exec --no-startup-id bash ~/.scripts/Control-Scripts/workspace-notify.sh
+exec --no-startup-id bash ~/.scripts/Control-Scripts/battery-notify.sh
+exec --no-startup-id bash ~/.scripts/Control-Scripts/network-notify.sh
+exec --no-startup-id bash ~/.scripts/Control-Scripts/bluetooth-notify.sh
 
 # Docker
 exec --no-startup-id systemctl --user start docker-desktop
@@ -149,7 +155,7 @@ bindsym $mod+Shift+m exec kitty -o allow_remote_control=yes -o close_on_child_de
 bindsym $mod+Shift+y exec bash ~/.scripts/Control-Scripts/wm-clipboard-menu.sh # Clipboard history >> clipboard
 
 # Show Keybinds
-bindsym $mod+slash exec xdg-open "/home/$USER/.scripts/Control-Scripts/keybinds.html"
+bindsym $mod+slash exec xdg-open "$HOME/.scripts/Control-Scripts/keybinds.html"
 
 # Audio Output/Input Manager
 bindsym $mod+o exec ~/.scripts/PiercingXX-Settings-Menu/audio-input-manager.sh --toggle-output
@@ -194,6 +200,7 @@ bindsym $mod+Control+m exec ~/.scripts/Control-Scripts/volume.sh mute
 bindsym XF86AudioRaiseVolume exec ~/.scripts/Control-Scripts/volume.sh inc
 bindsym XF86AudioLowerVolume exec ~/.scripts/Control-Scripts/volume.sh dec
 bindsym XF86AudioMute exec ~/.scripts/Control-Scripts/volume.sh mute
+bindsym XF86AudioMicMute exec ~/.scripts/Control-Scripts/mic-toggle-notify.sh
 
 ###---Brightness---###
 bindsym $mod+Right exec ~/.scripts/Control-Scripts/brightness.sh inc
