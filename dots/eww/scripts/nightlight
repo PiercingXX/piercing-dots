@@ -33,7 +33,7 @@ set_on() {
   ensure_daemon || return 1
   hyprctl hyprsunset temperature "$TEMP_K" >/dev/null 2>&1 || true
   echo on >"$STATE_FILE"
-  command -v eww >/dev/null 2>&1 && eww update nightlight=true
+  command -v eww >/dev/null 2>&1 && eww update nightlight=true || true
 }
 
 set_off() {
@@ -41,7 +41,7 @@ set_off() {
   ensure_daemon || return 1
   hyprctl hyprsunset identity >/dev/null 2>&1 || true
   echo off >"$STATE_FILE"
-  command -v eww >/dev/null 2>&1 && eww update nightlight=false
+  command -v eww >/dev/null 2>&1 && eww update nightlight=false || true
 }
 
 state() {
