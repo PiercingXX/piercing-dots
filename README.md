@@ -65,7 +65,7 @@ The maintenance script of old evolved into a TUI settings menu, installed at `~/
 - **Logs** – journal errors, kernel, Hyprland, Xorg, package history.
 - **Power** – power profiles (power-profiles-daemon / TLP / tuned) and hyprsunset.
 - **Hardware Info** – CPU, memory, disks, PCI/USB, sensors, battery, disk usage.
-- **Keyboard Layout** – switch layouts live (Hyprland, Sway, GNOME, X11), optionally persist it.
+- **Keyboard Layout** – switch layouts live (Hyprland, Sway, GNOME, X11), optionally persist it. Includes Piercing Num and Piercing Sym from [piercing-keyboard-layout](https://github.com/PiercingXX/piercing-keyboard-layout), installed to `~/.config/xkb` on first pick; their system-wide option (TTY + login screen) uses keyd.
 
 ---
 
