@@ -13,9 +13,7 @@ end
 
 -- List of plugin specs
 local specs = {
-  -- UI and aesthetics (lush required by aura)
-  { src = gh("rktjmp/lush.nvim") },
-  { src = gh("JLighter/aura.nvim") },
+  -- UI and aesthetics (Aura colorscheme lives in colors/aura.lua)
   { src = gh("goolord/alpha-nvim") },
 
   -- Completion & snippets
@@ -30,13 +28,13 @@ local specs = {
   { src = gh("rcarriga/nvim-notify") },
 
   -- Treesitter and related
-  { src = gh("nvim-treesitter/nvim-treesitter") },
-  { src = gh("nvim-treesitter/nvim-treesitter-textobjects") },
+  { src = gh("nvim-treesitter/nvim-treesitter"), version = "main" },
+  { src = gh("nvim-treesitter/nvim-treesitter-textobjects"), version = "main" },
   { src = gh("windwp/nvim-ts-autotag") },
 
   -- Telescope and friends
   { src = gh("nvim-lua/plenary.nvim") },
-  { src = gh("nvim-telescope/telescope.nvim"), version = "0.1.8" },
+  { src = gh("nvim-telescope/telescope.nvim"), version = "v0.2.2" },
   { src = gh("nvim-telescope/telescope-fzf-native.nvim") },
   { src = gh("jvgrootveld/telescope-zoxide") },
   { src = gh("nvim-telescope/telescope-ui-select.nvim") },
@@ -89,6 +87,15 @@ vim.pack.add(specs, { load = true, confirm = false })
 vim.api.nvim_create_autocmd({ "PackChanged" }, {
   callback = function(ev)
     local name, kind = ev.data.spec.name, ev.data.kind
+    -- New nvim-treesitter queries need matching parsers, or highlighting errors out
+    if name == "nvim-treesitter" and kind == "update" then
+      if not ev.data.active then vim.cmd.packadd("nvim-treesitter") end
+      -- Synchronous so headless updates (update-system.sh quits right after) finish the build
+      local ok, err = pcall(function() require("nvim-treesitter").update():wait(300000) end)
+      if not ok then
+        vim.notify("nvim-treesitter: parser update failed: " .. tostring(err), vim.log.levels.WARN)
+      end
+    end
     if name == "telescope-fzf-native.nvim" and (kind == "install" or kind == "update") then
       vim.system({ "make" }, { cwd = ev.data.path }, function(obj)
         if obj.code ~= 0 then
@@ -117,7 +124,7 @@ end
 safe_require("setup.webdevicons")
 safe_require("setup.mini_icons")
 
--- Apply Aura (needs lush.nvim)
+-- Apply Aura (colors/aura.lua)
 local ok_aura, aura_err = pcall(vim.cmd.colorscheme, "aura")
 if not ok_aura then
   vim.schedule(function()

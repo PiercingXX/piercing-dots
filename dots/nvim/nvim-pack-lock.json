@@ -4,10 +4,6 @@
       "rev": "3979b01cb05734331c7873049001d3f2bb8477f4",
       "src": "https://github.com/goolord/alpha-nvim"
     },
-    "aura.nvim": {
-      "rev": "92c6d775e2afd75eff66619288f302320752e882",
-      "src": "https://github.com/JLighter/aura.nvim"
-    },
     "blink.cmp": {
       "rev": "2408f14f740f89d603cad33fe8cbd92ab068cc92",
       "src": "https://github.com/saghen/blink.cmp",
@@ -49,10 +45,6 @@
       "rev": "47f91c416daef12db467145e16bed5bbfe00add8",
       "src": "https://github.com/nvim-lualine/lualine.nvim"
     },
-    "lush.nvim": {
-      "rev": "9c60ec2279d62487d942ce095e49006af28eed6e",
-      "src": "https://github.com/rktjmp/lush.nvim"
-    },
     "mini.icons": {
       "rev": "284798619aed9f4c1ac1b9417b9a5e3b4b85ef3a",
       "src": "https://github.com/echasnovski/mini.icons"
@@ -78,12 +70,14 @@
       "src": "https://github.com/rcarriga/nvim-notify"
     },
     "nvim-treesitter": {
-      "rev": "42fc28ba918343ebfd5565147a42a26580579482",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+      "rev": "ca581c3436fc2b236847f5b739ebc263739e5ca6",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter",
+      "version": "'main'"
     },
     "nvim-treesitter-textobjects": {
-      "rev": "5ca4aaa6efdcc59be46b95a3e876300cfead05ef",
-      "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects"
+      "rev": "5c7b0263797dfd1bd6202f2b219f3b53a80b2187",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
+      "version": "'main'"
     },
     "nvim-ts-autotag": {
       "rev": "c4ca798ab95b316a768d51eaaaee48f64a4a46bc",
@@ -114,9 +108,9 @@
       "src": "https://github.com/jvgrootveld/telescope-zoxide"
     },
     "telescope.nvim": {
-      "rev": "a0bbec21143c7bc5f8bb02e0005fa0b982edc026",
+      "rev": "5255aa27c422de944791318024167ad5d40aad20",
       "src": "https://github.com/nvim-telescope/telescope.nvim",
-      "version": "'0.1.8'"
+      "version": "'v0.2.2'"
     },
     "treesj": {
       "rev": "4770492244ccecdc9b01e0e81fa8f2f6b4a23841",

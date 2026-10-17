@@ -3,12 +3,14 @@
 
 if vim.fn.executable("bash-language-server") == 1 then
   local ok, err = pcall(function()
-    require("lspconfig").bashls.setup({
+    -- nvim-lspconfig ships the base bashls config; this extends it
+    vim.lsp.config("bashls", {
       filetypes = { "sh", "bash" },
-      root_dir = function(fname)
-        return vim.fs.root(fname, { ".git" }) or vim.fn.getcwd()
+      root_dir = function(bufnr, on_dir)
+        on_dir(vim.fs.root(bufnr, { ".git" }) or vim.fn.getcwd())
       end,
     })
+    vim.lsp.enable("bashls")
   end)
   if not ok then
     vim.schedule(function()
