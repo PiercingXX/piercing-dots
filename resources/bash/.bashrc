@@ -507,6 +507,12 @@ elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
     _px_cached_init brew "$HOME/.linuxbrew/bin/brew" shellenv bash
 fi
 
+# Claude Code and Grok Build accounts (claude1..N, grok1..N): separate logins
+# with one shared memory. Created by setup-claude-accounts.sh and
+# setup-grok-accounts.sh in .scripts/Useful-Scripts. Plain claude/grok stay on account 1.
+[[ -r "$HOME/.config/claude/shell.bash" ]] && source "$HOME/.config/claude/shell.bash"
+[[ -r "$HOME/.config/grok/shell.bash" ]] && source "$HOME/.config/grok/shell.bash"
+
 # fastfetch only in the first interactive shell of a terminal, not in tmux,
 # nvim's :terminal, or nested shells
 if [[ $iatest -gt 0 && ${SHLVL:-1} -le 1 && -z ${TMUX:-} && -z ${NVIM:-} ]] && command -v fastfetch &>/dev/null; then

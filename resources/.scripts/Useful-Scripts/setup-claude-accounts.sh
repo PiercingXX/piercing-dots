@@ -232,7 +232,7 @@ install_self() {
 
 ensure_bashrc() {
   touch "$BASHRC"
-  if ! grep -qE '^[^#]*PATH=.*\.local/bin' "$BASHRC"; then
+  if ! grep -qE '^[^#]*\.local/bin' "$BASHRC"; then
     cat >> "$BASHRC" <<'EOF'
 
 # Local user binaries (Claude Code and the account commands live here).
