@@ -14,5 +14,6 @@
     "show-recent-apps": "6",
     "show-tray-icon": true,
     "theme-name": "Aura-Theme",
-    "tray-icon-name": "ulauncher-indicator-symbolic"
+    "tray-icon-name": "ulauncher-indicator-symbolic",
+    "layer-shell": false
 }

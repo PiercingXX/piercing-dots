@@ -5,7 +5,11 @@
 launch_ulauncher() {
     # If Ulauncher is already running, toggle it exactly once.
     if pgrep -x ulauncher >/dev/null 2>&1; then
-        if command -v ulauncher-toggle >/dev/null 2>&1; then
+        # v6 owns io.ulauncher.Ulauncher and uses `ulauncher toggle`;
+        # v5 only has the ulauncher-toggle script.
+        if busctl --user status io.ulauncher.Ulauncher >/dev/null 2>&1; then
+            ulauncher toggle >/dev/null 2>&1 || true
+        elif command -v ulauncher-toggle >/dev/null 2>&1; then
             ulauncher-toggle >/dev/null 2>&1 || true
         fi
         return 0
