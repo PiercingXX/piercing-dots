@@ -12,15 +12,14 @@ if hl.plugin.dynamic_cursors then
                 },
                 tilt = {
                     limit = 3000,
-                    ["function"] = "negative_quadratic",
+                    activation = "negative_quadratic",
                 },
                 stretch = {
                     limit = 3000,
-                    ["function"] = "quadratic",
+                    activation = "quadratic",
                 },
                 shake = {
                     enabled = true,
-                    nearest = true,
                     threshold = 6.0,
                     base = 4.0,
                     speed = 4.0,

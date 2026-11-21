@@ -21,7 +21,7 @@
     :valign "center"
     (button 
       :class command 
-      :onclick {command == "exit" ? "hyprctl dispatch exit" : "systemctl ${command} -i"} 
+      :onclick {command == "exit" ? "hyprctl dispatch 'hl.dsp.exit()'" : "systemctl ${command} -i"} 
       {icons.power[command]}
     )
   )

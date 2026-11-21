@@ -11,7 +11,7 @@
   },
   {
     "name": "Logou_t",
-    "exec": "hyprctl dispatch exit 0",
+    "exec": "hyprctl dispatch 'hl.dsp.exit()'",
     "icon": "/usr/share/nwg-launchers/nwgbar/images/logout.svg"
   },
   {

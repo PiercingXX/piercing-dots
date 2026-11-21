@@ -113,12 +113,13 @@ for workspace = 1, 10 do
     hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = workspaceName }))
 end
 
--- Move active window to a workspace with mainMod + SHIFT + [0-9]
+-- Move active window to a workspace with mainMod + SHIFT + [0-9] (follow it)
+-- or mainMod + ALT + [0-9] (send it silently, stay on the current workspace)
 for workspace = 1, 10 do
     local key = workspace % 10
     local workspaceName = tostring(workspace)
     hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = workspaceName }))
-    hl.bind(mainMod .. " + ALT + " .. key, hl.dsp.window.move({ workspace = workspaceName .. " silent" }))
+    hl.bind(mainMod .. " + ALT + " .. key, hl.dsp.window.move({ workspace = workspaceName, follow = false }))
 end
 
 -- Media control

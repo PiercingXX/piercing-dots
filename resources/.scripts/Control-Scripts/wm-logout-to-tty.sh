@@ -71,8 +71,8 @@ switch_to_target_tty() {
 logout_current_session() {
     # Hyprland
     if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && command -v hyprctl >/dev/null 2>&1; then
-        log "Logging out via hyprctl dispatch exit."
-        exec hyprctl dispatch exit
+        log "Logging out via hyprctl dispatch hl.dsp.exit()."
+        exec hyprctl dispatch 'hl.dsp.exit()'
     fi
 
     # Sway

@@ -48,7 +48,7 @@
     (powermenu_entry    
       :label "Sign out" 
       :icon "󰗼" 
-      :onclick "hyprctl dispatch exit 0"
+      :onclick "hyprctl dispatch 'hl.dsp.exit()'"
     )
   )
 )
